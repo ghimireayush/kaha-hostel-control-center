@@ -62,11 +62,13 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     }
   );
   
-  // Designer state
+  // Enhanced designer state
   const [elements, setElements] = useState<RoomElement[]>(roomData?.elements || []);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [selectedElements, setSelectedElements] = useState<string[]>([]);
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [duplicateMode, setDuplicateMode] = useState(false);
   
   // View controls
   const [snapToGrid, setSnapToGrid] = useState(true);
@@ -140,6 +142,50 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     toast.success("Room setup complete! Start designing your layout.");
   };
 
+  const handleElementSelect = (id: string, multiSelect = false) => {
+    if (multiSelect) {
+      setSelectedElements(prev => 
+        prev.includes(id) 
+          ? prev.filter(elId => elId !== id)
+          : [...prev, id]
+      );
+    } else {
+      setSelectedElement(id);
+      setSelectedElements([id]);
+    }
+  };
+
+  const handleElementsMove = (ids: string[], deltaX: number, deltaY: number) => {
+    addToHistory();
+    setElements(elements.map(el => 
+      ids.includes(el.id) 
+        ? { 
+            ...el, 
+            x: snapToGridPosition(Math.max(0, Math.min(el.x + deltaX, dimensions.length - el.width))),
+            y: snapToGridPosition(Math.max(0, Math.min(el.y + deltaY, dimensions.width - el.height)))
+          }
+        : el
+    ));
+  };
+
+  const handleElementDuplicate = (id: string) => {
+    const element = elements.find(el => el.id === id);
+    if (element) {
+      const newElement = {
+        ...element,
+        id: Date.now().toString(),
+        x: Math.min(element.x + 1, dimensions.length - element.width),
+        y: Math.min(element.y + 1, dimensions.width - element.height),
+        zIndex: elements.length
+      };
+      addToHistory();
+      setElements([...elements, newElement]);
+      setSelectedElement(newElement.id);
+      setSelectedElements([newElement.id]);
+      toast.success(`${element.type.replace('-', ' ')} duplicated! 🎉`);
+    }
+  };
+
   const addElement = (type: string) => {
     const elementTypes = [
       { type: 'bed', defaultSize: { width: 2, height: 1 } },
@@ -158,11 +204,39 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     const elementType = elementTypes.find(t => t.type === type);
     if (!elementType) return;
     
+    // Smart positioning - find an empty spot
+    let x = 1, y = 1;
+    let attempts = 0;
+    while (attempts < 100) {
+      const testElement: RoomElement = {
+        id: 'test',
+        type,
+        x, y,
+        width: elementType.defaultSize.width,
+        height: elementType.defaultSize.height,
+        rotation: 0,
+        zIndex: 0
+      };
+      
+      if (!checkCollisions(testElement) && 
+          x + elementType.defaultSize.width <= dimensions.length &&
+          y + elementType.defaultSize.height <= dimensions.width) {
+        break;
+      }
+      
+      x += 0.5;
+      if (x + elementType.defaultSize.width > dimensions.length) {
+        x = 1;
+        y += 0.5;
+      }
+      attempts++;
+    }
+    
     const newElement: RoomElement = {
       id: Date.now().toString(),
       type,
-      x: 1,
-      y: 1,
+      x: snapToGridPosition(x),
+      y: snapToGridPosition(y),
       width: elementType.defaultSize.width,
       height: elementType.defaultSize.height,
       rotation: 0,
@@ -177,7 +251,8 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     addToHistory();
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
-    toast.success(`${type.replace('-', ' ')} added to room`);
+    setSelectedElements([newElement.id]);
+    toast.success(`${type.replace('-', ' ')} added to room! ✨`);
   };
 
   const updateElement = (id: string, updates: Partial<RoomElement>) => {
@@ -253,10 +328,20 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     );
     
     if (clickedElement) {
-      setSelectedElement(clickedElement.id);
-      setDraggedElement(clickedElement.id);
+      const isMultiSelect = e.ctrlKey || e.metaKey;
+      const isAltDuplicate = e.altKey && duplicateMode;
+      
+      if (isAltDuplicate) {
+        handleElementDuplicate(clickedElement.id);
+      } else {
+        handleElementSelect(clickedElement.id, isMultiSelect);
+        setDraggedElement(clickedElement.id);
+      }
     } else {
-      setSelectedElement(null);
+      if (!e.ctrlKey && !e.metaKey) {
+        setSelectedElement(null);
+        setSelectedElements([]);
+      }
     }
   };
 
@@ -399,6 +484,8 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
           onAddElement={addElement}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
+          onDuplicateMode={setDuplicateMode}
+          duplicateMode={duplicateMode}
         />
 
         {/* Canvas */}
@@ -406,12 +493,20 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
           dimensions={dimensions}
           elements={elements}
           selectedElement={selectedElement}
+          selectedElements={selectedElements}
           theme={currentTheme}
           scale={scale}
           showGrid={showGrid}
+          snapToGrid={snapToGrid}
+          duplicateMode={duplicateMode}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
+          onElementSelect={handleElementSelect}
+          onElementsMove={handleElementsMove}
+          onElementRotate={rotateElement}
+          onElementDuplicate={handleElementDuplicate}
+          onElementDelete={deleteElement}
           checkCollisions={checkCollisions}
           warnings={collisionWarnings}
         />
