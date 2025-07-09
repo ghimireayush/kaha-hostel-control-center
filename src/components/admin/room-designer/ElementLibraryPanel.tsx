@@ -216,7 +216,7 @@ export const ElementLibraryPanel = ({ onAddElement, selectedCategory, onCategory
           {/* Add Custom Element */}
           <div className="mt-4 pt-4 border-t border-gray-200">
             <Button
-              variant="dashed"
+              variant="outline"
               className="w-full h-16 flex flex-col items-center gap-2 border-2 border-dashed border-gray-300 hover:border-purple-400 text-gray-600 hover:text-purple-600"
             >
               <Plus className="h-5 w-5" />
