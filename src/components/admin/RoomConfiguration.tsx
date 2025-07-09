@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Plus, Edit, Trash2, Users, Wifi, Lock, Lightbulb } from "lucide-react";
+import { Bed, Plus, Edit, Trash2, Users, Settings, Layout } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
+import { RoomDesigner } from "./RoomDesigner";
 
 export const RoomConfiguration = () => {
   const { translations } = useLanguage();
@@ -22,7 +22,8 @@ export const RoomConfiguration = () => {
       gender: "Mixed",
       baseRate: 800,
       amenities: ["Wi-Fi", "Lockers", "Reading Light"],
-      status: "Active"
+      status: "Active",
+      layout: null
     },
     {
       id: "room-2",
@@ -60,6 +61,8 @@ export const RoomConfiguration = () => {
   ]);
 
   const [showAddRoom, setShowAddRoom] = useState(false);
+  const [showRoomDesigner, setShowRoomDesigner] = useState(false);
+  const [selectedRoomForDesign, setSelectedRoomForDesign] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
     type: "Dormitory",
@@ -76,25 +79,13 @@ export const RoomConfiguration = () => {
     "AC", "TV", "Power Outlet", "Personal Locker", "Bunk Bed"
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-700";
-      case "Maintenance":
-        return "bg-yellow-100 text-yellow-700";
-      case "Inactive":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
   const handleAddRoom = () => {
     const room = {
       id: `room-${Date.now()}`,
       ...newRoom,
       occupancy: 0,
-      status: "Active"
+      status: "Active",
+      layout: null
     };
     setRooms([...rooms, room]);
     setNewRoom({
@@ -108,6 +99,40 @@ export const RoomConfiguration = () => {
     setShowAddRoom(false);
     toast.success("Room added successfully!");
   };
+
+  const openRoomDesigner = (roomId: string) => {
+    setSelectedRoomForDesign(roomId);
+    setShowRoomDesigner(true);
+  };
+
+  const handleSaveLayout = (layout: any) => {
+    if (selectedRoomForDesign) {
+      setRooms(rooms.map(room => 
+        room.id === selectedRoomForDesign 
+          ? { ...room, layout }
+          : room
+      ));
+      setShowRoomDesigner(false);
+      setSelectedRoomForDesign(null);
+      toast.success("Room layout saved successfully!");
+    }
+  };
+
+  const closeRoomDesigner = () => {
+    setShowRoomDesigner(false);
+    setSelectedRoomForDesign(null);
+  };
+
+  if (showRoomDesigner && selectedRoomForDesign) {
+    const roomData = rooms.find(r => r.id === selectedRoomForDesign);
+    return (
+      <RoomDesigner
+        onSave={handleSaveLayout}
+        onClose={closeRoomDesigner}
+        roomData={roomData?.layout}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,7 +166,7 @@ export const RoomConfiguration = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {roomTypes.map((type) => (
+                    {["Dormitory", "Private", "Capsule"].map((type) => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
@@ -163,7 +188,7 @@ export const RoomConfiguration = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {genderOptions.map((gender) => (
+                    {["Mixed", "Male", "Female"].map((gender) => (
                       <SelectItem key={gender} value={gender}>{gender}</SelectItem>
                     ))}
                   </SelectContent>
@@ -203,9 +228,22 @@ export const RoomConfiguration = () => {
                     <Badge className={getStatusColor(room.status)}>
                       {room.status}
                     </Badge>
+                    {room.layout && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        Layout Designed
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => openRoomDesigner(room.id)}
+                    className="text-purple-600 hover:text-purple-700"
+                  >
+                    <Layout className="h-4 w-4" />
+                  </Button>
                   <Button size="sm" variant="outline">
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -239,6 +277,17 @@ export const RoomConfiguration = () => {
                   </div>
                 </div>
 
+                {room.layout && (
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <div className="text-sm text-purple-600 mb-1">Room Layout</div>
+                    <div className="text-sm text-gray-600">
+                      {room.layout.dimensions?.length}m × {room.layout.dimensions?.width}m
+                      <br />
+                      {room.layout.elements?.length || 0} elements configured
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <div className="text-sm font-medium text-gray-700 mb-2">Amenities</div>
                   <div className="flex flex-wrap gap-1">
@@ -267,3 +316,16 @@ export const RoomConfiguration = () => {
     </div>
   );
 };
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "Active":
+      return "bg-green-100 text-green-700";
+    case "Maintenance":
+      return "bg-yellow-100 text-yellow-700";
+    case "Inactive":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
