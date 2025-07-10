@@ -1,4 +1,3 @@
-
 import { 
   Bed, 
   DoorOpen, 
@@ -11,7 +10,7 @@ import {
   Flame,
   ImageIcon,
   Speaker,
-  Desk,
+  Table,
   Bath,
   Trash2,
   Luggage,
@@ -104,7 +103,7 @@ export const elementTypes: ElementType[] = [
   // STUDY ZONE CATEGORY
   { 
     type: 'study-table', 
-    icon: Desk, 
+    icon: Table, 
     emoji: '🪵',
     label: 'Study Table', 
     color: '#8B5CF6', 
