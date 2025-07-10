@@ -27,6 +27,7 @@ import {
 export interface ElementType {
   type: string;
   icon: any;
+  emoji: string;
   label: string;
   color: string;
   defaultSize: { width: number; height: number };
@@ -40,6 +41,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'bed', 
     icon: Bed, 
+    emoji: '🛏️',
     label: 'Bed', 
     color: '#3B82F6', 
     defaultSize: { width: 2, height: 1 },
@@ -51,6 +53,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'door', 
     icon: DoorOpen, 
+    emoji: '🚪',
     label: 'Door', 
     color: '#8B5CF6', 
     defaultSize: { width: 1, height: 0.2 },
@@ -62,6 +65,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'window', 
     icon: Square, 
+    emoji: '🪟',
     label: 'Window', 
     color: '#10B981', 
     defaultSize: { width: 1.5, height: 0.3 },
@@ -73,6 +77,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'cupboard', 
     icon: Box, 
+    emoji: '🗄️',
     label: 'Cupboard', 
     color: '#F59E0B', 
     defaultSize: { width: 1, height: 0.6 },
@@ -84,6 +89,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'charging-port', 
     icon: Zap, 
+    emoji: '🔌',
     label: 'Charging Port', 
     color: '#EF4444', 
     defaultSize: { width: 0.2, height: 0.2 },
@@ -95,6 +101,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'light', 
     icon: Lightbulb, 
+    emoji: '💡',
     label: 'Light', 
     color: '#FBBF24', 
     defaultSize: { width: 0.5, height: 0.5 },
@@ -105,6 +112,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'tv', 
     icon: Tv, 
+    emoji: '📺',
     label: 'TV', 
     color: '#1F2937', 
     defaultSize: { width: 1.2, height: 0.8 },
@@ -115,6 +123,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'chair', 
     icon: Armchair, 
+    emoji: '🪑',
     label: 'Chair/Sofa', 
     color: '#7C3AED', 
     defaultSize: { width: 0.8, height: 0.8 },
@@ -125,6 +134,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'fire-safety', 
     icon: Flame, 
+    emoji: '🧯',
     label: 'Fire Safety', 
     color: '#DC2626', 
     defaultSize: { width: 0.3, height: 0.3 },
@@ -135,6 +145,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'wall-decor', 
     icon: ImageIcon, 
+    emoji: '🖼️',
     label: 'Wall Decor', 
     color: '#9333EA', 
     defaultSize: { width: 0.6, height: 0.4 },
@@ -145,6 +156,7 @@ const elementTypes: ElementType[] = [
   { 
     type: 'speaker', 
     icon: Speaker, 
+    emoji: '🔊',
     label: 'Speaker', 
     color: '#059669', 
     defaultSize: { width: 0.4, height: 0.4 },
@@ -170,16 +182,15 @@ export const ElementLibraryPanel = ({
   duplicateMode = false
 }: ElementLibraryPanelProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showPopularOnly, setShowPopularOnly] = useState(false);
 
   const categories = [
-    { id: 'all', label: 'All Items', count: elementTypes.length, icon: Box },
-    { id: 'popular', label: 'Popular', count: elementTypes.filter(e => e.popular).length, icon: Sparkles },
-    { id: 'furniture', label: 'Furniture', count: elementTypes.filter(e => e.category === 'furniture').length, icon: Armchair },
-    { id: 'fixtures', label: 'Fixtures', count: elementTypes.filter(e => e.category === 'fixtures').length, icon: Square },
-    { id: 'electrical', label: 'Electrical', count: elementTypes.filter(e => e.category === 'electrical').length, icon: Zap },
-    { id: 'safety', label: 'Safety', count: elementTypes.filter(e => e.category === 'safety').length, icon: Flame },
-    { id: 'decor', label: 'Decor', count: elementTypes.filter(e => e.category === 'decor').length, icon: ImageIcon },
+    { id: 'all', label: 'All Items', count: elementTypes.length, icon: Box, emoji: '📦' },
+    { id: 'popular', label: 'Popular', count: elementTypes.filter(e => e.popular).length, icon: Sparkles, emoji: '⭐' },
+    { id: 'furniture', label: 'Furniture', count: elementTypes.filter(e => e.category === 'furniture').length, icon: Armchair, emoji: '🪑' },
+    { id: 'fixtures', label: 'Fixtures', count: elementTypes.filter(e => e.category === 'fixtures').length, icon: Square, emoji: '🏠' },
+    { id: 'electrical', label: 'Electrical', count: elementTypes.filter(e => e.category === 'electrical').length, icon: Zap, emoji: '⚡' },
+    { id: 'safety', label: 'Safety', count: elementTypes.filter(e => e.category === 'safety').length, icon: Flame, emoji: '🛡️' },
+    { id: 'decor', label: 'Decor', count: elementTypes.filter(e => e.category === 'decor').length, icon: ImageIcon, emoji: '🎨' },
   ];
 
   const getFilteredElements = () => {
@@ -224,8 +235,8 @@ export const ElementLibraryPanel = ({
 
   return (
     <TooltipProvider>
-      <div className="w-80 bg-white border-r border-gray-200 h-full flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+      <div className="w-80 bg-white border-r border-gray-200 h-full flex flex-col shadow-lg">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
           <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
             <Box className="h-5 w-5 text-purple-500" />
             Element Library
@@ -244,7 +255,7 @@ export const ElementLibraryPanel = ({
               placeholder="Search elements..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 text-sm"
+              className="pl-10 text-sm bg-white/70 backdrop-blur-sm border-2 focus:border-purple-300"
             />
           </div>
 
@@ -276,7 +287,7 @@ export const ElementLibraryPanel = ({
           </div>
           
           {/* Category Filters */}
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {categories.map((category) => {
               const IconComponent = category.icon;
               return (
@@ -285,13 +296,20 @@ export const ElementLibraryPanel = ({
                   variant={selectedCategory === category.id ? "default" : "ghost"}
                   size="sm"
                   onClick={() => onCategoryChange(category.id)}
-                  className="w-full justify-between text-left hover:scale-[1.02] transition-transform"
+                  className={`w-full justify-between text-left hover:scale-[1.02] transition-all duration-200 ${
+                    selectedCategory === category.id 
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md' 
+                      : 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50'
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4" />
-                    <span>{category.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{category.emoji}</span>
+                    <span className="font-medium">{category.label}</span>
                   </div>
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge 
+                    variant={selectedCategory === category.id ? "secondary" : "outline"} 
+                    className={`ml-2 ${selectedCategory === category.id ? 'bg-white/20 text-white border-white/30' : ''}`}
+                  >
                     {category.count}
                   </Badge>
                 </Button>
@@ -301,15 +319,15 @@ export const ElementLibraryPanel = ({
         </div>
 
         {/* Elements Grid */}
-        <div className="flex-1 p-4 overflow-y-auto">
+        <div className="flex-1 p-4 overflow-y-auto bg-gradient-to-b from-gray-50/50 to-white">
           {filteredElements.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No elements found</p>
-              <p className="text-xs">Try a different search or category</p>
+            <div className="text-center py-12 text-gray-500">
+              <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-base font-medium mb-2">No elements found</p>
+              <p className="text-sm">Try a different search or category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {filteredElements.map((element) => {
                 const Icon = element.icon;
                 return (
@@ -317,45 +335,65 @@ export const ElementLibraryPanel = ({
                     <TooltipTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-20 flex flex-col items-center gap-2 p-3 hover:scale-105 transition-all duration-200 cursor-grab active:cursor-grabbing relative group"
+                        className="h-20 w-full flex items-center gap-4 p-4 hover:scale-[1.02] transition-all duration-200 cursor-grab active:cursor-grabbing relative group bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 border-2 hover:border-purple-200 hover:shadow-lg"
                         onClick={() => handleElementClick(element.type)}
                         draggable
                         onDragStart={(e) => handleDragStart(e, element.type)}
-                        style={{ 
-                          borderColor: element.color + '40',
-                          background: selectedCategory === 'popular' && element.popular 
-                            ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' 
-                            : undefined
-                        }}
                       >
                         {element.popular && (
-                          <Sparkles className="absolute top-1 right-1 h-3 w-3 text-yellow-500" />
+                          <Sparkles className="absolute top-2 right-2 h-4 w-4 text-yellow-500 animate-pulse" />
                         )}
-                        <Icon 
-                          className="h-6 w-6 group-hover:scale-110 transition-transform" 
-                          style={{ color: element.color }}
-                        />
-                        <span className="text-xs text-center leading-tight font-medium">
-                          {element.label}
-                        </span>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded" />
+                        
+                        {/* Large Emoji */}
+                        <div className="text-3xl group-hover:scale-110 transition-transform duration-200">
+                          {element.emoji}
+                        </div>
+                        
+                        {/* Element Info */}
+                        <div className="flex-1 text-left">
+                          <div className="font-semibold text-base mb-1 group-hover:text-purple-700 transition-colors">
+                            {element.label}
+                          </div>
+                          <div className="text-xs text-gray-600 mb-2 line-clamp-2">
+                            {element.description}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {element.tags.slice(0, 2).map(tag => (
+                              <Badge key={tag} variant="outline" className="text-xs px-2 py-0.5">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Size Info */}
+                        <div className="text-xs text-gray-500 text-right">
+                          <div className="font-mono bg-gray-100 px-2 py-1 rounded">
+                            {element.defaultSize.width}×{element.defaultSize.height}m
+                          </div>
+                        </div>
+                        
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
                       <div className="text-center">
-                        <p className="font-medium">{element.label}</p>
-                        <p className="text-sm text-gray-600 mb-2">{element.description}</p>
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {element.tags.slice(0, 3).map(tag => (
+                        <div className="text-2xl mb-2">{element.emoji}</div>
+                        <p className="font-medium text-base mb-2">{element.label}</p>
+                        <p className="text-sm text-gray-600 mb-3">{element.description}</p>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {element.tags.map(tag => (
                             <Badge key={tag} variant="outline" className="text-xs">
                               {tag}
                             </Badge>
                           ))}
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Size: {element.defaultSize.width}m × {element.defaultSize.height}m
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
+                        <div className="bg-gray-100 p-2 rounded mb-2">
+                          <p className="text-xs font-mono">
+                            Size: {element.defaultSize.width}m × {element.defaultSize.height}m
+                          </p>
+                        </div>
+                        <p className="text-xs text-blue-600 font-medium">
                           💡 Click to add • Drag to place
                         </p>
                       </div>
@@ -370,33 +408,39 @@ export const ElementLibraryPanel = ({
           <div className="mt-6 pt-4 border-t border-gray-200">
             <Button
               variant="outline"
-              className="w-full h-16 flex flex-col items-center gap-2 border-2 border-dashed border-gray-300 hover:border-purple-400 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
+              className="w-full h-16 flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-purple-400 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
             >
               <Plus className="h-5 w-5" />
-              <span className="text-sm font-medium">Add Custom Item</span>
+              <div className="text-left">
+                <div className="font-medium">Add Custom Item</div>
+                <div className="text-xs text-gray-500">Create your own element</div>
+              </div>
             </Button>
           </div>
         </div>
 
         {/* Quick Stats & Tips */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="text-xs text-gray-600 space-y-2">
+        <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+          <div className="text-xs text-gray-600 space-y-3">
             <div className="flex justify-between items-center">
-              <span>Showing {filteredElements.length} elements</span>
-              <Badge variant="outline" className="text-xs">
+              <span className="font-medium">Showing {filteredElements.length} elements</span>
+              <Badge variant="outline" className="text-xs font-mono">
                 {selectedCategory === 'all' ? 'All' : selectedCategory}
               </Badge>
             </div>
             
             {searchQuery && (
-              <div className="text-blue-600 bg-blue-50 p-2 rounded text-center">
+              <div className="text-blue-700 bg-blue-100 p-2 rounded-lg text-center font-medium">
                 🔍 "{searchQuery}" - {filteredElements.length} found
               </div>
             )}
             
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-2 rounded text-center">
-              <p className="text-purple-700 font-medium text-xs">
-                💡 Pro Tip: Alt + Drag = Duplicate
+            <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-3 rounded-lg text-center">
+              <p className="text-purple-700 font-medium text-xs mb-1">
+                💡 Pro Tips
+              </p>
+              <p className="text-xs text-purple-600">
+                Alt + Drag = Duplicate • Right-click for options
               </p>
             </div>
           </div>
