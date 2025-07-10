@@ -5,17 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { 
   RotateCw, 
-  Plus, 
   Trash2, 
   Box, 
   AlertTriangle,
   Copy,
-  Eye,
-  EyeOff
+  Settings
 } from "lucide-react";
-import { elementTypes } from "./ElementLibraryPanel";
+import { elementTypes } from "./ElementTypes";
 
 interface RoomElement {
   id: string;
@@ -27,12 +26,17 @@ interface RoomElement {
   rotation: number;
   zIndex: number;
   properties?: {
-    bedType?: 'single' | 'bunk' | 'capsule';
+    bedType?: 'single' | 'bunk' | 'double' | 'kids';
     bedId?: string;
-    gender?: 'mixed' | 'male' | 'female';
+    position?: 'top' | 'middle' | 'bottom';
+    orientation?: 'north' | 'south' | 'east' | 'west';
+    drawers?: number;
+    brightness?: number;
+    hingeType?: 'left' | 'right';
+    isOpen?: boolean;
+    material?: 'wood' | 'metal' | 'plastic';
     color?: string;
-    brand?: string;
-    wattage?: number;
+    portType?: 'USB' | 'Type-C' | 'Universal';
   };
 }
 
@@ -58,7 +62,7 @@ export const PropertiesPanel = ({
       <div className="w-80 bg-white border-l border-gray-200 h-full flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Box className="h-5 w-5 text-gray-400" />
+            <Settings className="h-5 w-5 text-gray-400" />
             Properties
           </h3>
         </div>
@@ -76,6 +80,12 @@ export const PropertiesPanel = ({
   const elementType = elementTypes.find(e => e.type === selectedElement.type);
   const Icon = elementType?.icon || Box;
 
+  const updateProperty = (key: string, value: any) => {
+    onUpdateElement(selectedElement.id, {
+      properties: { ...selectedElement.properties, [key]: value }
+    });
+  };
+
   return (
     <div className="w-80 bg-white border-l border-gray-200 h-full flex flex-col">
       {/* Header */}
@@ -85,9 +95,18 @@ export const PropertiesPanel = ({
             <Icon className="h-5 w-5" style={{ color: elementType?.color }} />
             Properties
           </h3>
+          <div className="text-2xl">{elementType?.emoji}</div>
+        </div>
+
+        <div className="flex items-center gap-2 mb-3">
           <Badge variant="outline" className="capitalize">
             {selectedElement.type.replace('-', ' ')}
           </Badge>
+          {elementType?.popular && (
+            <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+              Popular
+            </Badge>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -225,23 +244,21 @@ export const PropertiesPanel = ({
         </div>
 
         {/* Element-specific Properties */}
-        {selectedElement.type === 'bed' && selectedElement.properties && (
+        {(selectedElement.type.includes('bed') || selectedElement.type === 'bunk-bed') && (
           <>
             <Separator />
             <div className="space-y-4">
               <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
                 <Icon className="h-4 w-4" />
-                Bed Properties
+                🛏️ Bed Properties
               </h4>
               
               <div>
                 <Label className="text-xs text-gray-600">Bed ID</Label>
                 <Input
-                  value={selectedElement.properties.bedId || ''}
-                  onChange={(e) => onUpdateElement(selectedElement.id, {
-                    properties: { ...selectedElement.properties, bedId: e.target.value }
-                  })}
-                  placeholder="e.g., BED-001"
+                  value={selectedElement.properties?.bedId || ''}
+                  onChange={(e) => updateProperty('bedId', e.target.value)}
+                  placeholder="e.g., BED-A, BED-001"
                   className="text-sm"
                 />
               </div>
@@ -249,39 +266,210 @@ export const PropertiesPanel = ({
               <div>
                 <Label className="text-xs text-gray-600">Bed Type</Label>
                 <Select
-                  value={selectedElement.properties.bedType || 'single'}
-                  onValueChange={(value) => onUpdateElement(selectedElement.id, {
-                    properties: { ...selectedElement.properties, bedType: value as any }
-                  })}
+                  value={selectedElement.properties?.bedType || 'single'}
+                  onValueChange={(value) => updateProperty('bedType', value)}
                 >
                   <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single Bed</SelectItem>
-                    <SelectItem value="bunk">Bunk Bed</SelectItem>
-                    <SelectItem value="capsule">Capsule Pod</SelectItem>
+                    <SelectItem value="single">🛏️ Single Bed</SelectItem>
+                    <SelectItem value="bunk">🛏️ Bunk Bed</SelectItem>
+                    <SelectItem value="double">🛌 Double Bed</SelectItem>
+                    <SelectItem value="kids">🧸 Kids Bed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedElement.type === 'bunk-bed' && (
+                <div>
+                  <Label className="text-xs text-gray-600">Sleeping Position</Label>
+                  <Select
+                    value={selectedElement.properties?.position || 'bottom'}
+                    onValueChange={(value) => updateProperty('position', value)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top">Top Bunk</SelectItem>
+                      <SelectItem value="middle">Middle Bunk</SelectItem>
+                      <SelectItem value="bottom">Bottom Bunk</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div>
+                <Label className="text-xs text-gray-600">Orientation</Label>
+                <Select
+                  value={selectedElement.properties?.orientation || 'north'}
+                  onValueChange={(value) => updateProperty('orientation', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="north">⬆️ North</SelectItem>
+                    <SelectItem value="south">⬇️ South</SelectItem>
+                    <SelectItem value="east">➡️ East</SelectItem>
+                    <SelectItem value="west">⬅️ West</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Study Table Properties */}
+        {selectedElement.type === 'study-table' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                🪵 Study Table Properties
+              </h4>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Material</Label>
+                <Select
+                  value={selectedElement.properties?.material || 'wood'}
+                  onValueChange={(value) => updateProperty('material', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="wood">🪵 Wooden</SelectItem>
+                    <SelectItem value="metal">🔩 Metal</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label className="text-xs text-gray-600">Gender Assignment</Label>
+                <Label className="text-xs text-gray-600">Number of Drawers</Label>
                 <Select
-                  value={selectedElement.properties.gender || 'mixed'}
-                  onValueChange={(value) => onUpdateElement(selectedElement.id, {
-                    properties: { ...selectedElement.properties, gender: value as any }
-                  })}
+                  value={String(selectedElement.properties?.drawers || 0)}
+                  onValueChange={(value) => updateProperty('drawers', Number(value))}
                 >
                   <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mixed">Mixed</SelectItem>
-                    <SelectItem value="male">Male Only</SelectItem>
-                    <SelectItem value="female">Female Only</SelectItem>
+                    <SelectItem value="0">No Drawers</SelectItem>
+                    <SelectItem value="1">1 Drawer</SelectItem>
+                    <SelectItem value="2">2 Drawers</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Door Properties */}
+        {selectedElement.type === 'door' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                🚪 Door Properties
+              </h4>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Hinge Type</Label>
+                <Select
+                  value={selectedElement.properties?.hingeType || 'left'}
+                  onValueChange={(value) => updateProperty('hingeType', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">⬅️ Left Hinge</SelectItem>
+                    <SelectItem value="right">➡️ Right Hinge</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Window Properties */}
+        {selectedElement.type === 'window' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                🪟 Window Properties
+              </h4>
+              
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-gray-600">Window Open</Label>
+                <Switch
+                  checked={selectedElement.properties?.isOpen || false}
+                  onCheckedChange={(checked) => updateProperty('isOpen', checked)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Charging Port Properties */}
+        {selectedElement.type === 'charging-port' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                🔌 Charging Port Properties
+              </h4>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Port Type</Label>
+                <Select
+                  value={selectedElement.properties?.portType || 'USB'}
+                  onValueChange={(value) => updateProperty('portType', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USB">🔌 USB</SelectItem>
+                    <SelectItem value="Type-C">🔌 Type-C</SelectItem>
+                    <SelectItem value="Universal">🔌 Universal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Study Lamp Properties */}
+        {selectedElement.type === 'study-lamp' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                💡 Study Lamp Properties
+              </h4>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Brightness Level</Label>
+                <Input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={selectedElement.properties?.brightness || 50}
+                  onChange={(e) => updateProperty('brightness', Number(e.target.value))}
+                  className="text-sm"
+                />
+                <div className="text-xs text-gray-500 text-center">
+                  {selectedElement.properties?.brightness || 50}%
+                </div>
               </div>
             </div>
           </>
@@ -306,6 +494,12 @@ export const PropertiesPanel = ({
               <span>Layer:</span>
               <span className="font-medium">L{selectedElement.zIndex}</span>
             </div>
+            {elementType?.category && (
+              <div className="flex justify-between">
+                <span>Category:</span>
+                <span className="font-medium capitalize">{elementType.category}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

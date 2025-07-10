@@ -9,6 +9,7 @@ import { ElementLibraryPanel } from "./room-designer/ElementLibraryPanel";
 import { PropertiesPanel } from "./room-designer/PropertiesPanel";
 import { DesignerToolbar } from "./room-designer/DesignerToolbar";
 import { RoomCanvas } from "./room-designer/RoomCanvas";
+import { elementTypes } from "./room-designer/ElementTypes";
 
 interface RoomElement {
   id: string;
@@ -20,12 +21,17 @@ interface RoomElement {
   rotation: number;
   zIndex: number;
   properties?: {
-    bedType?: 'single' | 'bunk' | 'capsule';
+    bedType?: 'single' | 'bunk' | 'double' | 'kids';
     bedId?: string;
-    gender?: 'mixed' | 'male' | 'female';
+    position?: 'top' | 'middle' | 'bottom';
+    orientation?: 'north' | 'south' | 'east' | 'west';
+    drawers?: number;
+    brightness?: number;
+    hingeType?: 'left' | 'right';
+    isOpen?: boolean;
+    material?: 'wood' | 'metal' | 'plastic';
     color?: string;
-    brand?: string;
-    wattage?: number;
+    portType?: 'USB' | 'Type-C' | 'Universal';
   };
 }
 
@@ -187,20 +193,6 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   };
 
   const addElement = (type: string) => {
-    const elementTypes = [
-      { type: 'bed', defaultSize: { width: 2, height: 1 } },
-      { type: 'door', defaultSize: { width: 1, height: 0.2 } },
-      { type: 'window', defaultSize: { width: 1.5, height: 0.3 } },
-      { type: 'cupboard', defaultSize: { width: 1, height: 0.6 } },
-      { type: 'charging-port', defaultSize: { width: 0.2, height: 0.2 } },
-      { type: 'light', defaultSize: { width: 0.5, height: 0.5 } },
-      { type: 'tv', defaultSize: { width: 1.2, height: 0.8 } },
-      { type: 'chair', defaultSize: { width: 0.8, height: 0.8 } },
-      { type: 'fire-safety', defaultSize: { width: 0.3, height: 0.3 } },
-      { type: 'wall-decor', defaultSize: { width: 0.6, height: 0.4 } },
-      { type: 'speaker', defaultSize: { width: 0.4, height: 0.4 } }
-    ];
-    
     const elementType = elementTypes.find(t => t.type === type);
     if (!elementType) return;
     
@@ -241,10 +233,22 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
       height: elementType.defaultSize.height,
       rotation: 0,
       zIndex: elements.length,
-      properties: type === 'bed' ? {
-        bedType: 'single',
-        bedId: `BED-${elements.filter(e => e.type === 'bed').length + 1}`,
-        gender: 'mixed'
+      properties: type.includes('bed') ? {
+        bedType: type === 'bunk-bed' ? 'bunk' : type === 'double-bed' ? 'double' : type === 'kids-bed' ? 'kids' : 'single',
+        bedId: `BED-${elements.filter(e => e.type.includes('bed')).length + 1}`,
+        orientation: 'north',
+        position: type === 'bunk-bed' ? 'bottom' : undefined
+      } : type === 'study-table' ? {
+        material: 'wood',
+        drawers: 1
+      } : type === 'door' ? {
+        hingeType: 'left'
+      } : type === 'window' ? {
+        isOpen: false
+      } : type === 'charging-port' ? {
+        portType: 'USB'
+      } : type === 'study-lamp' ? {
+        brightness: 50
       } : {}
     };
     
@@ -252,7 +256,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
     setSelectedElements([newElement.id]);
-    toast.success(`${type.replace('-', ' ')} added to room! ✨`);
+    toast.success(`${elementType.label} added to room! ✨`);
   };
 
   const updateElement = (id: string, updates: Partial<RoomElement>) => {

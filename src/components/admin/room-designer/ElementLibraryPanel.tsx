@@ -5,166 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
-  Bed, 
-  DoorOpen, 
-  Square, 
-  Box,
-  Zap,
-  Lightbulb,
-  Tv,
-  Armchair,
-  Flame,
-  ImageIcon,
-  Speaker,
   Plus,
   Search,
-  Filter,
-  Sparkles,
   Copy,
-  Wand2
+  Wand2,
+  Box,
+  Sparkles
 } from "lucide-react";
-
-export interface ElementType {
-  type: string;
-  icon: any;
-  emoji: string;
-  label: string;
-  color: string;
-  defaultSize: { width: number; height: number };
-  description: string;
-  category: 'furniture' | 'fixtures' | 'electrical' | 'safety' | 'decor';
-  tags: string[];
-  popular?: boolean;
-}
-
-const elementTypes: ElementType[] = [
-  { 
-    type: 'bed', 
-    icon: Bed, 
-    emoji: '🛏️',
-    label: 'Bed', 
-    color: '#3B82F6', 
-    defaultSize: { width: 2, height: 1 },
-    description: 'Single, bunk, or capsule bed',
-    category: 'furniture',
-    tags: ['sleep', 'bedroom', 'furniture'],
-    popular: true
-  },
-  { 
-    type: 'door', 
-    icon: DoorOpen, 
-    emoji: '🚪',
-    label: 'Door', 
-    color: '#8B5CF6', 
-    defaultSize: { width: 1, height: 0.2 },
-    description: 'Room entrance/exit',
-    category: 'fixtures',
-    tags: ['entrance', 'access', 'door'],
-    popular: true
-  },
-  { 
-    type: 'window', 
-    icon: Square, 
-    emoji: '🪟',
-    label: 'Window', 
-    color: '#10B981', 
-    defaultSize: { width: 1.5, height: 0.3 },
-    description: 'Natural light source',
-    category: 'fixtures',
-    tags: ['light', 'view', 'window'],
-    popular: true
-  },
-  { 
-    type: 'cupboard', 
-    icon: Box, 
-    emoji: '🗄️',
-    label: 'Cupboard', 
-    color: '#F59E0B', 
-    defaultSize: { width: 1, height: 0.6 },
-    description: 'Storage furniture',
-    category: 'furniture',
-    tags: ['storage', 'cabinet', 'organize'],
-    popular: true
-  },
-  { 
-    type: 'charging-port', 
-    icon: Zap, 
-    emoji: '🔌',
-    label: 'Charging Port', 
-    color: '#EF4444', 
-    defaultSize: { width: 0.2, height: 0.2 },
-    description: 'Power outlet for devices',
-    category: 'electrical',
-    tags: ['power', 'charge', 'electricity'],
-    popular: true
-  },
-  { 
-    type: 'light', 
-    icon: Lightbulb, 
-    emoji: '💡',
-    label: 'Light', 
-    color: '#FBBF24', 
-    defaultSize: { width: 0.5, height: 0.5 },
-    description: 'Ceiling or wall light',
-    category: 'electrical',
-    tags: ['lighting', 'illumination', 'bulb']
-  },
-  { 
-    type: 'tv', 
-    icon: Tv, 
-    emoji: '📺',
-    label: 'TV', 
-    color: '#1F2937', 
-    defaultSize: { width: 1.2, height: 0.8 },
-    description: 'Entertainment display',
-    category: 'electrical',
-    tags: ['entertainment', 'screen', 'media']
-  },
-  { 
-    type: 'chair', 
-    icon: Armchair, 
-    emoji: '🪑',
-    label: 'Chair/Sofa', 
-    color: '#7C3AED', 
-    defaultSize: { width: 0.8, height: 0.8 },
-    description: 'Seating furniture',
-    category: 'furniture',
-    tags: ['seating', 'comfort', 'furniture']
-  },
-  { 
-    type: 'fire-safety', 
-    icon: Flame, 
-    emoji: '🧯',
-    label: 'Fire Safety', 
-    color: '#DC2626', 
-    defaultSize: { width: 0.3, height: 0.3 },
-    description: 'Fire extinguisher/alarm',
-    category: 'safety',
-    tags: ['safety', 'fire', 'emergency']
-  },
-  { 
-    type: 'wall-decor', 
-    icon: ImageIcon, 
-    emoji: '🖼️',
-    label: 'Wall Decor', 
-    color: '#9333EA', 
-    defaultSize: { width: 0.6, height: 0.4 },
-    description: 'Artwork or decoration',
-    category: 'decor',
-    tags: ['art', 'decoration', 'wall']
-  },
-  { 
-    type: 'speaker', 
-    icon: Speaker, 
-    emoji: '🔊',
-    label: 'Speaker', 
-    color: '#059669', 
-    defaultSize: { width: 0.4, height: 0.4 },
-    description: 'Audio system',
-    category: 'electrical',
-    tags: ['audio', 'sound', 'music']
-  }
-];
+import { elementTypes, categories, ElementType } from "./ElementTypes";
 
 interface ElementLibraryPanelProps {
   onAddElement: (type: string) => void;
@@ -182,16 +30,6 @@ export const ElementLibraryPanel = ({
   duplicateMode = false
 }: ElementLibraryPanelProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-
-  const categories = [
-    { id: 'all', label: 'All Items', count: elementTypes.length, icon: Box, emoji: '📦' },
-    { id: 'popular', label: 'Popular', count: elementTypes.filter(e => e.popular).length, icon: Sparkles, emoji: '⭐' },
-    { id: 'furniture', label: 'Furniture', count: elementTypes.filter(e => e.category === 'furniture').length, icon: Armchair, emoji: '🪑' },
-    { id: 'fixtures', label: 'Fixtures', count: elementTypes.filter(e => e.category === 'fixtures').length, icon: Square, emoji: '🏠' },
-    { id: 'electrical', label: 'Electrical', count: elementTypes.filter(e => e.category === 'electrical').length, icon: Zap, emoji: '⚡' },
-    { id: 'safety', label: 'Safety', count: elementTypes.filter(e => e.category === 'safety').length, icon: Flame, emoji: '🛡️' },
-    { id: 'decor', label: 'Decor', count: elementTypes.filter(e => e.category === 'decor').length, icon: ImageIcon, emoji: '🎨' },
-  ];
 
   const getFilteredElements = () => {
     let filtered = elementTypes;
@@ -239,7 +77,7 @@ export const ElementLibraryPanel = ({
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
           <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
             <Box className="h-5 w-5 text-purple-500" />
-            Element Library
+            Room Elements
             {duplicateMode && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                 <Copy className="h-3 w-3 mr-1" />
@@ -288,33 +126,30 @@ export const ElementLibraryPanel = ({
           
           {/* Category Filters */}
           <div className="space-y-2 max-h-48 overflow-y-auto">
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => onCategoryChange(category.id)}
-                  className={`w-full justify-between text-left hover:scale-[1.02] transition-all duration-200 ${
-                    selectedCategory === category.id 
-                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md' 
-                      : 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50'
-                  }`}
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onCategoryChange(category.id)}
+                className={`w-full justify-between text-left hover:scale-[1.02] transition-all duration-200 ${
+                  selectedCategory === category.id 
+                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md' 
+                    : 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{category.emoji}</span>
+                  <span className="font-medium text-sm">{category.label}</span>
+                </div>
+                <Badge 
+                  variant={selectedCategory === category.id ? "secondary" : "outline"} 
+                  className={`ml-2 text-xs ${selectedCategory === category.id ? 'bg-white/20 text-white border-white/30' : ''}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{category.emoji}</span>
-                    <span className="font-medium">{category.label}</span>
-                  </div>
-                  <Badge 
-                    variant={selectedCategory === category.id ? "secondary" : "outline"} 
-                    className={`ml-2 ${selectedCategory === category.id ? 'bg-white/20 text-white border-white/30' : ''}`}
-                  >
-                    {category.count}
-                  </Badge>
-                </Button>
-              );
-            })}
+                  {category.count}
+                </Badge>
+              </Button>
+            ))}
           </div>
         </div>
 
@@ -327,7 +162,7 @@ export const ElementLibraryPanel = ({
               <p className="text-sm">Try a different search or category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               {filteredElements.map((element) => {
                 const Icon = element.icon;
                 return (
@@ -335,7 +170,7 @@ export const ElementLibraryPanel = ({
                     <TooltipTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-20 w-full flex items-center gap-4 p-4 hover:scale-[1.02] transition-all duration-200 cursor-grab active:cursor-grabbing relative group bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 border-2 hover:border-purple-200 hover:shadow-lg"
+                        className="h-24 w-full flex items-center gap-4 p-4 hover:scale-[1.02] transition-all duration-200 cursor-grab active:cursor-grabbing relative group bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 border-2 hover:border-purple-200 hover:shadow-lg"
                         onClick={() => handleElementClick(element.type)}
                         draggable
                         onDragStart={(e) => handleDragStart(e, element.type)}
@@ -345,12 +180,12 @@ export const ElementLibraryPanel = ({
                         )}
                         
                         {/* Large Emoji */}
-                        <div className="text-3xl group-hover:scale-110 transition-transform duration-200">
+                        <div className="text-4xl group-hover:scale-110 transition-transform duration-200 flex-shrink-0">
                           {element.emoji}
                         </div>
                         
                         {/* Element Info */}
-                        <div className="flex-1 text-left">
+                        <div className="flex-1 text-left min-w-0">
                           <div className="font-semibold text-base mb-1 group-hover:text-purple-700 transition-colors">
                             {element.label}
                           </div>
@@ -367,8 +202,8 @@ export const ElementLibraryPanel = ({
                         </div>
                         
                         {/* Size Info */}
-                        <div className="text-xs text-gray-500 text-right">
-                          <div className="font-mono bg-gray-100 px-2 py-1 rounded">
+                        <div className="text-xs text-gray-500 text-right flex-shrink-0">
+                          <div className="font-mono bg-gray-100 px-2 py-1 rounded text-center min-w-12">
                             {element.defaultSize.width}×{element.defaultSize.height}m
                           </div>
                         </div>
@@ -378,7 +213,7 @@ export const ElementLibraryPanel = ({
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
                       <div className="text-center">
-                        <div className="text-2xl mb-2">{element.emoji}</div>
+                        <div className="text-3xl mb-2">{element.emoji}</div>
                         <p className="font-medium text-base mb-2">{element.label}</p>
                         <p className="text-sm text-gray-600 mb-3">{element.description}</p>
                         <div className="flex flex-wrap gap-1 mb-3">
@@ -393,6 +228,16 @@ export const ElementLibraryPanel = ({
                             Size: {element.defaultSize.width}m × {element.defaultSize.height}m
                           </p>
                         </div>
+                        {element.customizable && (
+                          <div className="bg-blue-50 p-2 rounded mb-2">
+                            <p className="text-xs text-blue-700 font-medium mb-1">Customizable:</p>
+                            <div className="text-xs text-blue-600">
+                              {Object.entries(element.customizable).filter(([_, value]) => value).map(([key, _]) => 
+                                key.replace(/([A-Z])/g, ' $1').toLowerCase()
+                              ).join(', ')}
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs text-blue-600 font-medium">
                           💡 Click to add • Drag to place
                         </p>
