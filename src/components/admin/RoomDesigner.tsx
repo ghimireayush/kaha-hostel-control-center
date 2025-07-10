@@ -11,6 +11,13 @@ import { DesignerToolbar } from "./room-designer/DesignerToolbar";
 import { RoomCanvas } from "./room-designer/RoomCanvas";
 import { elementTypes } from "./room-designer/ElementTypes";
 
+interface BunkLevel {
+  id: string;
+  position: 'top' | 'middle' | 'bottom';
+  assignedTo?: string;
+  bedId: string;
+}
+
 interface RoomElement {
   id: string;
   type: string;
@@ -32,6 +39,9 @@ interface RoomElement {
     material?: 'wood' | 'metal' | 'plastic';
     color?: string;
     portType?: 'USB' | 'Type-C' | 'Universal';
+    bunkLevels?: number;
+    levels?: BunkLevel[];
+    isLocked?: boolean;
   };
 }
 
@@ -50,10 +60,8 @@ interface RoomDesignerProps {
 }
 
 export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) => {
-  // Wizard state
   const [showWizard, setShowWizard] = useState(!roomData);
   
-  // Room setup
   const [dimensions, setDimensions] = useState({
     length: roomData?.dimensions?.length || 10,
     width: roomData?.dimensions?.width || 8,
@@ -68,7 +76,6 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     }
   );
   
-  // Enhanced designer state
   const [elements, setElements] = useState<RoomElement[]>(roomData?.elements || []);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
@@ -76,17 +83,14 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [duplicateMode, setDuplicateMode] = useState(false);
   
-  // View controls
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [scale, setScale] = useState(30);
   const [showGrid, setShowGrid] = useState(true);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   
-  // History
   const [history, setHistory] = useState<RoomElement[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
-  // Validation
   const [collisionWarnings, setCollisionWarnings] = useState<string[]>([]);
 
   const snapToGridPosition = (value: number) => {
@@ -182,7 +186,17 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
         id: Date.now().toString(),
         x: Math.min(element.x + 1, dimensions.length - element.width),
         y: Math.min(element.y + 1, dimensions.width - element.height),
-        zIndex: elements.length
+        zIndex: elements.length,
+        properties: element.type === 'bunk-bed' ? {
+          ...element.properties,
+          bedId: `BUNK-${elements.filter(e => e.type === 'bunk-bed').length + 1}`,
+          levels: element.properties?.levels?.map((level, idx) => ({
+            ...level,
+            id: `${Date.now()}-${idx}`,
+            bedId: `BUNK-${elements.filter(e => e.type === 'bunk-bed').length + 1}`,
+            assignedTo: undefined
+          }))
+        } : element.properties
       };
       addToHistory();
       setElements([...elements, newElement]);
@@ -196,7 +210,6 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     const elementType = elementTypes.find(t => t.type === type);
     if (!elementType) return;
     
-    // Smart positioning - find an empty spot
     let x = 1, y = 1;
     let attempts = 0;
     while (attempts < 100) {
@@ -224,6 +237,8 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
       attempts++;
     }
     
+    const bunkBedCount = elements.filter(e => e.type === 'bunk-bed').length;
+    
     const newElement: RoomElement = {
       id: Date.now().toString(),
       type,
@@ -233,11 +248,30 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
       height: elementType.defaultSize.height,
       rotation: 0,
       zIndex: elements.length,
-      properties: type.includes('bed') ? {
-        bedType: type === 'bunk-bed' ? 'bunk' : type === 'double-bed' ? 'double' : type === 'kids-bed' ? 'kids' : 'single',
-        bedId: `BED-${elements.filter(e => e.type.includes('bed')).length + 1}`,
+      properties: type === 'bunk-bed' ? {
+        bedType: 'bunk',
+        bedId: `BUNK-${bunkBedCount + 1}`,
         orientation: 'north',
-        position: type === 'bunk-bed' ? 'bottom' : undefined
+        bunkLevels: 2,
+        isLocked: false,
+        levels: [
+          {
+            id: `${Date.now()}-top`,
+            position: 'top',
+            bedId: `BUNK-${bunkBedCount + 1}-TOP`,
+            assignedTo: undefined
+          },
+          {
+            id: `${Date.now()}-bottom`,
+            position: 'bottom',
+            bedId: `BUNK-${bunkBedCount + 1}-BTM`,
+            assignedTo: undefined
+          }
+        ]
+      } : type.includes('bed') ? {
+        bedType: type === 'double-bed' ? 'double' : type === 'kids-bed' ? 'kids' : 'single',
+        bedId: `BED-${elements.filter(e => e.type.includes('bed')).length + 1}`,
+        orientation: 'north'
       } : type === 'study-table' ? {
         material: 'wood',
         drawers: 1

@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Move, RotateCw, Copy, Trash2, Ruler, Grid3X3 } from "lucide-react";
 import { elementTypes } from "./ElementLibraryPanel";
 
+interface BunkLevel {
+  id: string;
+  position: 'top' | 'middle' | 'bottom';
+  assignedTo?: string;
+  bedId: string;
+}
+
 interface RoomElement {
   id: string;
   type: string;
@@ -14,7 +21,22 @@ interface RoomElement {
   height: number;
   rotation: number;
   zIndex: number;
-  properties?: any;
+  properties?: {
+    bedType?: 'single' | 'bunk' | 'double' | 'kids';
+    bedId?: string;
+    position?: 'top' | 'middle' | 'bottom';
+    orientation?: 'north' | 'south' | 'east' | 'west';
+    drawers?: number;
+    brightness?: number;
+    hingeType?: 'left' | 'right';
+    isOpen?: boolean;
+    material?: 'wood' | 'metal' | 'plastic';
+    color?: string;
+    portType?: 'USB' | 'Type-C' | 'Universal';
+    bunkLevels?: number;
+    levels?: BunkLevel[];
+    isLocked?: boolean;
+  };
 }
 
 interface RoomTheme {
@@ -89,14 +111,12 @@ export const RoomCanvas = ({
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, dimensions.length * scale, dimensions.width * scale);
     
-    // Draw enhanced grid
     if (showGrid) {
       ctx.strokeStyle = '#00000010';
       ctx.lineWidth = 1;
       const gridSize = 0.5 * scale;
       const majorGridSize = 1 * scale;
       
-      // Minor grid lines
       for (let x = 0; x <= dimensions.length * scale; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -111,7 +131,6 @@ export const RoomCanvas = ({
         ctx.stroke();
       }
       
-      // Major grid lines
       ctx.strokeStyle = '#00000020';
       ctx.lineWidth = 2;
       
@@ -130,7 +149,6 @@ export const RoomCanvas = ({
       }
     }
     
-    // Draw room walls with enhanced styling
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 6;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
@@ -158,6 +176,7 @@ export const RoomCanvas = ({
       const isSelected = selectedElements.includes(element.id);
       const isHovered = hoveredElement === element.id;
       const hasCollision = checkCollisions(element, element.id);
+      const isLocked = element.properties?.isLocked;
       
       // Enhanced shadow for depth
       if (isSelected || isHovered) {
@@ -194,32 +213,94 @@ export const RoomCanvas = ({
       // Enhanced borders
       ctx.strokeStyle = isSelected ? '#1D4ED8' : hasCollision ? '#DC2626' : isHovered ? '#6B7280' : '#1F2937';
       ctx.lineWidth = isSelected ? 4 : isHovered ? 3 : 2;
+      if (isLocked) {
+        ctx.setLineDash([8, 4]);
+      }
       ctx.strokeRect(-width/2, -height/2, width, height);
+      ctx.setLineDash([]);
       
       // Clear shadows
       ctx.shadowColor = 'transparent';
       
-      // Draw element label with better styling
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold ${Math.min(width, height) * 0.25}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-      ctx.lineWidth = 2;
-      
-      const label = element.type.toUpperCase().replace('-', ' ');
-      ctx.strokeText(label, 0, 0);
-      ctx.fillText(label, 0, 0);
-      
-      // Draw bed ID for beds with enhanced styling
-      if (element.type === 'bed' && element.properties?.bedId) {
-        ctx.font = `${Math.min(width, height) * 0.15}px Arial`;
-        ctx.strokeText(element.properties.bedId, 0, height * 0.15);
-        ctx.fillText(element.properties.bedId, 0, height * 0.15);
+      // Special handling for bunk beds
+      if (element.type === 'bunk-bed') {
+        // Draw bunk bed levels
+        const levels = element.properties?.levels || [];
+        const levelHeight = height / levels.length;
+        
+        levels.forEach((level, index) => {
+          const levelY = -height/2 + (index * levelHeight);
+          
+          // Draw level separator
+          if (index > 0) {
+            ctx.strokeStyle = '#1F2937';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-width/2, levelY);
+            ctx.lineTo(width/2, levelY);
+            ctx.stroke();
+          }
+          
+          // Draw level indicator
+          const levelIcon = level.position === 'top' ? '🛏️⬆️' : 
+                           level.position === 'middle' ? '🛏️↕️' : '🛏️⬇️';
+          
+          ctx.font = `${Math.min(width, levelHeight) * 0.15}px Arial`;
+          ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(levelIcon, -width/2 + 5, levelY + levelHeight/2);
+          
+          // Draw assignment status
+          if (level.assignedTo) {
+            ctx.font = `bold ${Math.min(width, levelHeight) * 0.12}px Arial`;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 1;
+            const assignmentText = level.assignedTo.substring(0, 8);
+            ctx.strokeText(assignmentText, -width/2 + 30, levelY + levelHeight/2);
+            ctx.fillText(assignmentText, -width/2 + 30, levelY + levelHeight/2);
+          } else {
+            ctx.font = `${Math.min(width, levelHeight) * 0.1}px Arial`;
+            ctx.fillStyle = '#9CA3AF';
+            ctx.fillText('Unassigned', -width/2 + 30, levelY + levelHeight/2);
+          }
+        });
+        
+        // Draw main bed ID
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${Math.min(width, height) * 0.12}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 2;
+        
+        const bedId = element.properties?.bedId || 'BUNK';
+        ctx.strokeText(bedId, 0, -height/2 + 5);
+        ctx.fillText(bedId, 0, -height/2 + 5);
+      } else {
+        // Standard element label drawing
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${Math.min(width, height) * 0.25}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 2;
+        
+        const label = element.type.toUpperCase().replace('-', ' ');
+        ctx.strokeText(label, 0, 0);
+        ctx.fillText(label, 0, 0);
+        
+        // Draw bed ID for regular beds
+        if (element.type.includes('bed') && element.properties?.bedId) {
+          ctx.font = `${Math.min(width, height) * 0.15}px Arial`;
+          ctx.strokeText(element.properties.bedId, 0, height * 0.15);
+          ctx.fillText(element.properties.bedId, 0, height * 0.15);
+        }
       }
       
       // Draw selection handles with animations
-      if (isSelected) {
+      if (isSelected && !isLocked) {
         const handleSize = 8;
         const handleColor = '#3B82F6';
         ctx.fillStyle = handleColor;
@@ -256,6 +337,16 @@ export const RoomCanvas = ({
         ctx.lineTo(0, -height/2 - 14);
         ctx.stroke();
         ctx.setLineDash([]);
+      }
+      
+      // Draw lock indicator
+      if (isLocked) {
+        ctx.fillStyle = '#EF4444';
+        ctx.font = 'bold 16px Arial';
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.strokeText('🔒', width/2 - 15, -height/2 + 15);
+        ctx.fillText('🔒', width/2 - 15, -height/2 + 15);
       }
       
       // Draw collision warning with animation
@@ -300,7 +391,6 @@ export const RoomCanvas = ({
     ctx.fillText(widthText, 0, 0);
     ctx.restore();
 
-    // Draw snap guides
     if (snapToGrid && selectedElements.length > 0) {
       ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
       ctx.lineWidth = 1;
@@ -389,6 +479,11 @@ export const RoomCanvas = ({
               {selectedElements.length} selected
             </Badge>
           )}
+          {elements.filter(e => e.type === 'bunk-bed').length > 0 && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+              🛏️ {elements.filter(e => e.type === 'bunk-bed').length} Bunk Beds
+            </Badge>
+          )}
         </div>
         
         <div className="flex gap-2">
@@ -453,15 +548,15 @@ export const RoomCanvas = ({
             <div className="text-gray-600">Click to select • Ctrl+Click for multi-select</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-gray-700 mb-1">🖱️ Actions</div>
-            <div className="text-gray-600">Drag to move • Right-click for menu • Alt+Drag to duplicate</div>
+            <div className="font-medium text-gray-700 mb-1">🛏️ Bunk Beds</div>
+            <div className="text-gray-600">🛏️⬆️ Top • 🛏️↕️ Middle • 🛏️⬇️ Bottom levels</div>
           </div>
           <div className="text-center">
             <div className="font-medium text-gray-700 mb-1">📊 Stats</div>
             <div className="text-gray-600">
               <span className="text-blue-600">🔌 {elements.filter(e => e.type === 'charging-port').length}</span> • 
-              <span className="text-red-600 ml-2">🧯 {elements.filter(e => e.type === 'fire-safety').length}</span> • 
-              <span className="text-green-600 ml-2">🛏️ {elements.filter(e => e.type === 'bed').length}</span>
+              <span className="text-red-600 ml-2">🧯 {elements.filter(e => e.type === 'fire-extinguisher').length}</span> • 
+              <span className="text-green-600 ml-2">🛏️ {elements.filter(e => e.type.includes('bed')).length}</span>
             </div>
           </div>
         </div>

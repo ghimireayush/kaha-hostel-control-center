@@ -12,9 +12,24 @@ import {
   Box, 
   AlertTriangle,
   Copy,
-  Settings
+  Settings,
+  Users,
+  Lock,
+  Unlock,
+  UserCheck,
+  UserX,
+  ArrowUp,
+  ArrowDown,
+  Minus
 } from "lucide-react";
 import { elementTypes } from "./ElementTypes";
+
+interface BunkLevel {
+  id: string;
+  position: 'top' | 'middle' | 'bottom';
+  assignedTo?: string;
+  bedId: string;
+}
 
 interface RoomElement {
   id: string;
@@ -37,6 +52,9 @@ interface RoomElement {
     material?: 'wood' | 'metal' | 'plastic';
     color?: string;
     portType?: 'USB' | 'Type-C' | 'Universal';
+    bunkLevels?: number;
+    levels?: BunkLevel[];
+    isLocked?: boolean;
   };
 }
 
@@ -86,6 +104,88 @@ export const PropertiesPanel = ({
     });
   };
 
+  const updateBunkLevels = (newLevels: number) => {
+    const currentLevels = selectedElement.properties?.levels || [];
+    const bedId = selectedElement.properties?.bedId || '';
+    
+    let updatedLevels: BunkLevel[] = [];
+    
+    if (newLevels === 2) {
+      updatedLevels = [
+        currentLevels.find(l => l.position === 'top') || {
+          id: `${Date.now()}-top`,
+          position: 'top',
+          bedId: `${bedId}-TOP`,
+          assignedTo: undefined
+        },
+        currentLevels.find(l => l.position === 'bottom') || {
+          id: `${Date.now()}-bottom`,
+          position: 'bottom',
+          bedId: `${bedId}-BTM`,
+          assignedTo: undefined
+        }
+      ];
+    } else if (newLevels === 3) {
+      updatedLevels = [
+        currentLevels.find(l => l.position === 'top') || {
+          id: `${Date.now()}-top`,
+          position: 'top',
+          bedId: `${bedId}-TOP`,
+          assignedTo: undefined
+        },
+        currentLevels.find(l => l.position === 'middle') || {
+          id: `${Date.now()}-middle`,
+          position: 'middle',
+          bedId: `${bedId}-MID`,
+          assignedTo: undefined
+        },
+        currentLevels.find(l => l.position === 'bottom') || {
+          id: `${Date.now()}-bottom`,
+          position: 'bottom',
+          bedId: `${bedId}-BTM`,
+          assignedTo: undefined
+        }
+      ];
+    }
+    
+    onUpdateElement(selectedElement.id, {
+      properties: { 
+        ...selectedElement.properties, 
+        bunkLevels: newLevels,
+        levels: updatedLevels
+      }
+    });
+  };
+
+  const assignToLevel = (levelId: string, studentName: string) => {
+    const updatedLevels = selectedElement.properties?.levels?.map(level => 
+      level.id === levelId 
+        ? { ...level, assignedTo: studentName || undefined }
+        : level
+    );
+    
+    onUpdateElement(selectedElement.id, {
+      properties: { ...selectedElement.properties, levels: updatedLevels }
+    });
+  };
+
+  const getLevelIcon = (position: 'top' | 'middle' | 'bottom') => {
+    switch (position) {
+      case 'top': return '🛏️⬆️';
+      case 'middle': return '🛏️↕️';
+      case 'bottom': return '🛏️⬇️';
+      default: return '🛏️';
+    }
+  };
+
+  const getLevelEmoji = (position: 'top' | 'middle' | 'bottom') => {
+    switch (position) {
+      case 'top': return <ArrowUp className="h-4 w-4" />;
+      case 'middle': return <Minus className="h-4 w-4" />;
+      case 'bottom': return <ArrowDown className="h-4 w-4" />;
+    }
+  };
+
   return (
     <div className="w-80 bg-white border-l border-gray-200 h-full flex flex-col">
       {/* Header */}
@@ -107,6 +207,12 @@ export const PropertiesPanel = ({
               Popular
             </Badge>
           )}
+          {selectedElement.properties?.isLocked && (
+            <Badge variant="secondary" className="bg-red-100 text-red-700">
+              <Lock className="h-3 w-3 mr-1" />
+              Locked
+            </Badge>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -116,6 +222,7 @@ export const PropertiesPanel = ({
             variant="outline"
             onClick={() => onRotateElement(selectedElement.id)}
             className="flex-1"
+            disabled={selectedElement.properties?.isLocked}
           >
             <RotateCw className="h-4 w-4" />
           </Button>
@@ -153,6 +260,25 @@ export const PropertiesPanel = ({
 
       {/* Properties Form */}
       <div className="flex-1 p-4 space-y-6 overflow-y-auto">
+        {/* Lock/Unlock Toggle */}
+        {selectedElement.type === 'bunk-bed' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-gray-700 flex items-center gap-2">
+                {selectedElement.properties?.isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                Lock Position
+              </Label>
+              <Switch
+                checked={selectedElement.properties?.isLocked || false}
+                onCheckedChange={(checked) => updateProperty('isLocked', checked)}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Lock prevents accidental movement and rotation of this bunk bed.
+            </p>
+          </div>
+        )}
+
         {/* Position & Size */}
         <div className="space-y-4">
           <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
@@ -170,6 +296,7 @@ export const PropertiesPanel = ({
                 step="0.1"
                 min="0"
                 className="text-sm"
+                disabled={selectedElement.properties?.isLocked}
               />
             </div>
             <div>
@@ -181,6 +308,7 @@ export const PropertiesPanel = ({
                 step="0.1"
                 min="0"
                 className="text-sm"
+                disabled={selectedElement.properties?.isLocked}
               />
             </div>
             <div>
@@ -192,6 +320,7 @@ export const PropertiesPanel = ({
                 step="0.1"
                 min="0.1"
                 className="text-sm"
+                disabled={selectedElement.properties?.isLocked}
               />
             </div>
             <div>
@@ -203,6 +332,7 @@ export const PropertiesPanel = ({
                 step="0.1"
                 min="0.1"
                 className="text-sm"
+                disabled={selectedElement.properties?.isLocked}
               />
             </div>
           </div>
@@ -228,6 +358,7 @@ export const PropertiesPanel = ({
                 min="0"
                 max="360"
                 className="text-sm"
+                disabled={selectedElement.properties?.isLocked}
               />
             </div>
             <div>
@@ -243,8 +374,135 @@ export const PropertiesPanel = ({
           </div>
         </div>
 
-        {/* Element-specific Properties */}
-        {(selectedElement.type.includes('bed') || selectedElement.type === 'bunk-bed') && (
+        {/* Bunk Bed Specific Properties */}
+        {selectedElement.type === 'bunk-bed' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                🛏️ Bunk Bed Configuration
+              </h4>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Bunk Bed ID</Label>
+                <Input
+                  value={selectedElement.properties?.bedId || ''}
+                  onChange={(e) => updateProperty('bedId', e.target.value)}
+                  placeholder="e.g., BUNK-A, BUNK-001"
+                  className="text-sm"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Number of Levels</Label>
+                <Select
+                  value={String(selectedElement.properties?.bunkLevels || 2)}
+                  onValueChange={(value) => updateBunkLevels(Number(value))}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2">🔹 2-Level Bunk</SelectItem>
+                    <SelectItem value="3">🔹 3-Level Bunk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Orientation</Label>
+                <Select
+                  value={selectedElement.properties?.orientation || 'north'}
+                  onValueChange={(value) => updateProperty('orientation', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="north">⬆️ North</SelectItem>
+                    <SelectItem value="south">⬇️ South</SelectItem>
+                    <SelectItem value="east">➡️ East</SelectItem>
+                    <SelectItem value="west">⬅️ West</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Level Assignment Section */}
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                🎯 Level Assignments
+              </h4>
+              
+              <div className="space-y-3">
+                {selectedElement.properties?.levels?.map((level, index) => (
+                  <div key={level.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{getLevelIcon(level.position)}</span>
+                        {getLevelEmoji(level.position)}
+                        <span className="font-medium text-sm capitalize">{level.position} Bunk</span>
+                      </div>
+                      <Badge variant={level.assignedTo ? "default" : "outline"} className="text-xs">
+                        {level.assignedTo ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
+                        {level.assignedTo ? 'Assigned' : 'Unassigned'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-gray-600">Bed ID</Label>
+                        <Input
+                          value={level.bedId}
+                          onChange={(e) => {
+                            const updatedLevels = selectedElement.properties?.levels?.map(l => 
+                              l.id === level.id ? { ...l, bedId: e.target.value } : l
+                            );
+                            onUpdateElement(selectedElement.id, {
+                              properties: { ...selectedElement.properties, levels: updatedLevels }
+                            });
+                          }}
+                          className="text-xs"
+                          placeholder={`${selectedElement.properties?.bedId}-${level.position.toUpperCase()}`}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-gray-600">
+                          Assigned Student {level.assignedTo && '✅'}
+                        </Label>
+                        <Input
+                          value={level.assignedTo || ''}
+                          onChange={(e) => assignToLevel(level.id, e.target.value)}
+                          className="text-xs"
+                          placeholder="Enter student name..."
+                        />
+                      </div>
+                      
+                      {level.assignedTo && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => assignToLevel(level.id, '')}
+                          className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <UserX className="h-3 w-3 mr-1" />
+                          Unassign Student
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Regular Bed Properties */}
+        {(selectedElement.type.includes('bed') && selectedElement.type !== 'bunk-bed') && (
           <>
             <Separator />
             <div className="space-y-4">
@@ -274,31 +532,11 @@ export const PropertiesPanel = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="single">🛏️ Single Bed</SelectItem>
-                    <SelectItem value="bunk">🛏️ Bunk Bed</SelectItem>
                     <SelectItem value="double">🛌 Double Bed</SelectItem>
                     <SelectItem value="kids">🧸 Kids Bed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {selectedElement.type === 'bunk-bed' && (
-                <div>
-                  <Label className="text-xs text-gray-600">Sleeping Position</Label>
-                  <Select
-                    value={selectedElement.properties?.position || 'bottom'}
-                    onValueChange={(value) => updateProperty('position', value)}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="top">Top Bunk</SelectItem>
-                      <SelectItem value="middle">Middle Bunk</SelectItem>
-                      <SelectItem value="bottom">Bottom Bunk</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               
               <div>
                 <Label className="text-xs text-gray-600">Orientation</Label>
@@ -367,7 +605,6 @@ export const PropertiesPanel = ({
           </>
         )}
 
-        {/* Door Properties */}
         {selectedElement.type === 'door' && (
           <>
             <Separator />
@@ -396,7 +633,6 @@ export const PropertiesPanel = ({
           </>
         )}
 
-        {/* Window Properties */}
         {selectedElement.type === 'window' && (
           <>
             <Separator />
@@ -417,7 +653,6 @@ export const PropertiesPanel = ({
           </>
         )}
 
-        {/* Charging Port Properties */}
         {selectedElement.type === 'charging-port' && (
           <>
             <Separator />
@@ -447,7 +682,6 @@ export const PropertiesPanel = ({
           </>
         )}
 
-        {/* Study Lamp Properties */}
         {selectedElement.type === 'study-lamp' && (
           <>
             <Separator />
@@ -490,6 +724,20 @@ export const PropertiesPanel = ({
                 {(selectedElement.width * selectedElement.height).toFixed(2)} m²
               </span>
             </div>
+            {selectedElement.type === 'bunk-bed' && (
+              <>
+                <div className="flex justify-between">
+                  <span>Levels:</span>
+                  <span className="font-medium">{selectedElement.properties?.bunkLevels || 2}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Assigned:</span>
+                  <span className="font-medium">
+                    {selectedElement.properties?.levels?.filter(l => l.assignedTo).length || 0} / {selectedElement.properties?.levels?.length || 0}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between">
               <span>Layer:</span>
               <span className="font-medium">L{selectedElement.zIndex}</span>

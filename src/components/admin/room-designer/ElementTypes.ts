@@ -1,3 +1,4 @@
+
 import { 
   Bed, 
   DoorOpen, 
@@ -44,6 +45,8 @@ export interface ElementType {
     type?: boolean;
     hinge?: boolean;
     openClose?: boolean;
+    bunkLevels?: boolean;
+    levelAssignment?: boolean;
   };
 }
 
@@ -69,11 +72,18 @@ export const elementTypes: ElementType[] = [
     label: 'Bunk Bed', 
     color: '#1E40AF', 
     defaultSize: { width: 2.2, height: 1.2 },
-    description: 'Space-saving bunk bed with top/bottom options',
+    description: 'Multi-level bunk bed with 2 or 3 levels - assign students to each level',
     category: 'beds',
-    tags: ['sleep', 'bedroom', 'bunk', 'space-saving'],
+    tags: ['sleep', 'bedroom', 'bunk', 'space-saving', 'multi-level'],
     popular: true,
-    customizable: { bedType: true, orientation: true, position: true, bedId: true }
+    customizable: { 
+      bedType: true, 
+      orientation: true, 
+      position: true, 
+      bedId: true, 
+      bunkLevels: true, 
+      levelAssignment: true 
+    }
   },
   { 
     type: 'double-bed', 
