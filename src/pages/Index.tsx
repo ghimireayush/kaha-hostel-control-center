@@ -8,10 +8,13 @@ import { RoomConfiguration } from "@/components/admin/RoomConfiguration";
 import { Analytics } from "@/components/admin/Analytics";
 import { LanguageToggle } from "@/components/admin/LanguageToggle";
 import { useLanguage } from "@/hooks/useLanguage";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { language, translations } = useLanguage();
+  const navigate = useNavigate();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -40,7 +43,15 @@ const Index = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             {translations.adminPanel}
           </h1>
-          <LanguageToggle />
+          <div className="flex items-center space-x-4">
+            <Button 
+              onClick={() => navigate('/ledger')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              📚 Open Kaha KLedger
+            </Button>
+            <LanguageToggle />
+          </div>
         </div>
         
         {/* Main Content */}
