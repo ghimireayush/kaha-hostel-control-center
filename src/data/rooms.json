@@ -1,0 +1,57 @@
+
+[
+  {
+    "id": "room-1",
+    "name": "Dorm A - Mixed",
+    "type": "Dormitory",
+    "bedCount": 8,
+    "occupancy": 6,
+    "gender": "Mixed",
+    "baseRate": 800,
+    "amenities": ["Wi-Fi", "Lockers", "Reading Light"],
+    "status": "Active",
+    "layout": null,
+    "floor": "Ground Floor",
+    "roomNumber": "A-101",
+    "occupants": ["STU001", "STU004"],
+    "availableBeds": 2,
+    "lastCleaned": "2024-01-15",
+    "maintenanceStatus": "Good"
+  },
+  {
+    "id": "room-2",
+    "name": "Dorm B - Female Only",
+    "type": "Dormitory",
+    "bedCount": 6,
+    "occupancy": 4,
+    "gender": "Female",
+    "baseRate": 900,
+    "amenities": ["Wi-Fi", "Lockers", "Reading Light", "Private Bathroom"],
+    "status": "Active",
+    "layout": null,
+    "floor": "First Floor",
+    "roomNumber": "B-205",
+    "occupants": ["STU002", "STU005"],
+    "availableBeds": 2,
+    "lastCleaned": "2024-01-14",
+    "maintenanceStatus": "Good"
+  },
+  {
+    "id": "room-3",
+    "name": "Private Room 1",
+    "type": "Private",
+    "bedCount": 2,
+    "occupancy": 0,
+    "gender": "Mixed",
+    "baseRate": 2500,
+    "amenities": ["Wi-Fi", "Private Bathroom", "AC", "TV"],
+    "status": "Active",
+    "layout": null,
+    "floor": "Second Floor",
+    "roomNumber": "C-301",
+    "occupants": ["STU003"],
+    "availableBeds": 1,
+    "lastCleaned": "2024-01-13",
+    "maintenanceStatus": "Excellent"
+  }
+]

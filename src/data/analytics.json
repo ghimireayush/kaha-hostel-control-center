@@ -1,0 +1,30 @@
+
+{
+  "monthlyRevenue": [
+    { "month": "Jan", "revenue": 180000, "bookings": 45, "occupancy": 65 },
+    { "month": "Feb", "revenue": 220000, "bookings": 52, "occupancy": 72 },
+    { "month": "Mar", "revenue": 280000, "bookings": 68, "occupancy": 78 },
+    { "month": "Apr", "revenue": 245000, "bookings": 58, "occupancy": 70 },
+    { "month": "May", "revenue": 290000, "bookings": 72, "occupancy": 82 },
+    { "month": "Jun", "revenue": 320000, "bookings": 78, "occupancy": 88 }
+  ],
+  "guestTypeData": [
+    { "name": "Tourist", "value": 35, "count": 156 },
+    { "name": "Backpacker", "value": 28, "count": 124 },
+    { "name": "Student", "value": 20, "count": 89 },
+    { "name": "Digital Nomad", "value": 12, "count": 53 },
+    { "name": "Volunteer", "value": 5, "count": 22 }
+  ],
+  "performanceMetrics": {
+    "averageDailyRate": 1250,
+    "revenuePerBed": 980,
+    "averageLengthOfStay": 2.4,
+    "repeatGuestRate": 18
+  },
+  "collectionStats": {
+    "totalCollected": 450000,
+    "outstandingDues": 85000,
+    "collectionRate": 84,
+    "overdueInvoices": 12
+  }
+}

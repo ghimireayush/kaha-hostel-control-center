@@ -1,0 +1,45 @@
+
+[
+  {
+    "id": "PAY001",
+    "studentId": "STU001",
+    "amount": 11700,
+    "paymentDate": "2024-01-03",
+    "paymentMode": "Cash",
+    "referenceId": "CASH-001",
+    "appliedToInvoice": "INV001",
+    "description": "Payment for January 2024 invoice",
+    "receivedBy": "Admin",
+    "advanceBalance": 0,
+    "previousBalance": 0,
+    "newBalance": 0
+  },
+  {
+    "id": "PAY002",
+    "studentId": "STU002",
+    "amount": 5000,
+    "paymentDate": "2024-02-03",
+    "paymentMode": "eSewa",
+    "referenceId": "ESW-789123456",
+    "appliedToInvoice": "INV002",
+    "description": "Partial payment for February 2024 invoice",
+    "receivedBy": "Admin",
+    "advanceBalance": 1500,
+    "previousBalance": 0,
+    "newBalance": -1500
+  },
+  {
+    "id": "PAY003",
+    "studentId": "STU001",
+    "amount": 12000,
+    "paymentDate": "2024-02-15",
+    "paymentMode": "Bank Transfer",
+    "referenceId": "TXN-987654321",
+    "appliedToInvoice": "INV004",
+    "description": "Advance payment",
+    "receivedBy": "Admin",
+    "advanceBalance": 500,
+    "previousBalance": 0,
+    "newBalance": -500
+  }
+]

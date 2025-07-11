@@ -1,0 +1,63 @@
+
+[
+  {
+    "id": "LED001",
+    "studentId": "STU001",
+    "date": "2024-01-01",
+    "type": "Invoice",
+    "description": "Monthly fees - January 2024",
+    "referenceId": "INV001",
+    "debit": 11700,
+    "credit": 0,
+    "balance": 11700,
+    "balanceType": "Dr"
+  },
+  {
+    "id": "LED002",
+    "studentId": "STU001",
+    "date": "2024-01-03",
+    "type": "Payment",
+    "description": "Payment received - Cash",
+    "referenceId": "PAY001",
+    "debit": 0,
+    "credit": 11700,
+    "balance": 0,
+    "balanceType": "Nil"
+  },
+  {
+    "id": "LED003",
+    "studentId": "STU002",
+    "date": "2024-02-01",
+    "type": "Invoice",
+    "description": "Monthly fees - February 2024",
+    "referenceId": "INV002",
+    "debit": 10300,
+    "credit": 0,
+    "balance": 10300,
+    "balanceType": "Dr"
+  },
+  {
+    "id": "LED004",
+    "studentId": "STU002",
+    "date": "2024-02-03",
+    "type": "Payment",
+    "description": "Partial payment - eSewa",
+    "referenceId": "PAY002",
+    "debit": 0,
+    "credit": 11800,
+    "balance": -1500,
+    "balanceType": "Cr"
+  },
+  {
+    "id": "LED005",
+    "studentId": "STU003",
+    "date": "2024-01-01",
+    "type": "Invoice",
+    "description": "Monthly fees - January 2024",
+    "referenceId": "INV003",
+    "debit": 15700,
+    "credit": 0,
+    "balance": 15700,
+    "balanceType": "Dr"
+  }
+]

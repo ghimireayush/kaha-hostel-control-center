@@ -1,0 +1,39 @@
+
+[
+  {
+    "id": "DIS001",
+    "studentId": "STU002",
+    "amount": 500,
+    "reason": "Good behavior discount",
+    "appliedDate": "2024-02-01",
+    "appliedToInvoice": "INV002",
+    "status": "Active",
+    "description": "Monthly behavior incentive",
+    "appliedBy": "Admin",
+    "validTill": "2024-02-29"
+  },
+  {
+    "id": "DIS002",
+    "studentId": "STU001",
+    "amount": 200,
+    "reason": "Early payment discount",
+    "appliedDate": "2024-01-03",
+    "appliedToInvoice": "INV001",
+    "status": "Applied",
+    "description": "Payment within 2 days",
+    "appliedBy": "Admin",
+    "validTill": "2024-01-31"
+  },
+  {
+    "id": "DIS003",
+    "studentId": "STU003",
+    "amount": 1000,
+    "reason": "Financial hardship",
+    "appliedDate": "2024-01-15",
+    "appliedToInvoice": "INV005",
+    "status": "Pending",
+    "description": "Special consideration",
+    "appliedBy": "Admin",
+    "validTill": "2024-03-31"
+  }
+]
