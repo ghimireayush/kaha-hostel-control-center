@@ -101,7 +101,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             )}
           >
             <BookOpen className="h-5 w-5" />
-            <span className="font-medium">📚 Kaha Ledger</span>
+            <span className="font-medium">📚 Kaha KLedger</span>
             <svg
               className={cn(
                 "h-4 w-4 ml-auto transition-transform",
