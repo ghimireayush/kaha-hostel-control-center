@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,21 +9,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Eye, Check, X, UserPlus, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { bookingService } from "@/services/bookingService";
 
 interface BookingRequest {
   id: string;
-  studentName: string;
+  name: string;
   phone: string;
   email: string;
   guardianName: string;
   guardianPhone: string;
   preferredRoom: string;
+  course: string;
+  institution: string;
   requestDate: string;
-  status: 'pending' | 'approved' | 'rejected';
-  documents: string[];
+  checkInDate: string;
+  duration: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  notes?: string;
   emergencyContact: string;
   address: string;
-  expectedJoinDate: string;
+  idProofType: string;
+  idProofNumber: string;
 }
 
 const BookingRequests = () => {
@@ -32,99 +37,95 @@ const BookingRequests = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState<BookingRequest | null>(null);
+  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
 
-  // Mock data - replace with API calls
-  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([
-    {
-      id: "REQ-001",
-      studentName: "Anish Sharma",
-      phone: "9841234567",
-      email: "anish@example.com",
-      guardianName: "Ram Sharma",
-      guardianPhone: "9841234568",
-      preferredRoom: "Single Room",
-      requestDate: "2024-01-15",
-      status: "pending",
-      documents: ["ID Card", "Guardian ID"],
-      emergencyContact: "9841234569",
-      address: "Kathmandu, Nepal",
-      expectedJoinDate: "2024-02-01"
-    },
-    {
-      id: "REQ-002",
-      studentName: "Priya Tamang",
-      phone: "9851234567",
-      email: "priya@example.com",
-      guardianName: "Sita Tamang",
-      guardianPhone: "9851234568",
-      preferredRoom: "Shared Room",
-      requestDate: "2024-01-16",
-      status: "pending",
-      documents: ["ID Card", "Academic Certificate"],
-      emergencyContact: "9851234569",
-      address: "Lalitpur, Nepal",
-      expectedJoinDate: "2024-02-05"
-    },
-    {
-      id: "REQ-003",
-      studentName: "Deepak Thapa",
-      phone: "9861234567",
-      email: "deepak@example.com",
-      guardianName: "Maya Thapa",
-      guardianPhone: "9861234568",
-      preferredRoom: "Dormitory",
-      requestDate: "2024-01-10",
-      status: "approved",
-      documents: ["ID Card", "Guardian ID", "Medical Certificate"],
-      emergencyContact: "9861234569",
-      address: "Bhaktapur, Nepal",
-      expectedJoinDate: "2024-01-25"
+  // Load booking requests on component mount
+  useEffect(() => {
+    loadBookingRequests();
+  }, []);
+
+  const loadBookingRequests = async () => {
+    try {
+      const requests = await bookingService.getBookingRequests();
+      setBookingRequests(requests);
+    } catch (error) {
+      toast.error("Failed to load booking requests");
+      console.error("Error loading bookings:", error);
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleApprove = (request: BookingRequest) => {
-    // Update request status
-    setBookingRequests(prev => 
-      prev.map(req => 
-        req.id === request.id 
-          ? { ...req, status: 'approved' }
-          : req
-      )
-    );
-
-    // Show success message
-    toast.success(`${request.studentName} approved! Student profile created and ledger activated.`, {
-      duration: 4000,
-      action: {
-        label: "View Ledger",
-        onClick: () => navigate("/ledger?section=students")
-      }
-    });
-
-    // Close modal
-    setSelectedRequest(null);
   };
 
-  const handleReject = (request: BookingRequest) => {
-    setBookingRequests(prev => 
-      prev.map(req => 
-        req.id === request.id 
-          ? { ...req, status: 'rejected' }
-          : req
-      )
-    );
+  const handleApprove = async (request: BookingRequest) => {
+    setApproving(true);
+    try {
+      // Suggest room based on preference
+      const roomSuggestion = request.preferredRoom === 'Single Room' ? 'A-101' :
+                           request.preferredRoom === 'Shared Room' ? 'B-205' : 'C-301';
+      
+      const result = await bookingService.approveBookingRequest(request.id, roomSuggestion);
+      
+      if (result) {
+        // Update local state
+        setBookingRequests(prev => 
+          prev.map(req => 
+            req.id === request.id 
+              ? { ...req, status: 'Approved' as const }
+              : req
+          )
+        );
 
-    toast.error(`${request.studentName}'s request has been rejected.`);
-    setSelectedRequest(null);
+        // Show success message with navigation
+        toast.success(`${request.name} approved! Student profile created and ledger activated.`, {
+          duration: 4000,
+          action: {
+            label: "View Student Profile",
+            onClick: () => navigate("/ledger?section=students")
+          }
+        });
+
+        // Close modal
+        setSelectedRequest(null);
+      } else {
+        toast.error("Failed to approve booking request");
+      }
+    } catch (error) {
+      toast.error("Error approving booking request");
+      console.error("Approval error:", error);
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async (request: BookingRequest) => {
+    try {
+      await bookingService.updateBookingStatus(request.id, 'Rejected', 'Application rejected after review');
+      
+      setBookingRequests(prev => 
+        prev.map(req => 
+          req.id === request.id 
+            ? { ...req, status: 'Rejected' as const }
+            : req
+        )
+      );
+
+      toast.error(`${request.name}'s request has been rejected.`);
+      setSelectedRequest(null);
+    } catch (error) {
+      toast.error("Error rejecting booking request");
+      console.error("Rejection error:", error);
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
+      case 'Approved':
         return 'bg-green-100 text-green-700';
-      case 'rejected':
+      case 'Rejected':
         return 'bg-red-100 text-red-700';
-      case 'pending':
+      case 'Pending':
         return 'bg-yellow-100 text-yellow-700';
       default:
         return 'bg-gray-100 text-gray-700';
@@ -132,16 +133,29 @@ const BookingRequests = () => {
   };
 
   const filteredRequests = bookingRequests.filter(request => {
-    const matchesSearch = request.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.phone.includes(searchTerm);
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter.toLowerCase();
     
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = bookingRequests.filter(req => req.status === 'pending').length;
-  const approvedCount = bookingRequests.filter(req => req.status === 'approved').length;
-  const rejectedCount = bookingRequests.filter(req => req.status === 'rejected').length;
+  const pendingCount = bookingRequests.filter(req => req.status === 'Pending').length;
+  const approvedCount = bookingRequests.filter(req => req.status === 'Approved').length;
+  const rejectedCount = bookingRequests.filter(req => req.status === 'Rejected').length;
+
+  if (loading) {
+    return (
+      <MainLayout activeTab="bookings">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading booking requests...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout activeTab="bookings">
@@ -267,7 +281,7 @@ const BookingRequests = () => {
                     <TableCell className="font-medium text-blue-600">{request.id}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{request.studentName}</p>
+                        <p className="font-medium">{request.name}</p>
                         <p className="text-sm text-gray-500 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
                           {request.phone}
@@ -285,7 +299,7 @@ const BookingRequests = () => {
                       </div>
                     </TableCell>
                     <TableCell>{request.preferredRoom}</TableCell>
-                    <TableCell>{request.expectedJoinDate}</TableCell>
+                    <TableCell>{request.checkInDate}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(request.status)}>
                         {request.status}
@@ -300,12 +314,13 @@ const BookingRequests = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {request.status === 'pending' && (
+                        {request.status === 'Pending' && (
                           <>
                             <Button
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white"
                               onClick={() => handleApprove(request)}
+                              disabled={approving}
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -345,7 +360,7 @@ const BookingRequests = () => {
                   <div>
                     <h4 className="font-semibold text-gray-900">Student Information</h4>
                     <div className="mt-2 space-y-2">
-                      <p><strong>Name:</strong> {selectedRequest.studentName}</p>
+                      <p><strong>Name:</strong> {selectedRequest.name}</p>
                       <p><strong>Phone:</strong> {selectedRequest.phone}</p>
                       <p><strong>Email:</strong> {selectedRequest.email}</p>
                       <p><strong>Address:</strong> {selectedRequest.address}</p>
@@ -365,19 +380,23 @@ const BookingRequests = () => {
                   <h4 className="font-semibold text-gray-900">Booking Details</h4>
                   <div className="mt-2 space-y-2">
                     <p><strong>Preferred Room:</strong> {selectedRequest.preferredRoom}</p>
-                    <p><strong>Expected Join Date:</strong> {selectedRequest.expectedJoinDate}</p>
+                    <p><strong>Expected Join Date:</strong> {selectedRequest.checkInDate}</p>
                     <p><strong>Request Date:</strong> {selectedRequest.requestDate}</p>
-                    <p><strong>Documents:</strong> {selectedRequest.documents.join(", ")}</p>
+                    <p><strong>Course:</strong> {selectedRequest.course}</p>
+                    <p><strong>Institution:</strong> {selectedRequest.institution}</p>
+                    <p><strong>ID Proof Type:</strong> {selectedRequest.idProofType}</p>
+                    <p><strong>ID Proof Number:</strong> {selectedRequest.idProofNumber}</p>
                   </div>
                 </div>
 
-                {selectedRequest.status === 'pending' && (
+                {selectedRequest.status === 'Pending' && (
                   <div className="flex gap-4 pt-4">
                     <Button
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => handleApprove(selectedRequest)}
+                      disabled={approving}
                     >
-                      ✅ Approve & Create Student Profile
+                      {approving ? "Processing..." : "✅ Approve & Create Student Profile"}
                     </Button>
                     <Button
                       variant="outline"

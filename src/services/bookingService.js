@@ -1,5 +1,8 @@
 
 import bookingRequestsData from '../data/bookingRequests.json';
+import { studentService } from './studentService.js';
+import { ledgerService } from './ledgerService.js';
+import { invoiceService } from './invoiceService.js';
 
 let bookingRequests = [...bookingRequestsData];
 
@@ -33,6 +36,82 @@ export const bookingService = {
     });
   },
 
+  // Approve booking and trigger student profile creation
+  async approveBookingRequest(bookingId, roomAssignment) {
+    return new Promise(async (resolve) => {
+      const requestIndex = bookingRequests.findIndex(r => r.id === bookingId);
+      if (requestIndex === -1) {
+        setTimeout(() => resolve(null), 100);
+        return;
+      }
+
+      const request = bookingRequests[requestIndex];
+      
+      // Update booking status
+      bookingRequests[requestIndex] = {
+        ...request,
+        status: 'Approved',
+        approvedDate: new Date().toISOString().split('T')[0],
+        assignedRoom: roomAssignment
+      };
+
+      // Create student profile
+      const studentData = {
+        name: request.name,
+        phone: request.phone,
+        email: request.email,
+        roomNumber: roomAssignment,
+        guardianName: request.guardianName,
+        guardianPhone: request.guardianPhone,
+        address: request.address,
+        emergencyContact: request.emergencyContact,
+        idProofType: request.idProofType,
+        idProofNumber: request.idProofNumber,
+        course: request.course,
+        institution: request.institution,
+        baseMonthlyFee: this.calculateBaseFee(request.preferredRoom),
+        laundryFee: 500,
+        foodFee: 0,
+        bookingRequestId: bookingId
+      };
+
+      try {
+        // Create student profile
+        const newStudent = await studentService.createStudent(studentData);
+        
+        // Create initial ledger entry for enrollment
+        await ledgerService.addLedgerEntry({
+          studentId: newStudent.id,
+          type: 'Enrollment',
+          description: 'Student enrollment - Welcome to hostel',
+          debit: 0,
+          credit: 0,
+          referenceId: bookingId
+        });
+
+        // Generate first invoice
+        await invoiceService.createInvoice({
+          studentId: newStudent.id,
+          month: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          baseFee: newStudent.baseMonthlyFee,
+          laundryFee: newStudent.laundryFee,
+          foodFee: newStudent.foodFee,
+          previousDue: 0,
+          discount: 0,
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        });
+
+        setTimeout(() => resolve({
+          booking: bookingRequests[requestIndex],
+          student: newStudent
+        }), 100);
+      } catch (error) {
+        console.error('Error in approval workflow:', error);
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
   // Update booking status
   async updateBookingStatus(id, status, notes = '') {
     return new Promise((resolve) => {
@@ -45,6 +124,16 @@ export const bookingService = {
         setTimeout(() => resolve(null), 100);
       }
     });
+  },
+
+  // Calculate base fee based on room type
+  calculateBaseFee(roomType) {
+    const feeMap = {
+      'Single Room': 15000,
+      'Shared Room': 12000,
+      'Dormitory': 8000
+    };
+    return feeMap[roomType] || 10000;
   },
 
   // Get booking statistics
