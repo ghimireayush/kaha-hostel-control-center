@@ -28,10 +28,20 @@ interface BookingRequest {
   name: string;
   phone: string;
   email: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  guardianName: string;
+  guardianPhone: string;
   preferredRoom: string;
+  course: string;
+  institution: string;
   requestDate: string;
   checkInDate: string;
+  duration: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  notes: string;
+  emergencyContact: string;
+  address: string;
+  idProofType: string;
+  idProofNumber: string;
 }
 
 interface Invoice {
