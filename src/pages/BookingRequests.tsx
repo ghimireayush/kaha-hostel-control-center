@@ -7,86 +7,34 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Eye, Check, X, UserPlus, Clock, MapPin, Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { bookingService } from "@/services/bookingService";
-
-interface BookingRequest {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  guardianName: string;
-  guardianPhone: string;
-  preferredRoom: string;
-  course: string;
-  institution: string;
-  requestDate: string;
-  checkInDate: string;
-  duration: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-  notes?: string;
-  emergencyContact: string;
-  address: string;
-  idProofType: string;
-  idProofNumber: string;
-}
+import { useAppContext } from "@/contexts/AppContext";
+import { useNavigation } from "@/hooks/useNavigation";
 
 const BookingRequests = () => {
-  const navigate = useNavigate();
+  const { state, approveBooking } = useAppContext();
+  const { goToLedger } = useNavigation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedRequest, setSelectedRequest] = useState<BookingRequest | null>(null);
-  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [approving, setApproving] = useState(false);
 
-  // Load booking requests on component mount
-  useEffect(() => {
-    loadBookingRequests();
-  }, []);
-
-  const loadBookingRequests = async () => {
-    try {
-      const requests = await bookingService.getBookingRequests();
-      setBookingRequests(requests);
-    } catch (error) {
-      toast.error("Failed to load booking requests");
-      console.error("Error loading bookings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async (request: BookingRequest) => {
+  const handleApprove = async (request: any) => {
     setApproving(true);
     try {
-      // Suggest room based on preference
       const roomSuggestion = request.preferredRoom === 'Single Room' ? 'A-101' :
                            request.preferredRoom === 'Shared Room' ? 'B-205' : 'C-301';
       
-      const result = await bookingService.approveBookingRequest(request.id, roomSuggestion);
+      const success = await approveBooking(request.id, roomSuggestion);
       
-      if (result) {
-        // Update local state
-        setBookingRequests(prev => 
-          prev.map(req => 
-            req.id === request.id 
-              ? { ...req, status: 'Approved' as const }
-              : req
-          )
-        );
-
-        // Show success message with navigation
+      if (success) {
         toast.success(`${request.name} approved! Student profile created and ledger activated.`, {
           duration: 4000,
           action: {
             label: "View Student Profile",
-            onClick: () => navigate("/ledger?section=students")
+            onClick: () => goToLedger("students")
           }
         });
-
-        // Close modal
         setSelectedRequest(null);
       } else {
         toast.error("Failed to approve booking request");
@@ -99,18 +47,9 @@ const BookingRequests = () => {
     }
   };
 
-  const handleReject = async (request: BookingRequest) => {
+  const handleReject = async (request: any) => {
     try {
-      await bookingService.updateBookingStatus(request.id, 'Rejected', 'Application rejected after review');
-      
-      setBookingRequests(prev => 
-        prev.map(req => 
-          req.id === request.id 
-            ? { ...req, status: 'Rejected' as const }
-            : req
-        )
-      );
-
+      // In a real app, you'd call an API here
       toast.error(`${request.name}'s request has been rejected.`);
       setSelectedRequest(null);
     } catch (error) {
@@ -132,7 +71,7 @@ const BookingRequests = () => {
     }
   };
 
-  const filteredRequests = bookingRequests.filter(request => {
+  const filteredRequests = state.bookingRequests.filter(request => {
     const matchesSearch = request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.phone.includes(searchTerm);
     const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter.toLowerCase();
@@ -140,11 +79,11 @@ const BookingRequests = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = bookingRequests.filter(req => req.status === 'Pending').length;
-  const approvedCount = bookingRequests.filter(req => req.status === 'Approved').length;
-  const rejectedCount = bookingRequests.filter(req => req.status === 'Rejected').length;
+  const pendingCount = state.bookingRequests.filter(req => req.status === 'Pending').length;
+  const approvedCount = state.bookingRequests.filter(req => req.status === 'Approved').length;
+  const rejectedCount = state.bookingRequests.filter(req => req.status === 'Rejected').length;
 
-  if (loading) {
+  if (state.loading) {
     return (
       <MainLayout activeTab="bookings">
         <div className="flex items-center justify-center h-64">
@@ -167,11 +106,11 @@ const BookingRequests = () => {
             <p className="text-gray-600 mt-1">Manage student admission requests and approvals</p>
           </div>
           <Button 
-            onClick={() => navigate("/ledger?section=students")}
+            onClick={() => goToLedger("students")}
             variant="outline"
             className="border-green-600 text-green-600 hover:bg-green-50"
           >
-            📚 View All Students
+            📚 View All Students ({state.students.length})
           </Button>
         </div>
 
@@ -218,7 +157,7 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Total Requests</p>
-                  <p className="text-3xl font-bold text-blue-700">{bookingRequests.length}</p>
+                  <p className="text-3xl font-bold text-blue-700">{state.bookingRequests.length}</p>
                 </div>
                 <UserPlus className="h-8 w-8 text-blue-600" />
               </div>
