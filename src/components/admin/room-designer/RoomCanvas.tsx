@@ -227,38 +227,9 @@ export const RoomCanvas = ({
         ctx.shadowOffsetY = 3;
       }
       
-      // Draw element background with enhanced gradients
-      if (isSelected) {
-        const gradient = ctx.createLinearGradient(-width/2, -height/2, width/2, height/2);
-        gradient.addColorStop(0, '#3B82F6');
-        gradient.addColorStop(0.5, '#1D4ED8');
-        gradient.addColorStop(1, '#1E40AF');
-        ctx.fillStyle = gradient;
-      } else if (hasCollision) {
-        const gradient = ctx.createLinearGradient(-width/2, -height/2, width/2, height/2);
-        gradient.addColorStop(0, '#EF4444');
-        gradient.addColorStop(1, '#DC2626');
-        ctx.fillStyle = gradient;
-      } else if (isHovered) {
-        const baseColor = elementType?.color || '#6B7280';
-        const gradient = ctx.createLinearGradient(-width/2, -height/2, width/2, height/2);
-        gradient.addColorStop(0, baseColor);
-        gradient.addColorStop(1, baseColor + 'CC');
-        ctx.fillStyle = gradient;
-      } else {
-        ctx.fillStyle = elementType?.color || '#6B7280';
-      }
+      // No background rectangle - elements are emoji-only
       
-      ctx.fillRect(-width/2, -height/2, width, height);
-      
-      // Enhanced borders
-      ctx.strokeStyle = isSelected ? '#1D4ED8' : hasCollision ? '#DC2626' : isHovered ? '#6B7280' : '#1F2937';
-      ctx.lineWidth = isSelected ? 4 : isHovered ? 3 : 2;
-      if (isLocked) {
-        ctx.setLineDash([8, 4]);
-      }
-      ctx.strokeRect(-width/2, -height/2, width, height);
-      ctx.setLineDash([]);
+      // No borders - only selection indicators
       
       // Clear shadows
       ctx.shadowColor = 'transparent';
@@ -320,58 +291,41 @@ export const RoomCanvas = ({
         ctx.strokeText(bedId, 0, -height/2 + 5);
         ctx.fillText(bedId, 0, -height/2 + 5);
       } else {
-        // Standard element emoji drawing with enhanced styling
-        const elementTypeData = elementTypes.find(t => t.type === element.type);
+        // Clean emoji-only display
         const emoji = getElementEmoji(element.type, element.properties);
         
-        // Calculate optimal emoji size based on element dimensions
-        const emojiSize = Math.min(width, height) * 0.6;
-        const maxEmojiSize = Math.min(40, emojiSize);
-        const minEmojiSize = Math.max(16, emojiSize);
-        const finalEmojiSize = Math.max(minEmojiSize, Math.min(maxEmojiSize, emojiSize));
+        // Consistent emoji sizing for all elements
+        const finalEmojiSize = 32; // Fixed size for consistency
         
         ctx.font = `${finalEmojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Add subtle shadow for emoji
-        if (isSelected || isHovered) {
-          ctx.shadowColor = 'rgba(0,0,0,0.3)';
-          ctx.shadowBlur = 2;
-          ctx.shadowOffsetX = 1;
-          ctx.shadowOffsetY = 1;
-        }
+        // Draw emoji with subtle shadow for depth
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 2;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
         
         ctx.fillText(emoji, 0, 0);
         ctx.shadowColor = 'transparent';
-        
-        // Draw bed ID for regular beds (smaller and positioned below emoji)
-        if (element.type.includes('bed') && element.properties?.bedId) {
-          const idFontSize = Math.min(width, height) * 0.15;
-          ctx.font = `bold ${Math.max(8, Math.min(14, idFontSize))}px Arial`;
-          ctx.fillStyle = '#FFFFFF';
-          ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-          ctx.lineWidth = 1;
-          const yOffset = finalEmojiSize * 0.4;
-          ctx.strokeText(element.properties.bedId, 0, yOffset);
-          ctx.fillText(element.properties.bedId, 0, yOffset);
-        }
       }
       
-      // Draw selection handles with animations
+      // Clean selection indicators around emoji
       if (isSelected && !isLocked) {
         const handleSize = 8;
-        const handleColor = '#3B82F6';
-        ctx.fillStyle = handleColor;
+        const selectionRadius = 35;
+        
+        // Corner handles positioned around emoji
+        ctx.fillStyle = '#3B82F6';
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 2;
         
-        // Corner handles
         const corners = [
-          [-width/2, -height/2],
-          [width/2, -height/2],
-          [-width/2, height/2],
-          [width/2, height/2]
+          [-selectionRadius, -selectionRadius],
+          [selectionRadius, -selectionRadius],
+          [-selectionRadius, selectionRadius],
+          [selectionRadius, selectionRadius]
         ];
         
         corners.forEach(([hx, hy]) => {
@@ -379,21 +333,21 @@ export const RoomCanvas = ({
           ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
         });
         
-        // Rotation handle with pulsing effect
+        // Rotation handle
         ctx.fillStyle = '#10B981';
         ctx.strokeStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(0, -height/2 - 20, 6, 0, 2 * Math.PI);
+        ctx.arc(0, -selectionRadius - 20, 6, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         
         // Connection line to rotation handle
         ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.lineTo(0, -height/2 - 14);
+        ctx.moveTo(0, -selectionRadius);
+        ctx.lineTo(0, -selectionRadius - 14);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -418,12 +372,13 @@ export const RoomCanvas = ({
         ctx.fillText('⚠', 0, -height/2 - 20);
       }
       
-      // Hover effect
+      // Subtle hover effect - light glow around emoji
       if (isHovered && !isSelected) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([8, 4]);
-        ctx.strokeRect(-width/2 - 2, -height/2 - 2, width + 4, height + 4);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        const glowSize = 50;
+        ctx.strokeRect(-glowSize/2, -glowSize/2, glowSize, glowSize);
         ctx.setLineDash([]);
       }
       
