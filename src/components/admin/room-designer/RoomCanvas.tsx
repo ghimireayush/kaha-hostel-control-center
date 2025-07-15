@@ -9,11 +9,12 @@ import { elementTypes } from "./ElementLibraryPanel";
 const getElementEmoji = (elementType: string, properties?: any): string => {
   const emojiMap: Record<string, string> = {
     'single-bed': '🛏️',
-    'bunk-bed': '🛏️',
+    'bunk-bed': '🛏️', 
     'double-bed': '🛌',
     'kids-bed': '🧸',
     'study-table': '📚',
     'study-chair': '🪑',
+    'chair': '🪑',
     'study-lamp': '💡',
     'monitor': '🖥️',
     'charging-port': '🔌',
@@ -36,10 +37,11 @@ const getElementEmoji = (elementType: string, properties?: any): string => {
     'call-button': '🔔'
   };
 
-  // Special handling for bunk beds with position
-  if (elementType === 'bunk-bed' && properties?.position) {
-    if (properties.position === 'top') return '🛌⬆️';
-    if (properties.position === 'bottom') return '🛌⬇️';
+  // Special handling for bunk beds
+  if (elementType === 'bunk-bed') {
+    if (properties?.position === 'top') return '🛌⬆️';
+    if (properties?.position === 'bottom') return '🛌⬇️';
+    return '🛏️'; // Default bunk bed emoji
   }
 
   return emojiMap[elementType] || '📦';
@@ -294,10 +296,10 @@ export const RoomCanvas = ({
         // Clean emoji-only display
         const emoji = getElementEmoji(element.type, element.properties);
         
-        // Consistent emoji sizing for all elements
-        const finalEmojiSize = 32; // Fixed size for consistency
+        // Responsive emoji sizing based on element size
+        const emojiSize = Math.min(Math.max(width * 0.6, 24), 48);
         
-        ctx.font = `${finalEmojiSize}px Arial`;
+        ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
@@ -309,23 +311,39 @@ export const RoomCanvas = ({
         
         ctx.fillText(emoji, 0, 0);
         ctx.shadowColor = 'transparent';
+        
+        // Optional: Draw element ID for debugging (small text below emoji)
+        if (element.properties?.bedId && element.type.includes('bed')) {
+          ctx.fillStyle = '#6B7280';
+          ctx.font = `${Math.max(emojiSize * 0.2, 8)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(element.properties.bedId, 0, emojiSize/3);
+        }
       }
       
       // Clean selection indicators around emoji
       if (isSelected && !isLocked) {
         const handleSize = 8;
-        const selectionRadius = 35;
+        const selectionRadius = Math.min(width, height) / 2 + 15;
         
-        // Corner handles positioned around emoji
+        // Selection border around element bounds
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(-width/2, -height/2, width, height);
+        ctx.setLineDash([]);
+        
+        // Corner handles positioned at element corners
         ctx.fillStyle = '#3B82F6';
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 2;
         
         const corners = [
-          [-selectionRadius, -selectionRadius],
-          [selectionRadius, -selectionRadius],
-          [-selectionRadius, selectionRadius],
-          [selectionRadius, selectionRadius]
+          [-width/2, -height/2],
+          [width/2, -height/2],
+          [-width/2, height/2],
+          [width/2, height/2]
         ];
         
         corners.forEach(([hx, hy]) => {
@@ -333,11 +351,11 @@ export const RoomCanvas = ({
           ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
         });
         
-        // Rotation handle
+        // Rotation handle above element
         ctx.fillStyle = '#10B981';
         ctx.strokeStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(0, -selectionRadius - 20, 6, 0, 2 * Math.PI);
+        ctx.arc(0, -height/2 - 20, 6, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         
@@ -346,8 +364,8 @@ export const RoomCanvas = ({
         ctx.lineWidth = 2;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.moveTo(0, -selectionRadius);
-        ctx.lineTo(0, -selectionRadius - 14);
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2 - 14);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -372,13 +390,12 @@ export const RoomCanvas = ({
         ctx.fillText('⚠', 0, -height/2 - 20);
       }
       
-      // Subtle hover effect - light glow around emoji
+      // Subtle hover effect around element bounds
       if (isHovered && !isSelected) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
-        const glowSize = 50;
-        ctx.strokeRect(-glowSize/2, -glowSize/2, glowSize, glowSize);
+        ctx.strokeRect(-width/2, -height/2, width, height);
         ctx.setLineDash([]);
       }
       
