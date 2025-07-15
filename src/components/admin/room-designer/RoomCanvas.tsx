@@ -5,6 +5,46 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Move, RotateCw, Copy, Trash2, Ruler, Grid3X3 } from "lucide-react";
 import { elementTypes } from "./ElementLibraryPanel";
 
+// Emoji mapping function for room elements
+const getElementEmoji = (elementType: string, properties?: any): string => {
+  const emojiMap: Record<string, string> = {
+    'single-bed': '🛏️',
+    'bunk-bed': '🛏️',
+    'double-bed': '🛌',
+    'kids-bed': '🧸',
+    'study-table': '📚',
+    'study-chair': '🪑',
+    'study-lamp': '💡',
+    'monitor': '🖥️',
+    'charging-port': '🔌',
+    'headphone-hanger': '🎧',
+    'bookshelf': '📚',
+    'door': '🚪',
+    'window': '🪟',
+    'wall-partition': '🧱',
+    'room-label': '🚩',
+    'toilet': '🚽',
+    'shower': '🚿',
+    'wash-basin': '🧼',
+    'dustbin': '🗑️',
+    'luggage-rack': '🧳',
+    'fire-extinguisher': '🧯',
+    'locker': '🔐',
+    'laundry-basket': '🧺',
+    'fan': '🌀',
+    'ac-unit': '❄️',
+    'call-button': '🔔'
+  };
+
+  // Special handling for bunk beds with position
+  if (elementType === 'bunk-bed' && properties?.position) {
+    if (properties.position === 'top') return '🛌⬆️';
+    if (properties.position === 'bottom') return '🛌⬇️';
+  }
+
+  return emojiMap[elementType] || '📦';
+};
+
 interface BunkLevel {
   id: string;
   position: 'top' | 'middle' | 'bottom';
@@ -93,6 +133,7 @@ export const RoomCanvas = ({
   const [dragStart, setDragStart] = useState<{x: number, y: number} | null>(null);
   const [showMeasurement, setShowMeasurement] = useState(false);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<{x: number, y: number, text: string} | null>(null);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -241,15 +282,15 @@ export const RoomCanvas = ({
             ctx.stroke();
           }
           
-          // Draw level indicator
-          const levelIcon = level.position === 'top' ? '🛏️⬆️' : 
-                           level.position === 'middle' ? '🛏️↕️' : '🛏️⬇️';
-          
-          ctx.font = `${Math.min(width, levelHeight) * 0.15}px Arial`;
-          ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(levelIcon, -width/2 + 5, levelY + levelHeight/2);
+        // Draw level indicator with enhanced emojis
+        const levelIcon = level.position === 'top' ? '🛌⬆️' : 
+                         level.position === 'middle' ? '🛌↕️' : '🛌⬇️';
+        
+        ctx.font = `${Math.min(width, levelHeight) * 0.3}px Arial`;
+        ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(levelIcon, -width/2 + 5, levelY + levelHeight/2);
           
           // Draw assignment status
           if (level.assignedTo) {
@@ -279,23 +320,41 @@ export const RoomCanvas = ({
         ctx.strokeText(bedId, 0, -height/2 + 5);
         ctx.fillText(bedId, 0, -height/2 + 5);
       } else {
-        // Standard element label drawing
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${Math.min(width, height) * 0.25}px Arial`;
+        // Standard element emoji drawing with enhanced styling
+        const elementTypeData = elementTypes.find(t => t.type === element.type);
+        const emoji = getElementEmoji(element.type, element.properties);
+        
+        // Calculate optimal emoji size based on element dimensions
+        const emojiSize = Math.min(width, height) * 0.6;
+        const maxEmojiSize = Math.min(40, emojiSize);
+        const minEmojiSize = Math.max(16, emojiSize);
+        const finalEmojiSize = Math.max(minEmojiSize, Math.min(maxEmojiSize, emojiSize));
+        
+        ctx.font = `${finalEmojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 2;
         
-        const label = element.type.toUpperCase().replace('-', ' ');
-        ctx.strokeText(label, 0, 0);
-        ctx.fillText(label, 0, 0);
+        // Add subtle shadow for emoji
+        if (isSelected || isHovered) {
+          ctx.shadowColor = 'rgba(0,0,0,0.3)';
+          ctx.shadowBlur = 2;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
+        }
         
-        // Draw bed ID for regular beds
+        ctx.fillText(emoji, 0, 0);
+        ctx.shadowColor = 'transparent';
+        
+        // Draw bed ID for regular beds (smaller and positioned below emoji)
         if (element.type.includes('bed') && element.properties?.bedId) {
-          ctx.font = `${Math.min(width, height) * 0.15}px Arial`;
-          ctx.strokeText(element.properties.bedId, 0, height * 0.15);
-          ctx.fillText(element.properties.bedId, 0, height * 0.15);
+          const idFontSize = Math.min(width, height) * 0.15;
+          ctx.font = `bold ${Math.max(8, Math.min(14, idFontSize))}px Arial`;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+          ctx.lineWidth = 1;
+          const yOffset = finalEmojiSize * 0.4;
+          ctx.strokeText(element.properties.bedId, 0, yOffset);
+          ctx.fillText(element.properties.bedId, 0, yOffset);
         }
       }
       
@@ -422,6 +481,18 @@ export const RoomCanvas = ({
     
     setHoveredElement(hoveredEl?.id || null);
     
+    // Show tooltip for hovered element
+    if (hoveredEl) {
+      const elementTypeData = elementTypes.find(t => t.type === hoveredEl.type);
+      setTooltip({
+        x: e.clientX,
+        y: e.clientY - 40,
+        text: elementTypeData?.label || hoveredEl.type
+      });
+    } else {
+      setTooltip(null);
+    }
+    
     onMouseMove(e);
   };
 
@@ -523,7 +594,7 @@ export const RoomCanvas = ({
       )}
 
       {/* Enhanced Canvas Container */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center relative">
         <div className="border-2 border-gray-300 rounded-xl shadow-2xl bg-white p-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent pointer-events-none"></div>
           <canvas
@@ -538,6 +609,17 @@ export const RoomCanvas = ({
             style={{ maxWidth: '100%', maxHeight: '70vh' }}
           />
         </div>
+        
+        {/* Tooltip */}
+        {tooltip && (
+          <div 
+            className="fixed z-50 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2"
+            style={{ left: tooltip.x, top: tooltip.y }}
+          >
+            {tooltip.text}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+          </div>
+        )}
       </div>
       
       {/* Enhanced Canvas Footer */}
