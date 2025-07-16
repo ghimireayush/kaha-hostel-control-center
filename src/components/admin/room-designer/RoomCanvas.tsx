@@ -8,10 +8,10 @@ import { elementTypes } from "./ElementLibraryPanel";
 const getElementEmoji = (elementType: string, properties?: any): string => {
   const emojiMap: Record<string, string> = {
     'single-bed': '🛏️',
-    'bunk-bed': '🛏️', 
+    'bunk-bed': '🏠', 
     'double-bed': '🛌',
     'kids-bed': '🧸',
-    'study-table': '📚',
+    'study-table': '🪑',
     'study-chair': '🪑',
     'chair': '🪑',
     'study-lamp': '💡',
@@ -22,7 +22,7 @@ const getElementEmoji = (elementType: string, properties?: any): string => {
     'door': '🚪',
     'window': '🪟',
     'wall-partition': '🧱',
-    'room-label': '🚩',
+    'room-label': '🏷️',
     'toilet': '🚽',
     'shower': '🚿',
     'wash-basin': '🧼',
@@ -38,15 +38,13 @@ const getElementEmoji = (elementType: string, properties?: any): string => {
 
   // Special handling for bunk beds
   if (elementType === 'bunk-bed') {
-    if (properties?.position === 'top') return '🛌⬆️';
-    if (properties?.position === 'bottom') return '🛌⬇️';
-    return '🛏️'; // Default bunk bed emoji
+    return '🏠'; // Using house emoji for bunk bed structure
   }
 
   return emojiMap[elementType] || '📦';
 };
 
-// Get element display name
+// Get element display name with better formatting
 const getElementDisplayName = (elementType: string, properties?: any): string => {
   const nameMap: Record<string, string> = {
     'single-bed': 'Single Bed',
@@ -56,25 +54,25 @@ const getElementDisplayName = (elementType: string, properties?: any): string =>
     'study-table': 'Study Table',
     'study-chair': 'Study Chair',
     'chair': 'Chair',
-    'study-lamp': 'Lamp',
+    'study-lamp': 'Desk Lamp',
     'monitor': 'Monitor',
-    'charging-port': 'Charger',
-    'headphone-hanger': 'Headphones',
+    'charging-port': 'Charging Port',
+    'headphone-hanger': 'Headphone Hook',
     'bookshelf': 'Bookshelf',
     'door': 'Door',
     'window': 'Window',
-    'wall-partition': 'Wall',
-    'room-label': 'Label',
+    'wall-partition': 'Wall Partition',
+    'room-label': 'Room Label',
     'toilet': 'Toilet',
     'shower': 'Shower',
-    'wash-basin': 'Basin',
+    'wash-basin': 'Wash Basin',
     'dustbin': 'Dustbin',
-    'luggage-rack': 'Luggage',
-    'fire-extinguisher': 'Fire Ext.',
+    'luggage-rack': 'Luggage Rack',
+    'fire-extinguisher': 'Fire Extinguisher',
     'locker': 'Locker',
-    'laundry-basket': 'Laundry',
-    'fan': 'Fan',
-    'ac-unit': 'AC',
+    'laundry-basket': 'Laundry Basket',
+    'fan': 'Ceiling Fan',
+    'ac-unit': 'AC Unit',
     'call-button': 'Call Button'
   };
 
@@ -181,6 +179,9 @@ export const RoomCanvas = ({
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{x: number, y: number, text: string} | null>(null);
 
+  // Increased scale for better visibility
+  const enhancedScale = Math.max(scale * 1.5, 45);
+
   const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -191,75 +192,78 @@ export const RoomCanvas = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw background with subtle texture
+    // Draw background with subtle texture and increased size
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, theme.floorColor);
     gradient.addColorStop(1, theme.floorColor + 'CC');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, dimensions.length * scale, dimensions.width * scale);
+    ctx.fillRect(0, 0, dimensions.length * enhancedScale, dimensions.width * enhancedScale);
     
+    // Enhanced grid with better visibility
     if (showGrid) {
-      ctx.strokeStyle = '#00000010';
+      ctx.strokeStyle = '#00000015';
       ctx.lineWidth = 1;
-      const gridSize = 0.5 * scale;
-      const majorGridSize = 1 * scale;
+      const gridSize = 0.5 * enhancedScale;
+      const majorGridSize = 1 * enhancedScale;
       
-      for (let x = 0; x <= dimensions.length * scale; x += gridSize) {
+      // Minor grid lines
+      for (let x = 0; x <= dimensions.length * enhancedScale; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, dimensions.width * scale);
+        ctx.lineTo(x, dimensions.width * enhancedScale);
         ctx.stroke();
       }
       
-      for (let y = 0; y <= dimensions.width * scale; y += gridSize) {
+      for (let y = 0; y <= dimensions.width * enhancedScale; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(dimensions.length * scale, y);
+        ctx.lineTo(dimensions.length * enhancedScale, y);
         ctx.stroke();
       }
       
-      ctx.strokeStyle = '#00000020';
+      // Major grid lines
+      ctx.strokeStyle = '#00000025';
       ctx.lineWidth = 2;
       
-      for (let x = 0; x <= dimensions.length * scale; x += majorGridSize) {
+      for (let x = 0; x <= dimensions.length * enhancedScale; x += majorGridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, dimensions.width * scale);
+        ctx.lineTo(x, dimensions.width * enhancedScale);
         ctx.stroke();
       }
       
-      for (let y = 0; y <= dimensions.width * scale; y += majorGridSize) {
+      for (let y = 0; y <= dimensions.width * enhancedScale; y += majorGridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(dimensions.length * scale, y);
+        ctx.lineTo(dimensions.length * enhancedScale, y);
         ctx.stroke();
       }
     }
     
+    // Enhanced room border
     ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 8;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    ctx.strokeRect(0, 0, dimensions.length * scale, dimensions.width * scale);
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
+    ctx.strokeRect(0, 0, dimensions.length * enhancedScale, dimensions.width * enhancedScale);
     ctx.shadowColor = 'transparent';
     
-    // Draw elements sorted by zIndex
+    // Draw elements sorted by zIndex with enhanced visibility
     const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
     
     sortedElements.forEach(element => {
-      const x = element.x * scale;
-      const y = element.y * scale;
-      const width = element.width * scale;
-      const height = element.height * scale;
+      const x = element.x * enhancedScale;
+      const y = element.y * enhancedScale;
+      const width = element.width * enhancedScale;
+      const height = element.height * enhancedScale;
       
       ctx.save();
       ctx.translate(x + width/2, y + height/2);
       ctx.rotate(element.rotation * Math.PI / 180);
       
       // Element styling
-      const elementType = elementTypes.find(t => t.type === element.type);
       const isSelected = selectedElements.includes(element.id);
       const isHovered = hoveredElement === element.id;
       const hasCollision = checkCollisions(element, element.id);
@@ -267,27 +271,32 @@ export const RoomCanvas = ({
       
       // Enhanced shadow for depth
       if (isSelected || isHovered) {
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
       }
       
       // Clear shadows for element rendering
       ctx.shadowColor = 'transparent';
       
-      // Special handling for bunk beds
+      // Special enhanced handling for bunk beds
       if (element.type === 'bunk-bed') {
-        // Draw bunk bed levels with enhanced visibility
+        // Draw bunk bed structure with enhanced visibility
         const levels = element.properties?.levels || [];
-        const levelHeight = height / levels.length;
+        const levelHeight = height / Math.max(levels.length, 2);
+        
+        // Draw bunk bed frame
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-width/2, -height/2, width, height);
         
         levels.forEach((level, index) => {
           const levelY = -height/2 + (index * levelHeight);
           
-          // Draw level separator with better visibility
+          // Draw level separator with enhanced visibility
           if (index > 0) {
-            ctx.strokeStyle = '#1F2937';
+            ctx.strokeStyle = '#654321';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(-width/2, levelY);
@@ -295,104 +304,110 @@ export const RoomCanvas = ({
             ctx.stroke();
           }
           
-          // Draw level indicator with enhanced emojis
-          const levelIcon = level.position === 'top' ? '🛌⬆️' : 
-                           level.position === 'middle' ? '🛌↔️' : '🛌⬇️';
+          // Draw level with enhanced emojis and better positioning
+          const levelIcon = level.position === 'top' ? '🛌' : 
+                           level.position === 'middle' ? '🛌' : '🛌';
           
-          ctx.font = `${Math.min(width, levelHeight) * 0.4}px Arial`;
-          ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
+          ctx.font = `${Math.min(width, levelHeight) * 0.5}px Arial`;
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(levelIcon, -width/2 + 8, levelY + levelHeight/2);
           
-          // Draw assignment status with better visibility
+          // Enhanced assignment status display
           if (level.assignedTo) {
-            ctx.font = `bold ${Math.min(width, levelHeight) * 0.14}px Arial`;
+            ctx.font = `bold ${Math.max(levelHeight * 0.15, 12)}px Arial`;
             ctx.fillStyle = '#FFFFFF';
-            ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-            ctx.lineWidth = 2;
-            const assignmentText = level.assignedTo.substring(0, 8);
-            ctx.strokeText(assignmentText, -width/2 + 35, levelY + levelHeight/2);
-            ctx.fillText(assignmentText, -width/2 + 35, levelY + levelHeight/2);
+            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = 3;
+            const assignmentText = level.assignedTo.substring(0, 10);
+            ctx.strokeText(assignmentText, -width/2 + 40, levelY + levelHeight/2);
+            ctx.fillText(assignmentText, -width/2 + 40, levelY + levelHeight/2);
           } else {
-            ctx.font = `${Math.min(width, levelHeight) * 0.12}px Arial`;
+            ctx.font = `${Math.max(levelHeight * 0.12, 10)}px Arial`;
             ctx.fillStyle = '#9CA3AF';
-            ctx.fillText('Unassigned', -width/2 + 35, levelY + levelHeight/2);
+            ctx.fillText('Available', -width/2 + 40, levelY + levelHeight/2);
           }
         });
         
         // Draw main bed ID with enhanced visibility
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${Math.min(width, height) * 0.14}px Arial`;
+        ctx.font = `bold ${Math.max(height * 0.12, 14)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+        ctx.lineWidth = 4;
         
         const bedId = element.properties?.bedId || 'BUNK';
-        ctx.strokeText(bedId, 0, -height/2 + 8);
-        ctx.fillText(bedId, 0, -height/2 + 8);
+        ctx.strokeText(bedId, 0, -height/2 + 6);
+        ctx.fillText(bedId, 0, -height/2 + 6);
       } else {
-        // Enhanced emoji display with better sizing and positioning
+        // Enhanced emoji display for regular elements
         const emoji = getElementEmoji(element.type, element.properties);
         const elementName = getElementDisplayName(element.type, element.properties);
         
-        // Responsive emoji sizing with better visibility
-        const emojiSize = Math.min(Math.max(width * 0.5, 28), 52);
+        // Significantly larger and more visible emoji
+        const emojiSize = Math.min(Math.max(width * 0.6, 36), 64);
         
         ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Draw emoji with enhanced shadow for better visibility
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 3;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
+        // Enhanced emoji shadow for better visibility
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
         
-        // Position emoji slightly above center to make room for text
-        ctx.fillText(emoji, 0, -height/8);
+        // Position emoji in upper part of element
+        ctx.fillText(emoji, 0, -height/6);
         ctx.shadowColor = 'transparent';
         
-        // Draw element name below emoji with enhanced visibility
-        ctx.fillStyle = '#374151';
-        ctx.font = `bold ${Math.max(width * 0.12, 10)}px Arial`;
+        // Enhanced element name display below emoji
+        ctx.fillStyle = '#1F2937';
+        ctx.font = `bold ${Math.max(width * 0.14, 12)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         
-        // Truncate long names to fit
+        // Truncate long names intelligently
         let displayName = elementName;
-        if (displayName.length > 10) {
-          displayName = displayName.substring(0, 8) + '..';
+        if (displayName.length > 12) {
+          const words = displayName.split(' ');
+          if (words.length > 1) {
+            displayName = words.map(word => word.substring(0, 4)).join(' ');
+          } else {
+            displayName = displayName.substring(0, 10) + '..';
+          }
         }
         
-        ctx.strokeText(displayName, 0, height/3);
-        ctx.fillText(displayName, 0, height/3);
+        // Enhanced text rendering with better positioning
+        const textY = height/4;
+        ctx.strokeText(displayName, 0, textY);
+        ctx.fillText(displayName, 0, textY);
       }
       
-      // Enhanced selection indicators with better visibility
+      // Enhanced selection indicators with better positioning
       if (isSelected && !isLocked) {
-        const handleSize = 10;
+        const handleSize = 12;
         
-        // Selection border around element bounds with enhanced visibility
+        // Enhanced selection border with better visibility
         ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([6, 6]);
-        ctx.strokeRect(-width/2 - 4, -height/2 - 4, width + 8, height + 8);
+        ctx.lineWidth = 5;
+        ctx.setLineDash([8, 8]);
+        ctx.strokeRect(-width/2 - 6, -height/2 - 6, width + 12, height + 12);
         ctx.setLineDash([]);
         
-        // Corner handles positioned at element corners with better visibility
+        // Enhanced corner handles with better visibility
         ctx.fillStyle = '#3B82F6';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         
         const corners = [
-          [-width/2 - 4, -height/2 - 4],
-          [width/2 + 4, -height/2 - 4],
-          [-width/2 - 4, height/2 + 4],
-          [width/2 + 4, height/2 + 4]
+          [-width/2 - 6, -height/2 - 6],
+          [width/2 + 6, -height/2 - 6],
+          [-width/2 - 6, height/2 + 6],
+          [width/2 + 6, height/2 + 6]
         ];
         
         corners.forEach(([hx, hy]) => {
@@ -400,88 +415,89 @@ export const RoomCanvas = ({
           ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
         });
         
-        // Rotation handle above element with enhanced visibility
+        // Enhanced rotation handle with better visibility
         ctx.fillStyle = '#10B981';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(0, -height/2 - 25, 8, 0, 2 * Math.PI);
+        ctx.arc(0, -height/2 - 30, 10, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         
-        // Connection line to rotation handle
+        // Enhanced connection line to rotation handle
         ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 4;
+        ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(0, -height/2 - 4);
-        ctx.lineTo(0, -height/2 - 17);
+        ctx.moveTo(0, -height/2 - 6);
+        ctx.lineTo(0, -height/2 - 20);
         ctx.stroke();
         ctx.setLineDash([]);
       }
       
-      // Draw lock indicator with enhanced visibility
+      // Enhanced lock indicator
       if (isLocked) {
         ctx.fillStyle = '#EF4444';
-        ctx.font = 'bold 18px Arial';
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
-        ctx.strokeText('🔒', width/2 - 12, -height/2 + 18);
-        ctx.fillText('🔒', width/2 - 12, -height/2 + 18);
-      }
-      
-      // Draw collision warning with enhanced animation and visibility
-      if (hasCollision) {
-        ctx.fillStyle = '#DC2626';
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 22px Arial';
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 4;
-        ctx.strokeText('⚠️', 0, -height/2 - 25);
-        ctx.fillText('⚠️', 0, -height/2 - 25);
+        ctx.strokeText('🔒', width/2 - 15, -height/2 + 22);
+        ctx.fillText('🔒', width/2 - 15, -height/2 + 22);
       }
       
-      // Enhanced hover effect around element bounds
+      // Enhanced collision warning with animation effect
+      if (hasCollision) {
+        ctx.fillStyle = '#DC2626';
+        ctx.font = 'bold 24px Arial';
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 5;
+        ctx.strokeText('⚠️', 0, -height/2 - 30);
+        ctx.fillText('⚠️', 0, -height/2 - 30);
+      }
+      
+      // Enhanced hover effect
       if (isHovered && !isSelected) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(-width/2 - 2, -height/2 - 2, width + 4, height + 4);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.9)';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(-width/2 - 3, -height/2 - 3, width + 6, height + 6);
         ctx.setLineDash([]);
       }
       
       ctx.restore();
     });
     
-    // Draw room dimensions with enhanced styling
+    // Enhanced room dimensions display
     ctx.fillStyle = '#374151';
-    ctx.font = 'bold 16px Arial';
+    ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     
     const lengthText = `${dimensions.length}m`;
-    ctx.strokeText(lengthText, dimensions.length * scale / 2, -15);
-    ctx.fillText(lengthText, dimensions.length * scale / 2, -15);
+    ctx.strokeText(lengthText, dimensions.length * enhancedScale / 2, -20);
+    ctx.fillText(lengthText, dimensions.length * enhancedScale / 2, -20);
     
     ctx.save();
-    ctx.translate(-20, dimensions.width * scale / 2);
+    ctx.translate(-25, dimensions.width * enhancedScale / 2);
     ctx.rotate(-Math.PI / 2);
     const widthText = `${dimensions.width}m`;
     ctx.strokeText(widthText, 0, 0);
     ctx.fillText(widthText, 0, 0);
     ctx.restore();
 
+    // Enhanced snap-to-grid indicators
     if (snapToGrid && selectedElements.length > 0) {
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
       
-      const gridSize = 0.5 * scale;
-      for (let x = 0; x <= dimensions.length * scale; x += gridSize) {
+      const gridSize = 0.5 * enhancedScale;
+      for (let x = 0; x <= dimensions.length * enhancedScale; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, dimensions.width * scale);
+        ctx.lineTo(x, dimensions.width * enhancedScale);
         ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -491,8 +507,8 @@ export const RoomCanvas = ({
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = e.currentTarget;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale;
-    const y = (e.clientY - rect.top) / scale;
+    const x = (e.clientX - rect.left) / enhancedScale;
+    const y = (e.clientY - rect.top) / enhancedScale;
     
     // Find hovered element
     const sortedElements = [...elements].sort((a, b) => b.zIndex - a.zIndex);
@@ -503,12 +519,12 @@ export const RoomCanvas = ({
     
     setHoveredElement(hoveredEl?.id || null);
     
-    // Show enhanced tooltip for hovered element
+    // Enhanced tooltip for hovered element
     if (hoveredEl) {
       const elementName = getElementDisplayName(hoveredEl.type, hoveredEl.properties);
       setTooltip({
         x: e.clientX,
-        y: e.clientY - 50,
+        y: e.clientY - 60,
         text: elementName
       });
     } else {
@@ -523,8 +539,8 @@ export const RoomCanvas = ({
     
     const canvas = e.currentTarget;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale;
-    const y = (e.clientY - rect.top) / scale;
+    const x = (e.clientX - rect.left) / enhancedScale;
+    const y = (e.clientY - rect.top) / enhancedScale;
     
     const sortedElements = [...elements].sort((a, b) => b.zIndex - a.zIndex);
     const clickedElement = sortedElements.find(element => 
@@ -543,7 +559,7 @@ export const RoomCanvas = ({
 
   useEffect(() => {
     drawCanvas();
-  }, [elements, selectedElement, selectedElements, dimensions, showGrid, scale, theme, hoveredElement]);
+  }, [elements, selectedElement, selectedElements, dimensions, showGrid, enhancedScale, theme, hoveredElement]);
 
   useEffect(() => {
     const handleClickOutside = () => setContextMenu(null);
@@ -552,39 +568,39 @@ export const RoomCanvas = ({
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 p-4 relative">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 p-6 relative overflow-auto">
       {/* Enhanced Canvas Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-2 flex-wrap">
-          <Badge variant="outline" className="bg-white shadow-sm">
-            <Grid3X3 className="h-3 w-3 mr-1" />
-            2D View • {scale}px/m
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-3 flex-wrap">
+          <Badge variant="outline" className="bg-white shadow-sm border-2">
+            <Grid3X3 className="h-4 w-4 mr-2" />
+            Enhanced 2D View • {enhancedScale}px/m
           </Badge>
-          <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-            <Ruler className="h-3 w-3 mr-1" />
+          <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 border-2">
+            <Ruler className="h-4 w-4 mr-2" />
             {dimensions.length}m × {dimensions.width}m × {dimensions.height}m
           </Badge>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            {elements.length} elements
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 border-2">
+            📦 {elements.length} elements
           </Badge>
           {selectedElements.length > 1 && (
-            <Badge variant="default" className="bg-purple-600">
-              {selectedElements.length} selected
+            <Badge variant="default" className="bg-purple-600 border-2">
+              ✅ {selectedElements.length} selected
             </Badge>
           )}
           {elements.filter(e => e.type === 'bunk-bed').length > 0 && (
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-              🛏️ {elements.filter(e => e.type === 'bunk-bed').length} Bunk Beds
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 border-2">
+              🏠 {elements.filter(e => e.type === 'bunk-bed').length} Bunk Beds
             </Badge>
           )}
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button
             size="sm"
             variant="outline"
             onClick={() => setShowMeasurement(!showMeasurement)}
-            className={showMeasurement ? "bg-blue-50 border-blue-300" : ""}
+            className={showMeasurement ? "bg-blue-50 border-blue-300 border-2" : "border-2"}
           >
             <Ruler className="h-4 w-4" />
           </Button>
@@ -593,20 +609,20 @@ export const RoomCanvas = ({
       
       {/* Enhanced Warnings */}
       {warnings.length > 0 && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-400 rounded-lg shadow-sm">
-          <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-            <AlertTriangle className="h-5 w-5" />
+        <div className="mb-6 p-6 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-400 rounded-xl shadow-lg">
+          <div className="flex items-center gap-3 text-red-800 font-bold mb-3">
+            <AlertTriangle className="h-6 w-6" />
             Design Warnings ({warnings.length})
           </div>
-          <ul className="text-sm text-red-700 space-y-1">
+          <ul className="text-sm text-red-700 space-y-2">
             {warnings.slice(0, 3).map((warning, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-red-500 mt-0.5">•</span>
+              <li key={index} className="flex items-start gap-3">
+                <span className="text-red-500 mt-1 font-bold">•</span>
                 {warning}
               </li>
             ))}
             {warnings.length > 3 && (
-              <li className="text-red-600 font-medium flex items-center gap-2">
+              <li className="text-red-600 font-bold flex items-center gap-3">
                 <span className="text-red-500">•</span>
                 ... and {warnings.length - 3} more warnings
               </li>
@@ -615,27 +631,28 @@ export const RoomCanvas = ({
         </div>
       )}
 
-      {/* Enhanced Canvas Container */}
-      <div className="flex-1 flex items-center justify-center relative">
-        <div className="border-2 border-gray-300 rounded-xl shadow-2xl bg-white p-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent pointer-events-none"></div>
-          <canvas
-            ref={canvasRef}
-            width={dimensions.length * scale}
-            height={dimensions.width * scale}
-            className="cursor-crosshair rounded-lg border border-gray-200 relative z-10"
-            onMouseDown={onMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={onMouseUp}
-            onContextMenu={handleCanvasRightClick}
-            style={{ maxWidth: '100%', maxHeight: '70vh' }}
-          />
+      {/* Enhanced Canvas Container with better sizing */}
+      <div className="flex-1 flex items-center justify-center relative p-4">
+        <div className="border-4 border-gray-300 rounded-2xl shadow-2xl bg-white p-8 relative overflow-auto max-w-full max-h-full">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-transparent pointer-events-none rounded-2xl"></div>
+          <div className="overflow-auto max-h-[70vh] max-w-full">
+            <canvas
+              ref={canvasRef}
+              width={dimensions.length * enhancedScale}
+              height={dimensions.width * enhancedScale}
+              className="cursor-crosshair rounded-xl border-2 border-gray-200 relative z-10 block"
+              onMouseDown={onMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={onMouseUp}
+              onContextMenu={handleCanvasRightClick}
+            />
+          </div>
         </div>
         
         {/* Enhanced Tooltip */}
         {tooltip && (
           <div 
-            className="fixed z-50 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 font-medium"
+            className="fixed z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-2xl pointer-events-none transform -translate-x-1/2 font-bold border-2 border-gray-700"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
             {tooltip.text}
@@ -645,69 +662,69 @@ export const RoomCanvas = ({
       </div>
       
       {/* Enhanced Canvas Footer */}
-      <div className="mt-4 bg-white rounded-lg p-4 shadow-sm border">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div className="mt-6 bg-white rounded-xl p-6 shadow-lg border-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
           <div className="text-center">
-            <div className="font-medium text-gray-700 mb-1">🎯 Selection</div>
-            <div className="text-gray-600">Click to select • Ctrl+Click for multi-select</div>
+            <div className="font-bold text-gray-700 mb-2 text-base">🎯 Selection Controls</div>
+            <div className="text-gray-600">Click to select • Ctrl+Click for multi-select • Right-click for menu</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-gray-700 mb-1">🛏️ Bunk Beds</div>
-            <div className="text-gray-600">🛌⬆️ Top • 🛌↔️ Middle • 🛌⬇️ Bottom levels</div>
+            <div className="font-bold text-gray-700 mb-2 text-base">🏠 Bunk Bed Levels</div>
+            <div className="text-gray-600">🛌 Top/Middle/Bottom levels • Clear assignment status display</div>
           </div>
           <div className="text-center">
-            <div className="font-medium text-gray-700 mb-1">📊 Stats</div>
+            <div className="font-bold text-gray-700 mb-2 text-base">📊 Room Statistics</div>
             <div className="text-gray-600">
-              <span className="text-blue-600">🔌 {elements.filter(e => e.type === 'charging-port').length}</span> • 
-              <span className="text-red-600 ml-2">🧯 {elements.filter(e => e.type === 'fire-extinguisher').length}</span> • 
-              <span className="text-green-600 ml-2">🛏️ {elements.filter(e => e.type.includes('bed')).length}</span>
+              <span className="text-blue-600 font-semibold">🔌 {elements.filter(e => e.type === 'charging-port').length}</span> • 
+              <span className="text-red-600 font-semibold ml-2">🧯 {elements.filter(e => e.type === 'fire-extinguisher').length}</span> • 
+              <span className="text-green-600 font-semibold ml-2">🛏️ {elements.filter(e => e.type.includes('bed')).length}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Context Menu */}
+      {/* Enhanced Context Menu */}
       {contextMenu && (
         <div 
-          className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2 min-w-[180px]"
+          className="fixed bg-white border-2 border-gray-300 rounded-xl shadow-2xl z-50 py-3 min-w-[200px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-6 py-3 h-auto hover:bg-blue-50"
             onClick={() => {
               onElementRotate(contextMenu.elementId);
               setContextMenu(null);
             }}
           >
-            <RotateCw className="h-4 w-4 mr-3" />
+            <RotateCw className="h-5 w-5 mr-3" />
             Rotate 90°
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-6 py-3 h-auto hover:bg-green-50"
             onClick={() => {
               onElementDuplicate(contextMenu.elementId);
               setContextMenu(null);
             }}
           >
-            <Copy className="h-4 w-4 mr-3" />
-            Duplicate
+            <Copy className="h-5 w-5 mr-3" />
+            Duplicate Element
           </Button>
-          <div className="border-t border-gray-100 my-1"></div>
+          <div className="border-t border-gray-200 my-2"></div>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start px-4 py-2 h-auto text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="w-full justify-start px-6 py-3 h-auto text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => {
               onElementDelete(contextMenu.elementId);
               setContextMenu(null);
             }}
           >
-            <Trash2 className="h-4 w-4 mr-3" />
-            Delete
+            <Trash2 className="h-5 w-5 mr-3" />
+            Delete Element
           </Button>
         </div>
       )}
