@@ -1,11 +1,10 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Move, RotateCw, Copy, Trash2, Ruler, Grid3X3 } from "lucide-react";
 import { elementTypes } from "./ElementLibraryPanel";
 
-// Emoji mapping function for room elements
+// Enhanced emoji mapping function for room elements
 const getElementEmoji = (elementType: string, properties?: any): string => {
   const emojiMap: Record<string, string> = {
     'single-bed': '🛏️',
@@ -45,6 +44,51 @@ const getElementEmoji = (elementType: string, properties?: any): string => {
   }
 
   return emojiMap[elementType] || '📦';
+};
+
+// Get element display name
+const getElementDisplayName = (elementType: string, properties?: any): string => {
+  const nameMap: Record<string, string> = {
+    'single-bed': 'Single Bed',
+    'bunk-bed': 'Bunk Bed',
+    'double-bed': 'Double Bed',
+    'kids-bed': 'Kids Bed',
+    'study-table': 'Study Table',
+    'study-chair': 'Study Chair',
+    'chair': 'Chair',
+    'study-lamp': 'Lamp',
+    'monitor': 'Monitor',
+    'charging-port': 'Charger',
+    'headphone-hanger': 'Headphones',
+    'bookshelf': 'Bookshelf',
+    'door': 'Door',
+    'window': 'Window',
+    'wall-partition': 'Wall',
+    'room-label': 'Label',
+    'toilet': 'Toilet',
+    'shower': 'Shower',
+    'wash-basin': 'Basin',
+    'dustbin': 'Dustbin',
+    'luggage-rack': 'Luggage',
+    'fire-extinguisher': 'Fire Ext.',
+    'locker': 'Locker',
+    'laundry-basket': 'Laundry',
+    'fan': 'Fan',
+    'ac-unit': 'AC',
+    'call-button': 'Call Button'
+  };
+
+  // Special handling for bunk beds with bed IDs
+  if (elementType === 'bunk-bed' && properties?.bedId) {
+    return properties.bedId;
+  }
+
+  // For beds with bed IDs
+  if (elementType.includes('bed') && properties?.bedId) {
+    return properties.bedId;
+  }
+
+  return nameMap[elementType] || elementType.replace('-', ' ');
 };
 
 interface BunkLevel {
@@ -229,121 +273,126 @@ export const RoomCanvas = ({
         ctx.shadowOffsetY = 3;
       }
       
-      // No background rectangle - elements are emoji-only
-      
-      // No borders - only selection indicators
-      
-      // Clear shadows
+      // Clear shadows for element rendering
       ctx.shadowColor = 'transparent';
       
       // Special handling for bunk beds
       if (element.type === 'bunk-bed') {
-        // Draw bunk bed levels
+        // Draw bunk bed levels with enhanced visibility
         const levels = element.properties?.levels || [];
         const levelHeight = height / levels.length;
         
         levels.forEach((level, index) => {
           const levelY = -height/2 + (index * levelHeight);
           
-          // Draw level separator
+          // Draw level separator with better visibility
           if (index > 0) {
             ctx.strokeStyle = '#1F2937';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(-width/2, levelY);
             ctx.lineTo(width/2, levelY);
             ctx.stroke();
           }
           
-        // Draw level indicator with enhanced emojis
-        const levelIcon = level.position === 'top' ? '🛌⬆️' : 
-                         level.position === 'middle' ? '🛌↕️' : '🛌⬇️';
-        
-        ctx.font = `${Math.min(width, levelHeight) * 0.3}px Arial`;
-        ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(levelIcon, -width/2 + 5, levelY + levelHeight/2);
+          // Draw level indicator with enhanced emojis
+          const levelIcon = level.position === 'top' ? '🛌⬆️' : 
+                           level.position === 'middle' ? '🛌↔️' : '🛌⬇️';
           
-          // Draw assignment status
+          ctx.font = `${Math.min(width, levelHeight) * 0.4}px Arial`;
+          ctx.fillStyle = level.assignedTo ? '#10B981' : '#6B7280';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(levelIcon, -width/2 + 8, levelY + levelHeight/2);
+          
+          // Draw assignment status with better visibility
           if (level.assignedTo) {
-            ctx.font = `bold ${Math.min(width, levelHeight) * 0.12}px Arial`;
+            ctx.font = `bold ${Math.min(width, levelHeight) * 0.14}px Arial`;
             ctx.fillStyle = '#FFFFFF';
-            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+            ctx.lineWidth = 2;
             const assignmentText = level.assignedTo.substring(0, 8);
-            ctx.strokeText(assignmentText, -width/2 + 30, levelY + levelHeight/2);
-            ctx.fillText(assignmentText, -width/2 + 30, levelY + levelHeight/2);
+            ctx.strokeText(assignmentText, -width/2 + 35, levelY + levelHeight/2);
+            ctx.fillText(assignmentText, -width/2 + 35, levelY + levelHeight/2);
           } else {
-            ctx.font = `${Math.min(width, levelHeight) * 0.1}px Arial`;
+            ctx.font = `${Math.min(width, levelHeight) * 0.12}px Arial`;
             ctx.fillStyle = '#9CA3AF';
-            ctx.fillText('Unassigned', -width/2 + 30, levelY + levelHeight/2);
+            ctx.fillText('Unassigned', -width/2 + 35, levelY + levelHeight/2);
           }
         });
         
-        // Draw main bed ID
+        // Draw main bed ID with enhanced visibility
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${Math.min(width, height) * 0.12}px Arial`;
+        ctx.font = `bold ${Math.min(width, height) * 0.14}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = 3;
         
         const bedId = element.properties?.bedId || 'BUNK';
-        ctx.strokeText(bedId, 0, -height/2 + 5);
-        ctx.fillText(bedId, 0, -height/2 + 5);
+        ctx.strokeText(bedId, 0, -height/2 + 8);
+        ctx.fillText(bedId, 0, -height/2 + 8);
       } else {
-        // Clean emoji-only display
+        // Enhanced emoji display with better sizing and positioning
         const emoji = getElementEmoji(element.type, element.properties);
+        const elementName = getElementDisplayName(element.type, element.properties);
         
-        // Responsive emoji sizing based on element size
-        const emojiSize = Math.min(Math.max(width * 0.6, 24), 48);
+        // Responsive emoji sizing with better visibility
+        const emojiSize = Math.min(Math.max(width * 0.5, 28), 52);
         
         ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Draw emoji with subtle shadow for depth
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
-        ctx.shadowBlur = 2;
+        // Draw emoji with enhanced shadow for better visibility
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 3;
         ctx.shadowOffsetX = 1;
         ctx.shadowOffsetY = 1;
         
-        ctx.fillText(emoji, 0, 0);
+        // Position emoji slightly above center to make room for text
+        ctx.fillText(emoji, 0, -height/8);
         ctx.shadowColor = 'transparent';
         
-        // Optional: Draw element ID for debugging (small text below emoji)
-        if (element.properties?.bedId && element.type.includes('bed')) {
-          ctx.fillStyle = '#6B7280';
-          ctx.font = `${Math.max(emojiSize * 0.2, 8)}px Arial`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillText(element.properties.bedId, 0, emojiSize/3);
+        // Draw element name below emoji with enhanced visibility
+        ctx.fillStyle = '#374151';
+        ctx.font = `bold ${Math.max(width * 0.12, 10)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3;
+        
+        // Truncate long names to fit
+        let displayName = elementName;
+        if (displayName.length > 10) {
+          displayName = displayName.substring(0, 8) + '..';
         }
+        
+        ctx.strokeText(displayName, 0, height/3);
+        ctx.fillText(displayName, 0, height/3);
       }
       
-      // Clean selection indicators around emoji
+      // Enhanced selection indicators with better visibility
       if (isSelected && !isLocked) {
-        const handleSize = 8;
-        const selectionRadius = Math.min(width, height) / 2 + 15;
+        const handleSize = 10;
         
-        // Selection border around element bounds
+        // Selection border around element bounds with enhanced visibility
         ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(-width/2, -height/2, width, height);
+        ctx.lineWidth = 4;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(-width/2 - 4, -height/2 - 4, width + 8, height + 8);
         ctx.setLineDash([]);
         
-        // Corner handles positioned at element corners
+        // Corner handles positioned at element corners with better visibility
         ctx.fillStyle = '#3B82F6';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         
         const corners = [
-          [-width/2, -height/2],
-          [width/2, -height/2],
-          [-width/2, height/2],
-          [width/2, height/2]
+          [-width/2 - 4, -height/2 - 4],
+          [width/2 + 4, -height/2 - 4],
+          [-width/2 - 4, height/2 + 4],
+          [width/2 + 4, height/2 + 4]
         ];
         
         corners.forEach(([hx, hy]) => {
@@ -351,51 +400,52 @@ export const RoomCanvas = ({
           ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
         });
         
-        // Rotation handle above element
+        // Rotation handle above element with enhanced visibility
         ctx.fillStyle = '#10B981';
         ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(0, -height/2 - 20, 6, 0, 2 * Math.PI);
+        ctx.arc(0, -height/2 - 25, 8, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         
         // Connection line to rotation handle
         ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 3;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.lineTo(0, -height/2 - 14);
+        ctx.moveTo(0, -height/2 - 4);
+        ctx.lineTo(0, -height/2 - 17);
         ctx.stroke();
         ctx.setLineDash([]);
       }
       
-      // Draw lock indicator
+      // Draw lock indicator with enhanced visibility
       if (isLocked) {
         ctx.fillStyle = '#EF4444';
-        ctx.font = 'bold 16px Arial';
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
-        ctx.strokeText('🔒', width/2 - 15, -height/2 + 15);
-        ctx.fillText('🔒', width/2 - 15, -height/2 + 15);
-      }
-      
-      // Draw collision warning with animation
-      if (hasCollision) {
-        ctx.fillStyle = '#DC2626';
         ctx.font = 'bold 18px Arial';
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 3;
-        ctx.strokeText('⚠', 0, -height/2 - 20);
-        ctx.fillText('⚠', 0, -height/2 - 20);
+        ctx.strokeText('🔒', width/2 - 12, -height/2 + 18);
+        ctx.fillText('🔒', width/2 - 12, -height/2 + 18);
       }
       
-      // Subtle hover effect around element bounds
+      // Draw collision warning with enhanced animation and visibility
+      if (hasCollision) {
+        ctx.fillStyle = '#DC2626';
+        ctx.font = 'bold 20px Arial';
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 4;
+        ctx.strokeText('⚠️', 0, -height/2 - 25);
+        ctx.fillText('⚠️', 0, -height/2 - 25);
+      }
+      
+      // Enhanced hover effect around element bounds
       if (isHovered && !isSelected) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
-        ctx.strokeRect(-width/2, -height/2, width, height);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(-width/2 - 2, -height/2 - 2, width + 4, height + 4);
         ctx.setLineDash([]);
       }
       
@@ -453,13 +503,13 @@ export const RoomCanvas = ({
     
     setHoveredElement(hoveredEl?.id || null);
     
-    // Show tooltip for hovered element
+    // Show enhanced tooltip for hovered element
     if (hoveredEl) {
-      const elementTypeData = elementTypes.find(t => t.type === hoveredEl.type);
+      const elementName = getElementDisplayName(hoveredEl.type, hoveredEl.properties);
       setTooltip({
         x: e.clientX,
-        y: e.clientY - 40,
-        text: elementTypeData?.label || hoveredEl.type
+        y: e.clientY - 50,
+        text: elementName
       });
     } else {
       setTooltip(null);
@@ -582,10 +632,10 @@ export const RoomCanvas = ({
           />
         </div>
         
-        {/* Tooltip */}
+        {/* Enhanced Tooltip */}
         {tooltip && (
           <div 
-            className="fixed z-50 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2"
+            className="fixed z-50 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 font-medium"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
             {tooltip.text}
@@ -603,7 +653,7 @@ export const RoomCanvas = ({
           </div>
           <div className="text-center">
             <div className="font-medium text-gray-700 mb-1">🛏️ Bunk Beds</div>
-            <div className="text-gray-600">🛏️⬆️ Top • 🛏️↕️ Middle • 🛏️⬇️ Bottom levels</div>
+            <div className="text-gray-600">🛌⬆️ Top • 🛌↔️ Middle • 🛌⬇️ Bottom levels</div>
           </div>
           <div className="text-center">
             <div className="font-medium text-gray-700 mb-1">📊 Stats</div>
