@@ -76,17 +76,25 @@ const getElementDisplayName = (elementType: string, properties?: any): string =>
     'call-button': 'Call Button'
   };
 
-  // Special handling for bunk beds with bed IDs
-  if (elementType === 'bunk-bed' && properties?.bedId) {
-    return properties.bedId;
-  }
-
-  // For beds with bed IDs
-  if (elementType.includes('bed') && properties?.bedId) {
-    return properties.bedId;
-  }
-
   return nameMap[elementType] || elementType.replace('-', ' ');
+};
+
+// Get formatted element name with ID
+const getFormattedElementName = (elementType: string, properties?: any): string => {
+  const baseName = getElementDisplayName(elementType, properties);
+  
+  // For bunk beds, show the main bed ID
+  if (elementType === 'bunk-bed' && properties?.bedId) {
+    return `${properties.bedId} (${baseName})`;
+  }
+  
+  // For regular beds with bed IDs
+  if (elementType.includes('bed') && properties?.bedId) {
+    return `${properties.bedId} (${baseName})`;
+  }
+  
+  // For other elements, use a simple counter approach
+  return baseName;
 };
 
 interface BunkLevel {
@@ -179,8 +187,8 @@ export const RoomCanvas = ({
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{x: number, y: number, text: string} | null>(null);
 
-  // Increased scale for better visibility
-  const enhancedScale = Math.max(scale * 1.5, 45);
+  // Enhanced scale for better visibility
+  const enhancedScale = Math.max(scale * 2, 60);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -201,7 +209,7 @@ export const RoomCanvas = ({
     
     // Enhanced grid with better visibility
     if (showGrid) {
-      ctx.strokeStyle = '#00000015';
+      ctx.strokeStyle = '#00000010';
       ctx.lineWidth = 1;
       const gridSize = 0.5 * enhancedScale;
       const majorGridSize = 1 * enhancedScale;
@@ -222,7 +230,7 @@ export const RoomCanvas = ({
       }
       
       // Major grid lines
-      ctx.strokeStyle = '#00000025';
+      ctx.strokeStyle = '#00000020';
       ctx.lineWidth = 2;
       
       for (let x = 0; x <= dimensions.length * enhancedScale; x += majorGridSize) {
@@ -269,12 +277,19 @@ export const RoomCanvas = ({
       const hasCollision = checkCollisions(element, element.id);
       const isLocked = element.properties?.isLocked;
       
+      // Enhanced background for element
+      ctx.fillStyle = isSelected ? '#E0F2FE' : isHovered ? '#F0F9FF' : '#FFFFFF';
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-width/2, -height/2, width, height);
+      ctx.strokeRect(-width/2, -height/2, width, height);
+      
       // Enhanced shadow for depth
       if (isSelected || isHovered) {
         ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 12;
-        ctx.shadowOffsetX = 4;
-        ctx.shadowOffsetY = 4;
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
       }
       
       // Clear shadows for element rendering
@@ -288,126 +303,120 @@ export const RoomCanvas = ({
         
         // Draw bunk bed frame
         ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3;
         ctx.strokeRect(-width/2, -height/2, width, height);
         
         levels.forEach((level, index) => {
           const levelY = -height/2 + (index * levelHeight);
           
-          // Draw level separator with enhanced visibility
+          // Draw level separator
           if (index > 0) {
             ctx.strokeStyle = '#654321';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(-width/2, levelY);
             ctx.lineTo(width/2, levelY);
             ctx.stroke();
           }
           
-          // Draw level with enhanced emojis and better positioning
-          const levelIcon = level.position === 'top' ? '🛌' : 
-                           level.position === 'middle' ? '🛌' : '🛌';
-          
-          ctx.font = `${Math.min(width, levelHeight) * 0.5}px Arial`;
+          // Draw level emoji
+          const levelIcon = '🛌';
+          ctx.font = `${Math.min(width, levelHeight) * 0.4}px Arial`;
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(levelIcon, -width/2 + 8, levelY + levelHeight/2);
           
-          // Enhanced assignment status display
+          // Draw assignment status
           if (level.assignedTo) {
-            ctx.font = `bold ${Math.max(levelHeight * 0.15, 12)}px Arial`;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-            ctx.lineWidth = 3;
-            const assignmentText = level.assignedTo.substring(0, 10);
-            ctx.strokeText(assignmentText, -width/2 + 40, levelY + levelHeight/2);
-            ctx.fillText(assignmentText, -width/2 + 40, levelY + levelHeight/2);
+            ctx.font = `bold ${Math.max(levelHeight * 0.12, 10)}px Arial`;
+            ctx.fillStyle = '#1F2937';
+            const assignmentText = level.assignedTo.substring(0, 8);
+            ctx.fillText(assignmentText, -width/2 + 35, levelY + levelHeight/2);
           } else {
-            ctx.font = `${Math.max(levelHeight * 0.12, 10)}px Arial`;
+            ctx.font = `${Math.max(levelHeight * 0.10, 8)}px Arial`;
             ctx.fillStyle = '#9CA3AF';
-            ctx.fillText('Available', -width/2 + 40, levelY + levelHeight/2);
+            ctx.fillText('Available', -width/2 + 35, levelY + levelHeight/2);
           }
         });
         
-        // Draw main bed ID with enhanced visibility
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${Math.max(height * 0.12, 14)}px Arial`;
+        // Draw main emoji in center
+        const mainEmoji = getElementEmoji(element.type, element.properties);
+        const emojiSize = Math.min(Math.max(width * 0.3, 24), 40);
+        ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-        ctx.lineWidth = 4;
-        
-        const bedId = element.properties?.bedId || 'BUNK';
-        ctx.strokeText(bedId, 0, -height/2 + 6);
-        ctx.fillText(bedId, 0, -height/2 + 6);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(mainEmoji, 0, -height/6);
       } else {
         // Enhanced emoji display for regular elements
         const emoji = getElementEmoji(element.type, element.properties);
-        const elementName = getElementDisplayName(element.type, element.properties);
         
-        // Significantly larger and more visible emoji
-        const emojiSize = Math.min(Math.max(width * 0.6, 36), 64);
+        // Much larger and more visible emoji
+        const emojiSize = Math.min(Math.max(width * 0.5, 32), 56);
         
         ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Enhanced emoji shadow for better visibility
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        
-        // Position emoji in upper part of element
+        // Position emoji in upper center of element
         ctx.fillText(emoji, 0, -height/6);
-        ctx.shadowColor = 'transparent';
-        
-        // Enhanced element name display below emoji
-        ctx.fillStyle = '#1F2937';
-        ctx.font = `bold ${Math.max(width * 0.14, 12)}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 4;
-        
-        // Truncate long names intelligently
-        let displayName = elementName;
-        if (displayName.length > 12) {
-          const words = displayName.split(' ');
-          if (words.length > 1) {
-            displayName = words.map(word => word.substring(0, 4)).join(' ');
-          } else {
-            displayName = displayName.substring(0, 10) + '..';
-          }
-        }
-        
-        // Enhanced text rendering with better positioning
-        const textY = height/4;
-        ctx.strokeText(displayName, 0, textY);
-        ctx.fillText(displayName, 0, textY);
       }
       
-      // Enhanced selection indicators with better positioning
+      // Enhanced element name display below emoji
+      const formattedName = getFormattedElementName(element.type, element.properties);
+      ctx.fillStyle = '#1F2937';
+      ctx.font = `bold ${Math.max(width * 0.08, 10)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 3;
+      
+      // Split long names into multiple lines
+      const maxLineLength = Math.floor(width / 8);
+      const words = formattedName.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+      
+      words.forEach(word => {
+        if ((currentLine + word).length <= maxLineLength) {
+          currentLine += (currentLine ? ' ' : '') + word;
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+      
+      // Draw each line
+      const lineHeight = Math.max(width * 0.09, 11);
+      const startY = height/4 - ((lines.length - 1) * lineHeight) / 2;
+      
+      lines.forEach((line, index) => {
+        const textY = startY + (index * lineHeight);
+        ctx.strokeText(line, 0, textY);
+        ctx.fillText(line, 0, textY);
+      });
+      
+      // Enhanced selection indicators
       if (isSelected && !isLocked) {
-        const handleSize = 12;
+        const handleSize = 10;
         
-        // Enhanced selection border with better visibility
+        // Enhanced selection border
         ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 5;
-        ctx.setLineDash([8, 8]);
-        ctx.strokeRect(-width/2 - 6, -height/2 - 6, width + 12, height + 12);
+        ctx.lineWidth = 4;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(-width/2 - 4, -height/2 - 4, width + 8, height + 8);
         ctx.setLineDash([]);
         
-        // Enhanced corner handles with better visibility
+        // Enhanced corner handles
         ctx.fillStyle = '#3B82F6';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3;
         
         const corners = [
-          [-width/2 - 6, -height/2 - 6],
-          [width/2 + 6, -height/2 - 6],
-          [-width/2 - 6, height/2 + 6],
-          [width/2 + 6, height/2 + 6]
+          [-width/2 - 4, -height/2 - 4],
+          [width/2 + 4, -height/2 - 4],
+          [-width/2 - 4, height/2 + 4],
+          [width/2 + 4, height/2 + 4]
         ];
         
         corners.forEach(([hx, hy]) => {
@@ -415,22 +424,22 @@ export const RoomCanvas = ({
           ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
         });
         
-        // Enhanced rotation handle with better visibility
+        // Enhanced rotation handle
         ctx.fillStyle = '#10B981';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(0, -height/2 - 30, 10, 0, 2 * Math.PI);
+        ctx.arc(0, -height/2 - 25, 8, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         
-        // Enhanced connection line to rotation handle
+        // Connection line to rotation handle
         ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 3;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.moveTo(0, -height/2 - 6);
-        ctx.lineTo(0, -height/2 - 20);
+        ctx.moveTo(0, -height/2 - 4);
+        ctx.lineTo(0, -height/2 - 17);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -438,29 +447,29 @@ export const RoomCanvas = ({
       // Enhanced lock indicator
       if (isLocked) {
         ctx.fillStyle = '#EF4444';
-        ctx.font = 'bold 22px Arial';
+        ctx.font = 'bold 18px Arial';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 4;
-        ctx.strokeText('🔒', width/2 - 15, -height/2 + 22);
-        ctx.fillText('🔒', width/2 - 15, -height/2 + 22);
+        ctx.lineWidth = 3;
+        ctx.strokeText('🔒', width/2 - 12, -height/2 + 18);
+        ctx.fillText('🔒', width/2 - 12, -height/2 + 18);
       }
       
-      // Enhanced collision warning with animation effect
+      // Enhanced collision warning
       if (hasCollision) {
         ctx.fillStyle = '#DC2626';
-        ctx.font = 'bold 24px Arial';
+        ctx.font = 'bold 20px Arial';
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 5;
-        ctx.strokeText('⚠️', 0, -height/2 - 30);
-        ctx.fillText('⚠️', 0, -height/2 - 30);
+        ctx.lineWidth = 4;
+        ctx.strokeText('⚠️', 0, -height/2 - 25);
+        ctx.fillText('⚠️', 0, -height/2 - 25);
       }
       
       // Enhanced hover effect
       if (isHovered && !isSelected) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.9)';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([6, 6]);
-        ctx.strokeRect(-width/2 - 3, -height/2 - 3, width + 6, height + 6);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(-width/2 - 2, -height/2 - 2, width + 4, height + 4);
         ctx.setLineDash([]);
       }
       
@@ -521,7 +530,7 @@ export const RoomCanvas = ({
     
     // Enhanced tooltip for hovered element
     if (hoveredEl) {
-      const elementName = getElementDisplayName(hoveredEl.type, hoveredEl.properties);
+      const elementName = getFormattedElementName(hoveredEl.type, hoveredEl.properties);
       setTooltip({
         x: e.clientX,
         y: e.clientY - 60,
@@ -588,11 +597,6 @@ export const RoomCanvas = ({
               ✅ {selectedElements.length} selected
             </Badge>
           )}
-          {elements.filter(e => e.type === 'bunk-bed').length > 0 && (
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 border-2">
-              🏠 {elements.filter(e => e.type === 'bunk-bed').length} Bunk Beds
-            </Badge>
-          )}
         </div>
         
         <div className="flex gap-3">
@@ -631,11 +635,11 @@ export const RoomCanvas = ({
         </div>
       )}
 
-      {/* Enhanced Canvas Container with better sizing */}
+      {/* Enhanced Canvas Container with larger sizing */}
       <div className="flex-1 flex items-center justify-center relative p-4">
         <div className="border-4 border-gray-300 rounded-2xl shadow-2xl bg-white p-8 relative overflow-auto max-w-full max-h-full">
           <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-transparent pointer-events-none rounded-2xl"></div>
-          <div className="overflow-auto max-h-[70vh] max-w-full">
+          <div className="overflow-auto max-h-[75vh] max-w-full">
             <canvas
               ref={canvasRef}
               width={dimensions.length * enhancedScale}
