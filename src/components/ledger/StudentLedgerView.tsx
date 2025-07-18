@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useAppContext } from "@/contexts/AppContext";
+import { useLocation } from "react-router-dom";
 
 interface LedgerEntry {
   id: string;
@@ -18,67 +20,102 @@ interface LedgerEntry {
 }
 
 export const StudentLedgerView = () => {
+  const { state } = useAppContext();
+  const location = useLocation();
   const [selectedStudent, setSelectedStudent] = useState("");
 
-  const students = [
-    { id: "1", name: "Ram Sharma", room: "A-101" },
-    { id: "2", name: "Sita Poudel", room: "B-205" },
-    { id: "3", name: "Hari Thapa", room: "C-301" }
-  ];
-
-  // Mock ledger data for Ram Sharma
-  const ledgerEntries: LedgerEntry[] = [
-    {
-      id: "1",
-      date: "2024-01-15",
-      type: "advance",
-      description: "Initial advance payment",
-      debit: 0,
-      credit: 25000,
-      balance: -25000,
-      reference: "ADV-001"
-    },
-    {
-      id: "2",
-      date: "2024-02-01",
-      type: "invoice",
-      description: "February 2024 - Monthly charges",
-      debit: 21500,
-      credit: 0,
-      balance: -3500,
-      reference: "INV-2024-001"
-    },
-    {
-      id: "3",
-      date: "2024-03-01",
-      type: "invoice",
-      description: "March 2024 - Monthly charges",
-      debit: 21500,
-      credit: 0,
-      balance: 18000,
-      reference: "INV-2024-002"
-    },
-    {
-      id: "4",
-      date: "2024-03-05",
-      type: "payment",
-      description: "Cash payment",
-      debit: 0,
-      credit: 10000,
-      balance: 8000,
-      reference: "PAY-001"
-    },
-    {
-      id: "5",
-      date: "2024-03-10",
-      type: "discount",
-      description: "Good behavior discount",
-      debit: 0,
-      credit: 1000,
-      balance: 7000,
-      reference: "DISC-001"
+  // Handle URL parameters to auto-select student
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const studentParam = params.get('student');
+    
+    if (studentParam && state.students.find(s => s.id === studentParam)) {
+      setSelectedStudent(studentParam);
     }
-  ];
+  }, [location.search, state.students]);
+
+  const students = state.students;
+
+  // Get real ledger data for selected student
+  const selectedStudentData = selectedStudent ? state.students.find(s => s.id === selectedStudent) : null;
+  
+  // Generate dynamic ledger entries based on student data
+  const generateLedgerEntries = (student: any): LedgerEntry[] => {
+    if (!student) return [];
+    
+    const entries: LedgerEntry[] = [];
+    let runningBalance = 0;
+    
+    // Enrollment entry
+    entries.push({
+      id: `${student.id}-enrollment`,
+      date: student.enrollmentDate,
+      type: "advance",
+      description: "Student enrollment - Welcome to hostel",
+      debit: 0,
+      credit: 0,
+      balance: 0,
+      reference: `ENR-${student.id}`
+    });
+    
+    // Generate monthly invoices (last 3 months)
+    const monthlyFee = student.baseMonthlyFee + student.laundryFee + student.foodFee;
+    const months = ['January', 'February', 'March'];
+    
+    months.forEach((month, index) => {
+      const invoiceAmount = monthlyFee;
+      runningBalance += invoiceAmount;
+      
+      entries.push({
+        id: `${student.id}-invoice-${index}`,
+        date: `2024-0${index + 1}-01`,
+        type: "invoice",
+        description: `${month} 2024 - Monthly charges (Base: ₨${student.baseMonthlyFee}, Laundry: ₨${student.laundryFee}, Food: ₨${student.foodFee})`,
+        debit: invoiceAmount,
+        credit: 0,
+        balance: runningBalance,
+        reference: `INV-2024-${String(index + 1).padStart(3, '0')}`
+      });
+    });
+    
+    // Add payments to match current balance
+    const totalCharges = runningBalance;
+    const currentDue = student.currentBalance || 0;
+    const totalPaid = totalCharges - currentDue;
+    
+    if (totalPaid > 0) {
+      runningBalance -= totalPaid;
+      entries.push({
+        id: `${student.id}-payment`,
+        date: "2024-03-15",
+        type: "payment",
+        description: "Payment received - Multiple transactions",
+        debit: 0,
+        credit: totalPaid,
+        balance: runningBalance,
+        reference: `PAY-${student.id}`
+      });
+    }
+    
+    // Add advance if student has advance balance
+    if (student.advanceBalance > 0) {
+      runningBalance -= student.advanceBalance;
+      entries.push({
+        id: `${student.id}-advance`,
+        date: "2024-01-10",
+        type: "advance",
+        description: "Advance payment received",
+        debit: 0,
+        credit: student.advanceBalance,
+        balance: runningBalance,
+        reference: `ADV-${student.id}`
+      });
+    }
+    
+    return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+  
+  const ledgerEntries = generateLedgerEntries(selectedStudentData);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -122,7 +159,14 @@ export const StudentLedgerView = () => {
       {/* Student Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>👤 Select Student</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>👤 Select Student</span>
+            {selectedStudent && (
+              <Badge variant="outline" className="text-green-600">
+                Auto-selected from navigation
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedStudent} onValueChange={setSelectedStudent}>
@@ -132,7 +176,7 @@ export const StudentLedgerView = () => {
             <SelectContent>
               {students.map((student) => (
                 <SelectItem key={student.id} value={student.id}>
-                  {student.name} - Room {student.room}
+                  {student.name} - Room {student.roomNumber}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -140,8 +184,47 @@ export const StudentLedgerView = () => {
         </CardContent>
       </Card>
 
-      {selectedStudent && (
+      {selectedStudent && selectedStudentData && (
         <>
+          {/* Student Info Header */}
+          <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-2xl">👤</span>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">{selectedStudentData.name}</h3>
+                    <p className="text-gray-600">Room {selectedStudentData.roomNumber} • {selectedStudentData.course}</p>
+                    <p className="text-sm text-gray-500">Enrolled: {new Date(selectedStudentData.enrollmentDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+                    ← Back to Students
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const params = new URLSearchParams(location.search);
+                    params.set('section', 'payments');
+                    params.set('student', selectedStudent);
+                    window.location.href = `/ledger?${params.toString()}`;
+                  }}>
+                    💰 Record Payment
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const params = new URLSearchParams(location.search);
+                    params.set('section', 'invoices');
+                    params.set('student', selectedStudent);
+                    window.location.href = `/ledger?${params.toString()}`;
+                  }}>
+                    🧾 Generate Invoice
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Student Summary */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>

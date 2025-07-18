@@ -21,6 +21,9 @@ interface Student {
   status: 'Active' | 'Inactive';
   currentBalance: number;
   advanceBalance: number;
+  emergencyContact: string;
+  course: string;
+  institution: string;
 }
 
 interface BookingRequest {

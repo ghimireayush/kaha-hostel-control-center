@@ -72,6 +72,47 @@ export const roomService = {
     });
   },
 
+  // Vacate room (remove student from room)
+  async vacateRoom(roomNumber, studentId) {
+    return new Promise((resolve) => {
+      const room = rooms.find(r => r.roomNumber === roomNumber);
+      if (room && room.occupants.includes(studentId)) {
+        // Remove student from occupants
+        room.occupants = room.occupants.filter(id => id !== studentId);
+        // Decrease occupancy
+        room.occupancy = Math.max(0, room.occupancy - 1);
+        // Increase available beds
+        room.availableBeds = room.bedCount - room.occupancy;
+        // Update last cleaned date
+        room.lastCleaned = new Date().toISOString().split('T')[0];
+        
+        console.log(`Room ${roomNumber} vacated by student ${studentId}. Available beds: ${room.availableBeds}`);
+        setTimeout(() => resolve(room), 100);
+      } else {
+        console.log(`Student ${studentId} not found in room ${roomNumber}`);
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
+  // Assign room to student
+  async assignRoom(roomNumber, studentId) {
+    return new Promise((resolve) => {
+      const room = rooms.find(r => r.roomNumber === roomNumber);
+      if (room && room.availableBeds > 0) {
+        // Add student to occupants if not already there
+        if (!room.occupants.includes(studentId)) {
+          room.occupants.push(studentId);
+          room.occupancy = room.occupants.length;
+          room.availableBeds = room.bedCount - room.occupancy;
+        }
+        setTimeout(() => resolve(room), 100);
+      } else {
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
   // Get room statistics
   async getRoomStats() {
     return new Promise((resolve) => {

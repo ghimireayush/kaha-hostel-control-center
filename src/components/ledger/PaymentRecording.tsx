@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "react-router-dom";
+import { useAppContext } from "@/contexts/AppContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: string;
@@ -21,11 +24,29 @@ interface Payment {
 }
 
 export const PaymentRecording = () => {
+  const { state } = useAppContext();
+  const location = useLocation();
+  const { toast } = useToast();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMode, setPaymentMode] = useState("");
   const [referenceId, setReferenceId] = useState("");
+
+  // Handle URL parameters to auto-select student and show payment form
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const studentParam = params.get('student');
+    
+    if (studentParam && state.students.find(s => s.id === studentParam)) {
+      setSelectedStudent(studentParam);
+      setShowPaymentForm(true);
+      toast({
+        title: "Student Pre-selected",
+        description: "Payment form opened for the selected student.",
+      });
+    }
+  }, [location.search, state.students, toast]);
 
   // Mock payment data
   const [payments] = useState<Payment[]>([
@@ -52,11 +73,14 @@ export const PaymentRecording = () => {
     }
   ]);
 
-  const students = [
-    { id: "1", name: "Ram Sharma", room: "A-101", outstandingDue: 9500 },
-    { id: "2", name: "Sita Poudel", room: "B-205", outstandingDue: 0 },
-    { id: "3", name: "Hari Thapa", room: "C-301", outstandingDue: 14000 }
-  ];
+  // Use real student data from context
+  const students = state.students.map(student => ({
+    id: student.id,
+    name: student.name,
+    room: student.roomNumber,
+    outstandingDue: student.currentBalance || 0,
+    advanceBalance: student.advanceBalance || 0
+  }));
 
   const paymentModes = [
     { value: "cash", label: "💵 Cash" },

@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Edit } from "lucide-react";
 
 interface Invoice {
   id: string;
@@ -24,6 +29,18 @@ interface Invoice {
 export const InvoiceManagement = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editFormData, setEditFormData] = useState<{
+    baseFee: number;
+    extraServices: number;
+    previousDue: number;
+    discount: number;
+    status: string;
+    dueDate: string;
+  } | null>(null);
+  const { toast } = useToast();
 
   // Mock invoice data
   const [invoices] = useState<Invoice[]>([
@@ -88,6 +105,33 @@ export const InvoiceManagement = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowViewDialog(true);
+  };
+
+  const handlePrintInvoice = (invoice: Invoice) => {
+    toast({
+      title: "Printing Invoice",
+      description: `Printing invoice ${invoice.id} for ${invoice.studentName}`,
+    });
+    // In a real app, this would trigger the print functionality
+    window.print();
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setEditFormData({
+      baseFee: invoice.baseFee,
+      extraServices: invoice.extraServices,
+      previousDue: invoice.previousDue,
+      discount: invoice.discount,
+      status: invoice.status,
+      dueDate: invoice.dueDate
+    });
+    setShowEditDialog(true);
   };
 
   return (
@@ -189,9 +233,30 @@ export const InvoiceManagement = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="outline">👁️</Button>
-                      <Button size="sm" variant="outline">🖨️</Button>
-                      <Button size="sm" variant="outline">✏️</Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewInvoice(invoice)}
+                        title="View Invoice"
+                      >
+                        👁️
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handlePrintInvoice(invoice)}
+                        title="Print Invoice"
+                      >
+                        🖨️
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditInvoice(invoice)}
+                        title="Edit Invoice"
+                      >
+                        ✏️
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -236,6 +301,176 @@ export const InvoiceManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* View Invoice Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Invoice Details - {selectedInvoice?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold">Student Information</h4>
+                  <p>Name: {selectedInvoice.studentName}</p>
+                  <p>Room: {selectedInvoice.room}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Invoice Information</h4>
+                  <p>Month: {selectedInvoice.month}</p>
+                  <p>Status: {selectedInvoice.status}</p>
+                  <p>Due Date: {new Date(selectedInvoice.dueDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Amount Breakdown</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Base Fee:</span>
+                    <span>₨{selectedInvoice.baseFee.toLocaleString()}</span>
+                  </div>
+                  {selectedInvoice.extraServices > 0 && (
+                    <div className="flex justify-between">
+                      <span>Extra Services:</span>
+                      <span>₨{selectedInvoice.extraServices.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvoice.previousDue > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>Previous Due:</span>
+                      <span>₨{selectedInvoice.previousDue.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedInvoice.discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount:</span>
+                      <span>-₨{selectedInvoice.discount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                    <span>Total Amount:</span>
+                    <span>₨{selectedInvoice.totalAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button onClick={() => handlePrintInvoice(selectedInvoice)} className="flex-1">
+                  🖨️ Print Invoice
+                </Button>
+                <Button variant="outline" onClick={() => setShowViewDialog(false)} className="flex-1">
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Invoice Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Invoice - {selectedInvoice?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && editFormData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="baseFee">Base Fee (₨)</Label>
+                  <Input
+                    id="baseFee"
+                    type="number"
+                    value={editFormData.baseFee}
+                    onChange={(e) => setEditFormData({...editFormData, baseFee: Number(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="extraServices">Extra Services (₨)</Label>
+                  <Input
+                    id="extraServices"
+                    type="number"
+                    value={editFormData.extraServices}
+                    onChange={(e) => setEditFormData({...editFormData, extraServices: Number(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="previousDue">Previous Due (₨)</Label>
+                  <Input
+                    id="previousDue"
+                    type="number"
+                    value={editFormData.previousDue}
+                    onChange={(e) => setEditFormData({...editFormData, previousDue: Number(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="discount">Discount (₨)</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    value={editFormData.discount}
+                    onChange={(e) => setEditFormData({...editFormData, discount: Number(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unpaid">❌ Unpaid</SelectItem>
+                      <SelectItem value="partially_paid">⚠️ Partially Paid</SelectItem>
+                      <SelectItem value="paid">✅ Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="dueDate">Due Date</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={editFormData.dueDate}
+                    onChange={(e) => setEditFormData({...editFormData, dueDate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total Amount:</span>
+                  <span className="text-blue-600">
+                    ₨{(editFormData.baseFee + editFormData.extraServices + editFormData.previousDue - editFormData.discount).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  const updatedInvoice = {
+                    ...selectedInvoice,
+                    ...editFormData,
+                    totalAmount: editFormData.baseFee + editFormData.extraServices + editFormData.previousDue - editFormData.discount
+                  };
+                  
+                  toast({
+                    title: "Invoice Updated",
+                    description: `Invoice ${updatedInvoice.id} has been updated successfully.`,
+                  });
+                  setShowEditDialog(false);
+                }} className="flex-1">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

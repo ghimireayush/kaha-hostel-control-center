@@ -7,6 +7,7 @@ import { InvoiceManagement } from "@/components/ledger/InvoiceManagement";
 import { PaymentRecording } from "@/components/ledger/PaymentRecording";
 import { StudentLedgerView } from "@/components/ledger/StudentLedgerView";
 import { DiscountManagement } from "@/components/ledger/DiscountManagement";
+import { BillingManagement } from "@/components/ledger/BillingManagement";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -27,8 +28,10 @@ const Ledger = () => {
         'students': 'students',
         'invoices': 'invoices',
         'payments': 'payments',
+        'ledger': 'ledger',
         'ledgers': 'ledger',
-        'discounts': 'discounts'
+        'discounts': 'discounts',
+        'billing': 'billing'
       };
       if (sectionMap[section]) {
         setActiveTab(sectionMap[section]);
@@ -50,6 +53,8 @@ const Ledger = () => {
         return <StudentLedgerView />;
       case "discounts":
         return <DiscountManagement />;
+      case "billing":
+        return <BillingManagement />;
       default:
         return <Dashboard />;
     }

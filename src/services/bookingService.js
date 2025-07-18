@@ -3,6 +3,7 @@ import bookingRequestsData from '../data/bookingRequests.json';
 import { studentService } from './studentService.js';
 import { ledgerService } from './ledgerService.js';
 import { invoiceService } from './invoiceService.js';
+import { billingService } from './billingService.js';
 
 let bookingRequests = [...bookingRequestsData];
 
@@ -89,17 +90,17 @@ export const bookingService = {
           referenceId: bookingId
         });
 
-        // Generate first invoice
-        await invoiceService.createInvoice({
-          studentId: newStudent.id,
-          month: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          baseFee: newStudent.baseMonthlyFee,
-          laundryFee: newStudent.laundryFee,
-          foodFee: newStudent.foodFee,
-          previousDue: 0,
-          discount: 0,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        // Generate prorated initial invoice using billing service
+        const initialInvoice = await billingService.generateInitialInvoice(newStudent);
+        
+        // Update student balance with initial invoice amount
+        await studentService.updateStudent(newStudent.id, {
+          currentBalance: initialInvoice.total
         });
+
+        console.log(`✅ Student approved and enrolled: ${newStudent.name}`);
+        console.log(`📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${initialInvoice.isProrated ? '(Prorated)' : '(Full Month)'}`);
+        console.log(`🏠 Room assigned: ${roomAssignment}`);
 
         setTimeout(() => resolve({
           booking: bookingRequests[requestIndex],
