@@ -65,6 +65,7 @@ interface PropertiesPanelProps {
   onRotateElement: (id: string) => void;
   onDuplicateElement: (id: string) => void;
   hasCollision: boolean;
+  isLastSelected?: boolean;
 }
 
 export const PropertiesPanel = ({ 
@@ -73,7 +74,8 @@ export const PropertiesPanel = ({
   onDeleteElement, 
   onRotateElement, 
   onDuplicateElement,
-  hasCollision 
+  hasCollision,
+  isLastSelected = false
 }: PropertiesPanelProps) => {
   if (!selectedElement) {
     return (
@@ -194,6 +196,11 @@ export const PropertiesPanel = ({
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Icon className="h-5 w-5" style={{ color: elementType?.color }} />
             Properties
+            {isLastSelected && (
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200">
+                Last Selected
+              </Badge>
+            )}
           </h3>
           <div className="text-2xl">{elementType?.emoji}</div>
         </div>

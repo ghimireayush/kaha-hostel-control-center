@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,13 +61,13 @@ interface RoomDesignerProps {
 
 export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) => {
   const [showWizard, setShowWizard] = useState(!roomData);
-  
+
   const [dimensions, setDimensions] = useState({
     length: roomData?.dimensions?.length || 10,
     width: roomData?.dimensions?.width || 8,
     height: roomData?.dimensions?.height || 3
   });
-  
+
   const [currentTheme, setCurrentTheme] = useState<RoomTheme>(
     roomData?.theme || {
       name: 'Modern',
@@ -75,22 +75,23 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
       floorColor: '#E9ECEF'
     }
   );
-  
+
   const [elements, setElements] = useState<RoomElement[]>(roomData?.elements || []);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
+  const [lastSelectedElement, setLastSelectedElement] = useState<string | null>(null);
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [duplicateMode, setDuplicateMode] = useState(false);
-  
+
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [scale, setScale] = useState(30);
   const [showGrid, setShowGrid] = useState(true);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-  
+
   const [history, setHistory] = useState<RoomElement[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  
+
   const [collisionWarnings, setCollisionWarnings] = useState<string[]>([]);
 
   const snapToGridPosition = (value: number) => {
@@ -102,39 +103,39 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   const checkCollisions = (newElement: RoomElement, excludeId?: string) => {
     return elements.some(element => {
       if (element.id === excludeId) return false;
-      
+
       const overlap = !(
         newElement.x >= element.x + element.width ||
         newElement.x + newElement.width <= element.x ||
         newElement.y >= element.y + element.height ||
         newElement.y + newElement.height <= element.y
       );
-      
+
       return overlap;
     });
   };
 
   const validateDimensions = () => {
     const warnings: string[] = [];
-    
+
     if (dimensions.length < 2 || dimensions.width < 2) {
       warnings.push("Room dimensions too small (minimum 2m x 2m)");
     }
-    
+
     if (dimensions.length > 20 || dimensions.width > 20) {
       warnings.push("Room dimensions very large (maximum recommended 20m x 20m)");
     }
-    
+
     if (dimensions.height < 2.2) {
       warnings.push("Room height too low (minimum 2.2m recommended)");
     }
-    
+
     elements.forEach(element => {
       if (element.x + element.width > dimensions.length || element.y + element.height > dimensions.width) {
         warnings.push(`${element.type} extends beyond room boundaries`);
       }
     });
-    
+
     return warnings;
   };
 
@@ -153,29 +154,46 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   };
 
   const handleElementSelect = (id: string, multiSelect = false) => {
-    if (multiSelect) {
-      setSelectedElements(prev => 
-        prev.includes(id) 
+    if (id === '') {
+      // Clear selection but keep last selected for properties panel
+      if (selectedElement) {
+        setLastSelectedElement(selectedElement);
+      }
+      setSelectedElement(null);
+      setSelectedElements([]);
+    } else if (multiSelect) {
+      setSelectedElements(prev =>
+        prev.includes(id)
           ? prev.filter(elId => elId !== id)
           : [...prev, id]
       );
+      // Update single selection to the last selected element
+      if (!selectedElements.includes(id)) {
+        setSelectedElement(id);
+        setLastSelectedElement(id);
+      }
     } else {
       setSelectedElement(id);
       setSelectedElements([id]);
+      setLastSelectedElement(id);
     }
   };
 
   const handleElementsMove = (ids: string[], deltaX: number, deltaY: number) => {
-    addToHistory();
-    setElements(elements.map(el => 
-      ids.includes(el.id) 
-        ? { 
-            ...el, 
-            x: snapToGridPosition(Math.max(0, Math.min(el.x + deltaX, dimensions.length - el.width))),
-            y: snapToGridPosition(Math.max(0, Math.min(el.y + deltaY, dimensions.width - el.height)))
-          }
+    setElements(elements.map(el =>
+      ids.includes(el.id)
+        ? {
+          ...el,
+          x: snapToGridPosition(Math.max(0, Math.min(el.x + deltaX, dimensions.length - el.width))),
+          y: snapToGridPosition(Math.max(0, Math.min(el.y + deltaY, dimensions.width - el.height)))
+        }
         : el
     ));
+  };
+
+  const handleElementsMoveComplete = () => {
+    // Add to history when drag is complete
+    addToHistory();
   };
 
   const handleElementDuplicate = (id: string) => {
@@ -209,7 +227,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   const addElement = (type: string) => {
     const elementType = elementTypes.find(t => t.type === type);
     if (!elementType) return;
-    
+
     let x = 1, y = 1;
     let attempts = 0;
     while (attempts < 100) {
@@ -222,13 +240,13 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
         rotation: 0,
         zIndex: 0
       };
-      
-      if (!checkCollisions(testElement) && 
-          x + elementType.defaultSize.width <= dimensions.length &&
-          y + elementType.defaultSize.height <= dimensions.width) {
+
+      if (!checkCollisions(testElement) &&
+        x + elementType.defaultSize.width <= dimensions.length &&
+        y + elementType.defaultSize.height <= dimensions.width) {
         break;
       }
-      
+
       x += 0.5;
       if (x + elementType.defaultSize.width > dimensions.length) {
         x = 1;
@@ -236,9 +254,9 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
       }
       attempts++;
     }
-    
+
     const bunkBedCount = elements.filter(e => e.type === 'bunk-bed').length;
-    
+
     const newElement: RoomElement = {
       id: Date.now().toString(),
       type,
@@ -285,7 +303,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
         brightness: 50
       } : {}
     };
-    
+
     addToHistory();
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
@@ -295,7 +313,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
 
   const updateElement = (id: string, updates: Partial<RoomElement>) => {
     addToHistory();
-    setElements(elements.map(el => 
+    setElements(elements.map(el =>
       el.id === id ? { ...el, ...updates } : el
     ));
   };
@@ -358,39 +376,42 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / scale;
     const y = (e.clientY - rect.top) / scale;
-    
+
     const sortedElements = [...elements].sort((a, b) => b.zIndex - a.zIndex);
-    const clickedElement = sortedElements.find(element => 
+    const clickedElement = sortedElements.find(element =>
       x >= element.x && x <= element.x + element.width &&
       y >= element.y && y <= element.y + element.height
     );
-    
+
     if (clickedElement) {
       const isMultiSelect = e.ctrlKey || e.metaKey;
       const isAltDuplicate = e.altKey && duplicateMode;
-      
+
       if (isAltDuplicate) {
         handleElementDuplicate(clickedElement.id);
       } else {
         handleElementSelect(clickedElement.id, isMultiSelect);
-        setDraggedElement(clickedElement.id);
+        // Only start dragging if element is not locked
+        if (!clickedElement.properties?.isLocked) {
+          setDraggedElement(clickedElement.id);
+        }
       }
     } else {
+      // Clear selection when clicking on empty space
       if (!e.ctrlKey && !e.metaKey) {
-        setSelectedElement(null);
-        setSelectedElements([]);
+        handleElementSelect('', false);
       }
     }
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!draggedElement) return;
-    
+
     const canvas = e.currentTarget;
     const rect = canvas.getBoundingClientRect();
     const x = snapToGridPosition((e.clientX - rect.left) / scale);
     const y = snapToGridPosition((e.clientY - rect.top) / scale);
-    
+
     const element = elements.find(el => el.id === draggedElement);
     if (element) {
       const constrainedX = Math.max(0, Math.min(x, dimensions.length - element.width));
@@ -450,8 +471,8 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
               <p className="text-gray-600">Create your perfect room layout</p>
             </div>
           </div>
-          
-          <RoomSetupWizard 
+
+          <RoomSetupWizard
             onComplete={handleWizardComplete}
             initialData={{ dimensions, theme: currentTheme }}
           />
@@ -481,9 +502,9 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
               )}
             </div>
           </div>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             onClick={() => setShowWizard(true)}
             className="text-purple-600 hover:text-purple-700"
           >
@@ -542,6 +563,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
           onMouseUp={handleCanvasMouseUp}
           onElementSelect={handleElementSelect}
           onElementsMove={handleElementsMove}
+          onElementsMoveComplete={handleElementsMoveComplete}
           onElementRotate={rotateElement}
           onElementDuplicate={handleElementDuplicate}
           onElementDelete={deleteElement}
@@ -551,12 +573,13 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
 
         {/* Properties Panel */}
         <PropertiesPanel
-          selectedElement={selectedElementData}
+          selectedElement={selectedElementData || (lastSelectedElement ? elements.find(el => el.id === lastSelectedElement) : null)}
           onUpdateElement={updateElement}
           onDeleteElement={deleteElement}
           onRotateElement={rotateElement}
           onDuplicateElement={duplicateElement}
           hasCollision={selectedElementData ? checkCollisions(selectedElementData, selectedElementData.id) : false}
+          isLastSelected={!selectedElementData && !!lastSelectedElement}
         />
       </div>
     </div>
