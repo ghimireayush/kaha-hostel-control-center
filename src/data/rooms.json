@@ -7,7 +7,8 @@
     "bedCount": 8,
     "occupancy": 6,
     "gender": "Mixed",
-    "baseRate": 800,
+    "monthlyRate": 12000,
+    "dailyRate": 400,
     "amenities": ["Wi-Fi", "Lockers", "Reading Light"],
     "status": "Active",
     "layout": null,
@@ -16,7 +17,8 @@
     "occupants": ["STU001", "STU004"],
     "availableBeds": 2,
     "lastCleaned": "2024-01-15",
-    "maintenanceStatus": "Good"
+    "maintenanceStatus": "Good",
+    "pricingModel": "monthly"
   },
   {
     "id": "room-2",
@@ -25,7 +27,8 @@
     "bedCount": 6,
     "occupancy": 4,
     "gender": "Female",
-    "baseRate": 900,
+    "monthlyRate": 15000,
+    "dailyRate": 500,
     "amenities": ["Wi-Fi", "Lockers", "Reading Light", "Private Bathroom"],
     "status": "Active",
     "layout": null,
@@ -34,7 +37,8 @@
     "occupants": ["STU002", "STU005"],
     "availableBeds": 2,
     "lastCleaned": "2024-01-14",
-    "maintenanceStatus": "Good"
+    "maintenanceStatus": "Good",
+    "pricingModel": "monthly"
   },
   {
     "id": "room-3",
@@ -43,7 +47,8 @@
     "bedCount": 2,
     "occupancy": 0,
     "gender": "Mixed",
-    "baseRate": 2500,
+    "monthlyRate": 25000,
+    "dailyRate": 833,
     "amenities": ["Wi-Fi", "Private Bathroom", "AC", "TV"],
     "status": "Active",
     "layout": null,
@@ -52,6 +57,27 @@
     "occupants": ["STU003"],
     "availableBeds": 1,
     "lastCleaned": "2024-01-13",
-    "maintenanceStatus": "Excellent"
+    "maintenanceStatus": "Excellent",
+    "pricingModel": "monthly"
+  },
+  {
+    "id": "room-4",
+    "name": "Premium Suite",
+    "type": "Suite",
+    "bedCount": 1,
+    "occupancy": 0,
+    "gender": "Mixed",
+    "monthlyRate": 35000,
+    "dailyRate": 1167,
+    "amenities": ["Wi-Fi", "Private Bathroom", "AC", "TV", "Kitchenette", "Balcony"],
+    "status": "Active",
+    "layout": null,
+    "floor": "Third Floor",
+    "roomNumber": "D-401",
+    "occupants": [],
+    "availableBeds": 1,
+    "lastCleaned": "2024-01-16",
+    "maintenanceStatus": "Excellent",
+    "pricingModel": "monthly"
   }
 ]

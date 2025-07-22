@@ -12,6 +12,8 @@ import BookingRequests from "./pages/BookingRequests";
 import RoomManagement from "./pages/RoomManagement";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import AdminCharging from "./pages/AdminCharging";
+import MonthlyBilling from "./pages/MonthlyBilling";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/ledger" element={<Ledger />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/charging" element={<AdminCharging />} />
+            <Route path="/admin/monthly-billing" element={<MonthlyBilling />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

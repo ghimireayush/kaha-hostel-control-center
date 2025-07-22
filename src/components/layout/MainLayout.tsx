@@ -36,6 +36,12 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
           case 'analytics':
             navigate('/analytics');
             break;
+          case 'charging':
+            navigate('/admin/charging');
+            break;
+          case 'billing':
+            navigate('/admin/monthly-billing');
+            break;
           case 'settings':
             navigate('/settings');
             break;

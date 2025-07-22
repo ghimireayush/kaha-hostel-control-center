@@ -1,17 +1,16 @@
 
+import React from 'react';
 import { 
   Users, 
   DollarSign, 
   Calendar, 
   TrendingUp,
   Bed,
-  Building,
   MapPin,
   AlertCircle,
   CheckCircle,
   Clock,
   ArrowUpRight,
-  Sparkles,
   Zap,
   Target,
   Activity
@@ -26,7 +25,7 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { KahaLogo } from "@/components/ui/KahaLogo";
 
 export const Dashboard = () => {
-  const { translations } = useLanguage();
+  const { } = useLanguage();
   const { state } = useAppContext();
   const { goToBookings, goToLedger, goToStudentLedger } = useNavigation();
 
@@ -35,7 +34,7 @@ export const Dashboard = () => {
   const activeStudents = state.students.filter(s => s.status === 'Active').length;
   const pendingBookings = state.bookingRequests.filter(r => r.status === 'Pending').length;
   const totalDues = state.students.reduce((sum, s) => sum + (s.currentBalance || 0), 0);
-  const totalAdvances = state.students.reduce((sum, s) => sum + (s.advanceBalance || 0), 0);
+
   const paidInvoices = state.invoices.filter(i => i.status === 'Paid').length;
   const totalRevenue = state.invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.total, 0);
 
@@ -114,7 +113,7 @@ export const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-                  <Sparkles className="h-8 w-8" />
+               
                   Welcome to Kaha Hostel
                 </h1>
                 <p className="text-green-100 text-lg font-medium">
@@ -342,7 +341,7 @@ export const Dashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             {[
               {
                 icon: Users,
@@ -353,24 +352,38 @@ export const Dashboard = () => {
               },
               {
                 icon: DollarSign,
-                label: "Generate Invoices",
-                description: "Create monthly bills",
+                label: "Monthly Billing",
+                description: "Generate monthly bills",
                 color: "from-green-500 to-green-600",
-                onClick: () => goToLedger('invoices')
+                onClick: () => window.location.href = '/admin/monthly-billing'
+              },
+              {
+                icon: Zap,
+                label: "Admin Charges",
+                description: "Add flexible charges",
+                color: "from-purple-500 to-purple-600",
+                onClick: () => window.location.href = '/admin/charging'
               },
               {
                 icon: Calendar,
                 label: "Record Payments",
                 description: "Track transactions",
-                color: "from-purple-500 to-purple-600",
+                color: "from-orange-500 to-orange-600",
                 onClick: () => goToLedger('payments')
               },
               {
                 icon: Bed,
                 label: "Review Bookings",
                 description: "Approve requests",
-                color: "from-orange-500 to-orange-600",
+                color: "from-pink-500 to-pink-600",
                 onClick: goToBookings
+              },
+              {
+                icon: TrendingUp,
+                label: "Analytics",
+                description: "View reports",
+                color: "from-indigo-500 to-indigo-600",
+                onClick: () => window.location.href = '/analytics'
               }
             ].map((action, index) => {
               const Icon = action.icon;
