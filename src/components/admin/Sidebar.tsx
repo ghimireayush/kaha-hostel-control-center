@@ -17,6 +17,7 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { KahaLogo } from "@/components/ui/KahaLogo";
 
 interface SidebarProps {
   activeTab: string;
@@ -58,53 +59,84 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg border-r min-h-screen">
-      <div className="p-6 border-b">
+    <div className="w-64 bg-gradient-to-b from-white to-gray-50 shadow-xl border-r border-gray-200 min-h-screen">
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
         <div className="flex items-center gap-3">
-          <Mountain className="h-8 w-8 text-orange-500" />
+          <KahaLogo size="md" />
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Kaha</h2>
-            <p className="text-sm text-gray-500">Admin Panel</p>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              Kaha
+            </h2>
+            <p className="text-xs text-gray-600 font-medium">Control Center</p>
           </div>
         </div>
       </div>
       
-      <nav className="p-4 space-y-2">
-        {/* Main Menu Items */}
-        {mainMenuItems.map((item) => {
+      <nav className="p-4 space-y-3">
+        {/* Enhanced Main Menu Items */}
+        {mainMenuItems.map((item, index) => {
           const Icon = item.icon;
+          const gradients = [
+            'from-blue-500 to-blue-600',
+            'from-purple-500 to-purple-600',
+            'from-green-500 to-green-600',
+            'from-orange-500 to-orange-600',
+            'from-pink-500 to-pink-600'
+          ];
+          
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300 ${
                 activeTab === item.id
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-md transform scale-105"
+                  : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md hover:scale-102"
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
+              <div className={`p-2 rounded-lg transition-all duration-300 ${
+                activeTab === item.id 
+                  ? `bg-gradient-to-br ${gradients[index]} text-white shadow-lg` 
+                  : `bg-gray-100 group-hover:bg-gradient-to-br group-hover:${gradients[index]} group-hover:text-white`
+              }`}>
+                <Icon className="h-4 w-4" />
+              </div>
+              <span className="font-semibold">{item.label}</span>
+              {activeTab === item.id && (
+                <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              )}
             </button>
           );
         })}
 
-        {/* Kaha Ledger Section */}
-        <div className="border-t pt-4 mt-4">
+        {/* Enhanced Kaha Ledger Section */}
+        <div className="border-t border-gray-200 pt-6 mt-6">
+          <div className="mb-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4">Financial Hub</p>
+          </div>
           <button
             onClick={handleLedgerToggle}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+              "group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300",
               expandedSection === "ledger"
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-md"
+                : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md"
             )}
           >
-            <BookOpen className="h-5 w-5" />
-            <span className="font-medium">📚 Kaha KLedger</span>
+            <div className={`p-2 rounded-lg transition-all duration-300 ${
+              expandedSection === "ledger"
+                ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg"
+                : "bg-gray-100 group-hover:bg-gradient-to-br group-hover:from-green-500 group-hover:to-green-600 group-hover:text-white"
+            }`}>
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <div className="flex-1">
+              <span className="font-semibold">Kaha KLedger</span>
+              <p className="text-xs text-gray-500">Financial Management</p>
+            </div>
             <svg
               className={cn(
-                "h-4 w-4 ml-auto transition-transform",
+                "h-4 w-4 transition-transform duration-300",
                 expandedSection === "ledger" ? "rotate-180" : ""
               )}
               fill="none"
@@ -115,19 +147,30 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             </svg>
           </button>
 
-          {/* Ledger Sub-items */}
+          {/* Enhanced Ledger Sub-items */}
           {expandedSection === "ledger" && (
-            <div className="ml-4 mt-2 space-y-1">
-              {ledgerSubItems.map((item) => {
+            <div className="mt-3 space-y-2 bg-gradient-to-b from-green-50/50 to-transparent rounded-xl p-2">
+              {ledgerSubItems.map((item, index) => {
                 const Icon = item.icon;
+                const subGradients = [
+                  'from-blue-400 to-blue-500',
+                  'from-purple-400 to-purple-500',
+                  'from-green-400 to-green-500',
+                  'from-orange-400 to-orange-500',
+                  'from-pink-400 to-pink-500',
+                  'from-indigo-400 to-indigo-500'
+                ];
+                
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleLedgerSubItemClick(item.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    className="group w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-all duration-200 text-sm text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm"
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <div className={`p-1.5 rounded-md transition-all duration-200 bg-gray-100 group-hover:bg-gradient-to-br group-hover:${subGradients[index]} group-hover:text-white`}>
+                      <Icon className="h-3 w-3" />
+                    </div>
+                    <span className="font-medium">{item.label}</span>
                   </button>
                 );
               })}
@@ -135,18 +178,27 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           )}
         </div>
 
-        {/* Settings at the bottom */}
-        <div className="border-t pt-4 mt-4">
+        {/* Enhanced Settings */}
+        <div className="border-t border-gray-200 pt-6 mt-6">
           <button
             onClick={() => onTabChange("settings")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+            className={`group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300 ${
               activeTab === "settings"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700 border border-gray-200 shadow-md transform scale-105"
+                : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md hover:scale-102"
             }`}
           >
-            <Settings className="h-5 w-5" />
-            <span className="font-medium">{translations.settings}</span>
+            <div className={`p-2 rounded-lg transition-all duration-300 ${
+              activeTab === "settings"
+                ? "bg-gradient-to-br from-gray-500 to-gray-600 text-white shadow-lg"
+                : "bg-gray-100 group-hover:bg-gradient-to-br group-hover:from-gray-500 group-hover:to-gray-600 group-hover:text-white"
+            }`}>
+              <Settings className="h-4 w-4" />
+            </div>
+            <span className="font-semibold">{translations.settings}</span>
+            {activeTab === "settings" && (
+              <div className="ml-auto w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+            )}
           </button>
         </div>
       </nav>

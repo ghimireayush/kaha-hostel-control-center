@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarCheck, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { CalendarCheck, Search, Filter, Eye, Edit, Trash2, Plus, Users, Clock, MapPin, Phone } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export const BookingManagement = () => {

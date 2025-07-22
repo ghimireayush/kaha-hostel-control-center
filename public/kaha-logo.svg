@@ -1,0 +1,20 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Green location pin background -->
+  <path d="M100 20C70 20 45 45 45 75C45 105 100 180 100 180S155 105 155 75C155 45 130 20 100 20Z" fill="#4CAF50"/>
+  
+  <!-- Blue circle -->
+  <circle cx="100" cy="75" r="35" fill="#2196F3" stroke="white" stroke-width="3"/>
+  
+  <!-- White inner circle -->
+  <circle cx="100" cy="75" r="28" fill="white"/>
+  
+  <!-- Kaha text in Devanagari -->
+  <text x="100" y="85" text-anchor="middle" font-family="serif" font-size="24" font-weight="bold" fill="black">कहाँ</text>
+  
+  <!-- Small decorative elements -->
+  <circle cx="110" cy="60" r="2" fill="black"/>
+  <circle cx="115" cy="58" r="1.5" fill="black"/>
+  
+  <!-- Bottom dot of location pin -->
+  <circle cx="100" cy="185" r="8" fill="#4CAF50"/>
+</svg>
