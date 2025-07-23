@@ -103,7 +103,7 @@ const AdminCharging = () => {
       if (result.success) {
         toast({
           title: 'Charge Added Successfully',
-          description: `₹${amount} ${result.description} added to ${result.student.name}'s account`,
+          description: `NPR ${amount} ${result.description} added to ${result.student.name}'s account`,
         });
 
         // Reset form
@@ -157,7 +157,7 @@ const AdminCharging = () => {
 
       toast({
         title: 'Bulk Charges Applied',
-        description: `${result.successful.length} charges applied successfully. Total: ₹${result.totalAmount}`,
+        description: `${result.successful.length} charges applied successfully. Total: NPR ${result.totalAmount}`,
       });
 
       if (result.failed.length > 0) {
@@ -208,7 +208,7 @@ const AdminCharging = () => {
       if (result.success) {
         toast({
           title: 'Quick Charge Applied',
-          description: `₹${suggestedAmount} late fee added to ${result.student.name}'s account`,
+          description: `NPR ${suggestedAmount} late fee added to ${result.student.name}'s account`,
         });
 
         await refreshAllData();
@@ -268,7 +268,7 @@ const AdminCharging = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Total Amount</p>
-                  <p className="text-2xl font-bold text-green-700">₹{chargeSummary.totalAmount.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-green-700">NPR {chargeSummary.totalAmount.toLocaleString()}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
@@ -326,7 +326,7 @@ const AdminCharging = () => {
                           <span>{student.name} - Room {student.roomNumber}</span>
                           {student.currentBalance > 0 && (
                             <Badge variant="destructive" className="ml-2">
-                              ₹{student.currentBalance.toLocaleString()} due
+                              NPR {student.currentBalance.toLocaleString()} due
                             </Badge>
                           )}
                         </div>
@@ -341,7 +341,7 @@ const AdminCharging = () => {
                       <strong>{selectedStudentData.name}</strong> - Room {selectedStudentData.roomNumber}
                     </p>
                     <p className="text-sm text-blue-600">
-                      Current Balance: ₹{(selectedStudentData.currentBalance || 0).toLocaleString()}
+                      Current Balance: NPR {(selectedStudentData.currentBalance || 0).toLocaleString()}
                     </p>
                   </div>
                 )}
@@ -370,7 +370,7 @@ const AdminCharging = () => {
                         {student.name} - Room {student.roomNumber}
                         {student.currentBalance > 0 && (
                           <span className="text-red-600 ml-2">
-                            (₹{student.currentBalance.toLocaleString()} due)
+                            (NPR {student.currentBalance.toLocaleString()} due)
                           </span>
                         )}
                       </label>
@@ -408,7 +408,7 @@ const AdminCharging = () => {
             )}
 
             <div className="space-y-2">
-              <Label>Amount (₹) *</Label>
+              <Label>Amount (NPR) *</Label>
               <Input
                 type="number"
                 placeholder="Enter amount"
@@ -435,7 +435,7 @@ const AdminCharging = () => {
                   <p className="font-medium">Charge will be:</p>
                   <ul className="mt-1 space-y-1">
                     <li>• Added directly to student ledger</li>
-                    <li>• Student will be notified via SMS</li>
+                    <li>• Student will be notified via Kaha App</li>
                     <li>• Balance will be updated immediately</li>
                   </ul>
                 </div>
@@ -470,12 +470,12 @@ const AdminCharging = () => {
                         <p className="font-semibold text-gray-900">{student.name}</p>
                         <p className="text-sm text-gray-600">Room: {student.roomNumber}</p>
                         <p className="text-sm text-red-600">
-                          {student.daysOverdue} days overdue • ₹{(student.currentBalance || 0).toLocaleString()} due
+                          {student.daysOverdue} days overdue • NPR {(student.currentBalance || 0).toLocaleString()} due
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600 mb-2">
-                          Suggested: ₹{student.suggestedLateFee}
+                          Suggested: NPR {student.suggestedLateFee}
                         </p>
                         <Button
                           size="sm"

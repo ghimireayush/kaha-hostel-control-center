@@ -4,6 +4,7 @@ import { studentService } from './studentService.js';
 import { ledgerService } from './ledgerService.js';
 import { invoiceService } from './invoiceService.js';
 import { billingService } from './billingService.js';
+import { notificationService } from './notificationService.js';
 
 let bookingRequests = [...bookingRequestsData];
 
@@ -98,9 +99,17 @@ export const bookingService = {
           currentBalance: initialInvoice.total
         });
 
+        // Send welcome notification via Kaha App
+        await notificationService.notifyWelcome(
+          newStudent.id,
+          newStudent.name,
+          roomAssignment
+        );
+
         console.log(`✅ Student approved and enrolled: ${newStudent.name}`);
         console.log(`📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${initialInvoice.isProrated ? '(Prorated)' : '(Full Month)'}`);
         console.log(`🏠 Room assigned: ${roomAssignment}`);
+        console.log(`⚙️ Next step: Configure detailed charges for ${newStudent.name}`);
 
         setTimeout(() => resolve({
           booking: bookingRequests[requestIndex],

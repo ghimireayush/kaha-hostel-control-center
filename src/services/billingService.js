@@ -1,28 +1,84 @@
 import { invoiceService } from './invoiceService.js';
 import { ledgerService } from './ledgerService.js';
 import { studentService } from './studentService.js';
+import { notificationService } from './notificationService.js';
 
 export const billingService = {
-  // Calculate prorated amount for partial month
-  calculateProratedAmount(monthlyAmount, enrollmentDate) {
-    const enrollDate = new Date(enrollmentDate);
-    const year = enrollDate.getFullYear();
-    const month = enrollDate.getMonth();
+  // Calculate prorated amount for partial month (enrollment or checkout)
+  calculateProratedAmount(monthlyAmount, startDate, endDate = null) {
+    const start = new Date(startDate);
+    const year = start.getFullYear();
+    const month = start.getMonth();
     
-    // Get total days in the enrollment month
+    // Get total days in the month
     const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
     
-    // Get remaining days including enrollment day
-    const remainingDays = totalDaysInMonth - enrollDate.getDate() + 1;
+    let daysToCalculate;
+    let calculationType;
+    
+    if (endDate) {
+      // Checkout scenario - calculate days used
+      const end = new Date(endDate);
+      const startDay = start.getDate();
+      const endDay = end.getDate();
+      
+      if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+        // Same month checkout
+        daysToCalculate = endDay - startDay + 1;
+        calculationType = 'checkout_same_month';
+      } else {
+        // Different month - calculate remaining days in start month
+        daysToCalculate = totalDaysInMonth - startDay + 1;
+        calculationType = 'checkout_different_month';
+      }
+    } else {
+      // Enrollment scenario - calculate remaining days in month
+      daysToCalculate = totalDaysInMonth - start.getDate() + 1;
+      calculationType = 'enrollment';
+    }
     
     // Calculate prorated amount
-    const proratedAmount = Math.round((monthlyAmount * remainingDays) / totalDaysInMonth);
+    const proratedAmount = Math.round((monthlyAmount * daysToCalculate) / totalDaysInMonth);
     
     return {
       totalDaysInMonth,
-      remainingDays,
+      daysToCalculate,
       proratedAmount,
-      isProrated: remainingDays < totalDaysInMonth
+      isProrated: daysToCalculate < totalDaysInMonth,
+      calculationType,
+      dailyRate: Math.round(monthlyAmount / totalDaysInMonth)
+    };
+  },
+
+  // Calculate checkout refund for unused days in current month
+  calculateCheckoutRefund(student, checkoutDate) {
+    const checkout = new Date(checkoutDate);
+    const currentMonth = checkout.getMonth();
+    const currentYear = checkout.getFullYear();
+    
+    // Get student's monthly charges
+    const monthlyCharges = student.chargeConfiguration?.filter(c => 
+      c.isActive && c.type === 'monthly'
+    ) || [];
+    
+    const totalMonthlyAmount = monthlyCharges.reduce((sum, charge) => sum + charge.amount, 0);
+    
+    // Calculate days remaining in month after checkout
+    const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const checkoutDay = checkout.getDate();
+    const remainingDays = totalDaysInMonth - checkoutDay;
+    
+    // Calculate refund amount for unused days
+    const refundAmount = remainingDays > 0 ? 
+      Math.round((totalMonthlyAmount * remainingDays) / totalDaysInMonth) : 0;
+    
+    return {
+      totalDaysInMonth,
+      checkoutDay,
+      remainingDays,
+      refundAmount,
+      dailyRate: Math.round(totalMonthlyAmount / totalDaysInMonth),
+      hasRefund: refundAmount > 0
     };
   },
 
@@ -78,6 +134,13 @@ export const billingService = {
         credit: 0,
         referenceId: invoice.id
       });
+
+      // Send invoice notification via Kaha App
+      await notificationService.notifyNewInvoice(
+        student.id,
+        description,
+        totalProratedAmount
+      );
       
       console.log(`Initial invoice generated for ${student.name}:`, {
         amount: totalProratedAmount,

@@ -17,7 +17,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-[#07A64F]/5 flex">
       <Sidebar activeTab={activeTab} onTabChange={(tab) => {
         // Handle navigation based on tab
         switch (tab) {
@@ -59,7 +59,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
               <div className="flex items-center space-x-4">
                 <KahaLogo size="lg" />
                 <div className="border-l border-gray-300 pl-4">
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-green-700 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-[#07A64F] via-[#1295D0] to-[#07A64F] bg-clip-text text-transparent">
                     Kaha Control Center
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">Hostel Management System</p>
@@ -67,12 +67,12 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
               </div>
               
               {/* Enhanced Status Indicator */}
-              <div className="hidden lg:flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-full border border-green-200">
+              <div className="hidden lg:flex items-center space-x-3 bg-[#07A64F]/10 px-4 py-2 rounded-full border border-[#07A64F]/30">
                 <div className="relative">
-                  <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 h-3 w-3 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                  <div className="h-3 w-3 bg-[#07A64F] rounded-full animate-pulse"></div>
+                  <div className="absolute inset-0 h-3 w-3 bg-[#07A64F]/70 rounded-full animate-ping opacity-75"></div>
                 </div>
-                <span className="text-sm text-green-700 font-semibold">System Online</span>
+                <span className="text-sm text-[#07A64F] font-semibold">System Online</span>
               </div>
             </div>
             
@@ -80,7 +80,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
               {/* Enhanced Ledger Button */}
               <Button 
                 onClick={() => navigate('/ledger')}
-                className="bg-gradient-to-r from-green-600 via-green-700 to-emerald-700 hover:from-green-700 hover:via-green-800 hover:to-emerald-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-[#07A64F] via-[#1295D0] to-[#07A64F] hover:from-[#07A64F]/90 hover:via-[#1295D0]/90 hover:to-[#07A64F]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 size="lg"
               >
                 <span className="flex items-center space-x-3">
@@ -89,7 +89,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
                   </div>
                   <div className="text-left">
                     <div className="font-bold text-sm">Kaha KLedger</div>
-                    <div className="text-xs text-green-100">Financial Hub</div>
+                    <div className="text-xs text-white/80">Financial Hub</div>
                   </div>
                   <div className="bg-white/30 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold">
                     PRO
@@ -102,7 +102,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
         </div>
         
         {/* Main Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 bg-gradient-to-br from-white via-[#1295D0]/2 to-[#07A64F]/3">
           {children}
         </div>
       </div>

@@ -20,7 +20,7 @@ export const RoomConfiguration = () => {
       bedCount: 8,
       occupancy: 6,
       gender: "Mixed",
-      baseRate: 800,
+      baseRate: 12000,
       amenities: ["Wi-Fi", "Lockers", "Reading Light"],
       status: "Active",
       layout: null
@@ -32,7 +32,7 @@ export const RoomConfiguration = () => {
       bedCount: 6,
       occupancy: 4,
       gender: "Female",
-      baseRate: 900,
+      baseRate: 15000,
       amenities: ["Wi-Fi", "Lockers", "Reading Light", "Private Bathroom"],
       status: "Active"
     },
@@ -43,7 +43,7 @@ export const RoomConfiguration = () => {
       bedCount: 2,
       occupancy: 0,
       gender: "Mixed",
-      baseRate: 2500,
+      baseRate: 25000,
       amenities: ["Wi-Fi", "Private Bathroom", "AC", "TV"],
       status: "Active"
     },
@@ -54,7 +54,7 @@ export const RoomConfiguration = () => {
       bedCount: 12,
       occupancy: 8,
       gender: "Mixed",
-      baseRate: 1200,
+      baseRate: 18000,
       amenities: ["Wi-Fi", "Personal Locker", "Reading Light", "Power Outlet"],
       status: "Maintenance"
     }
@@ -68,7 +68,7 @@ export const RoomConfiguration = () => {
     type: "Dormitory",
     bedCount: 1,
     gender: "Mixed",
-    baseRate: 800,
+    baseRate: 12000,
     amenities: []
   });
 
@@ -93,7 +93,7 @@ export const RoomConfiguration = () => {
       type: "Dormitory",
       bedCount: 1,
       gender: "Mixed",
-      baseRate: 800,
+      baseRate: 12000,
       amenities: []
     });
     setShowAddRoom(false);
@@ -195,12 +195,13 @@ export const RoomConfiguration = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Base Rate (NPR per night)</Label>
+                <Label>Base Monthly Rate (NPR per month)</Label>
                 <Input
                   type="number"
                   value={newRoom.baseRate}
                   onChange={(e) => setNewRoom({...newRoom, baseRate: parseInt(e.target.value)})}
-                  min="100"
+                  min="3000"
+                  placeholder="e.g., 8000"
                 />
               </div>
             </div>
@@ -271,9 +272,12 @@ export const RoomConfiguration = () => {
                 </div>
                 
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-sm text-gray-600 mb-1">Base Rate</div>
+                  <div className="text-sm text-gray-600 mb-1">Monthly Rate</div>
                   <div className="text-xl font-bold text-blue-600">
-                    Rs {room.baseRate}/night
+                    NPR {room.baseRate.toLocaleString()}/month
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Daily: NPR {Math.round(room.baseRate / 30)}/day
                   </div>
                 </div>
 

@@ -1,0 +1,203 @@
+[
+  {
+    "id": "USR001",
+    "username": "admin",
+    "email": "admin@kahahostel.com",
+    "fullName": "System Administrator",
+    "role": "admin",
+    "permissions": [
+      "users.create",
+      "users.read",
+      "users.update",
+      "users.delete",
+      "students.all",
+      "rooms.all",
+      "billing.all",
+      "reports.all",
+      "settings.all"
+    ],
+    "phone": "+977-9841234567",
+    "isActive": true,
+    "lastLogin": "2024-01-20T08:30:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/admin.jpg",
+    "department": "Administration"
+  },
+  {
+    "id": "USR002",
+    "username": "manager",
+    "email": "manager@kahahostel.com",
+    "fullName": "Hostel Manager",
+    "role": "manager",
+    "permissions": [
+      "students.all",
+      "rooms.all",
+      "billing.read",
+      "billing.update",
+      "reports.read",
+      "maintenance.all"
+    ],
+    "phone": "+977-9841234568",
+    "isActive": true,
+    "lastLogin": "2024-01-20T09:15:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/manager.jpg",
+    "department": "Operations"
+  },
+  {
+    "id": "USR003",
+    "username": "accountant",
+    "email": "accounts@kahahostel.com",
+    "fullName": "Chief Accountant",
+    "role": "accountant",
+    "permissions": [
+      "billing.all",
+      "payments.all",
+      "reports.financial",
+      "students.read",
+      "invoices.all"
+    ],
+    "phone": "+977-9841234569",
+    "isActive": true,
+    "lastLogin": "2024-01-20T10:00:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/accountant.jpg",
+    "department": "Finance"
+  },
+  {
+    "id": "USR004",
+    "username": "reception",
+    "email": "reception@kahahostel.com",
+    "fullName": "Reception Staff",
+    "role": "staff",
+    "permissions": [
+      "students.read",
+      "students.update",
+      "rooms.read",
+      "bookings.all",
+      "payments.create"
+    ],
+    "phone": "+977-9841234570",
+    "isActive": true,
+    "lastLogin": "2024-01-20T07:45:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/reception.jpg",
+    "department": "Front Desk"
+  },
+  {
+    "id": "USR005",
+    "username": "warden",
+    "email": "warden@kahahostel.com",
+    "fullName": "Hostel Warden",
+    "role": "staff",
+    "permissions": [
+      "students.read",
+      "students.update",
+      "rooms.read",
+      "maintenance.create",
+      "maintenance.read",
+      "security.read"
+    ],
+    "phone": "+977-9841234571",
+    "isActive": true,
+    "lastLogin": "2024-01-19T22:30:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/warden.jpg",
+    "department": "Security"
+  },
+  {
+    "id": "USR006",
+    "username": "maintenance",
+    "email": "maintenance@kahahostel.com",
+    "fullName": "Maintenance Supervisor",
+    "role": "staff",
+    "permissions": [
+      "maintenance.all",
+      "rooms.read",
+      "rooms.update",
+      "inventory.all"
+    ],
+    "phone": "+977-9841234572",
+    "isActive": true,
+    "lastLogin": "2024-01-20T06:00:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/maintenance.jpg",
+    "department": "Maintenance"
+  },
+  {
+    "id": "USR007",
+    "username": "assistant",
+    "email": "assistant@kahahostel.com",
+    "fullName": "Administrative Assistant",
+    "role": "staff",
+    "permissions": [
+      "students.read",
+      "bookings.read",
+      "reports.basic",
+      "notifications.create"
+    ],
+    "phone": "+977-9841234573",
+    "isActive": true,
+    "lastLogin": "2024-01-20T08:00:00Z",
+    "createdAt": "2024-01-05T00:00:00Z",
+    "profileImage": "/images/profiles/assistant.jpg",
+    "department": "Administration"
+  },
+  {
+    "id": "USR008",
+    "username": "security",
+    "email": "security@kahahostel.com",
+    "fullName": "Security Guard",
+    "role": "staff",
+    "permissions": [
+      "security.create",
+      "security.read",
+      "students.read",
+      "visitors.all"
+    ],
+    "phone": "+977-9841234574",
+    "isActive": true,
+    "lastLogin": "2024-01-20T00:00:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/security.jpg",
+    "department": "Security"
+  },
+  {
+    "id": "USR009",
+    "username": "cleaner",
+    "email": "cleaning@kahahostel.com",
+    "fullName": "Cleaning Supervisor",
+    "role": "staff",
+    "permissions": [
+      "maintenance.read",
+      "maintenance.update",
+      "rooms.read",
+      "inventory.read"
+    ],
+    "phone": "+977-9841234575",
+    "isActive": true,
+    "lastLogin": "2024-01-19T16:00:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "profileImage": "/images/profiles/cleaner.jpg",
+    "department": "Housekeeping"
+  },
+  {
+    "id": "USR010",
+    "username": "temp_admin",
+    "email": "temp@kahahostel.com",
+    "fullName": "Temporary Admin",
+    "role": "admin",
+    "permissions": [
+      "students.read",
+      "rooms.read",
+      "billing.read",
+      "reports.read"
+    ],
+    "phone": "+977-9841234576",
+    "isActive": false,
+    "lastLogin": "2024-01-10T12:00:00Z",
+    "createdAt": "2024-01-10T00:00:00Z",
+    "profileImage": "/images/profiles/default.jpg",
+    "department": "Temporary"
+  }
+]

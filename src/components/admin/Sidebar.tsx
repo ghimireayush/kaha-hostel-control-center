@@ -38,7 +38,6 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
 
   const adminMenuItems = [
     { id: "charging", label: "⚡ Admin Charging", icon: TrendingUp, path: "/admin/charging" },
-    { id: "billing", label: "📅 Monthly Billing", icon: Receipt, path: "/admin/monthly-billing" },
   ];
 
   const ledgerSubItems = [
@@ -65,11 +64,11 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
 
   return (
     <div className="w-64 bg-gradient-to-b from-white to-gray-50 shadow-xl border-r border-gray-200 min-h-screen">
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-[#07A64F]/10 to-[#1295D0]/10">
         <div className="flex items-center gap-3">
           <KahaLogo size="md" />
           <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold bg-gradient-to-r from-[#07A64F] to-[#1295D0] bg-clip-text text-transparent">
               Kaha
             </h2>
             <p className="text-xs text-gray-600 font-medium">Control Center</p>
@@ -82,11 +81,11 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         {mainMenuItems.map((item, index) => {
           const Icon = item.icon;
           const gradients = [
-            'from-blue-500 to-blue-600',
-            'from-purple-500 to-purple-600',
-            'from-green-500 to-green-600',
-            'from-orange-500 to-orange-600',
-            'from-pink-500 to-pink-600'
+            'from-[#1295D0] to-[#1295D0]/80',
+            'from-[#07A64F] to-[#07A64F]/80',
+            'from-[#1295D0] to-[#07A64F]',
+            'from-[#07A64F] to-[#1295D0]',
+            'from-[#1295D0]/80 to-[#07A64F]/80'
           ];
           
           return (
@@ -95,7 +94,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
               onClick={() => onTabChange(item.id)}
               className={`group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300 ${
                 activeTab === item.id
-                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-md transform scale-105"
+                  ? "bg-gradient-to-r from-[#1295D0]/10 to-[#07A64F]/10 text-[#1295D0] border border-[#1295D0]/30 shadow-md transform scale-105"
                   : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md hover:scale-102"
               }`}
             >
@@ -122,8 +121,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           {adminMenuItems.map((item, index) => {
             const Icon = item.icon;
             const adminGradients = [
-              'from-purple-500 to-purple-600',
-              'from-indigo-500 to-indigo-600'
+              'from-[#07A64F] to-[#07A64F]/80',
+              'from-[#1295D0] to-[#1295D0]/80'
             ];
             
             return (

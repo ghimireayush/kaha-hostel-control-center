@@ -1,6 +1,7 @@
 // Admin Charging Service - Flexible admin-controlled charges
 import { ledgerService } from './ledgerService.js';
 import { studentService } from './studentService.js';
+import { notificationService } from './notificationService.js';
 
 export const adminChargingService = {
   // Predefined charge types with descriptions
@@ -66,7 +67,7 @@ export const adminChargingService = {
         });
       }
 
-      console.log(`Charge added: ₹${chargeData.amount} (${description}) to ${student.name} by ${adminId}`);
+      console.log(`Charge added: NPR ${chargeData.amount} (${description}) to ${student.name} by ${adminId}`);
       
       return {
         success: true,
@@ -102,7 +103,7 @@ export const adminChargingService = {
       const failed = results.filter(r => !r.success);
       const totalAmount = successful.reduce((sum, r) => sum + r.chargeAmount, 0);
 
-      console.log(`Bulk charges applied: ${successful.length} successful, ${failed.length} failed, Total: ₹${totalAmount}`);
+      console.log(`Bulk charges applied: ${successful.length} successful, ${failed.length} failed, Total: NPR ${totalAmount}`);
       
       return {
         results,
@@ -131,7 +132,7 @@ export const adminChargingService = {
       if (studentIndex !== -1) {
         students[studentIndex].currentBalance = (students[studentIndex].currentBalance || 0) + amount;
         // In a real app, this would update the database
-        console.log(`Updated balance for ${students[studentIndex].name}: +₹${amount}`);
+        console.log(`Updated balance for ${students[studentIndex].name}: +NPR ${amount}`);
       }
     } catch (error) {
       console.error('Error updating student balance:', error);
@@ -141,24 +142,19 @@ export const adminChargingService = {
   // Send notification to student
   async sendStudentNotification(student, chargeInfo) {
     try {
-      const message = `Dear ${student.name},
-
-A charge of ₹${chargeInfo.amount} has been added to your account.
-
-Type: ${chargeInfo.type}
-Date: ${chargeInfo.date}
-New Balance: ₹${(student.currentBalance || 0) + parseFloat(chargeInfo.amount)}
-
-Please contact office for any queries.
-
-- Kaha Hostel Management`;
-
-      // In a real app, this would send SMS/WhatsApp
-      console.log(`📱 Notification sent to ${student.name} (${student.phone}):`, message);
+      const newBalance = (student.currentBalance || 0) + parseFloat(chargeInfo.amount);
+      
+      // Use notification service to send Kaha App notification
+      const result = await notificationService.notifyAdminCharge(
+        student.id,
+        parseFloat(chargeInfo.amount),
+        chargeInfo.type
+      );
       
       return {
-        success: true,
-        message: 'Notification sent successfully'
+        success: result.success,
+        message: 'Kaha App notification sent successfully',
+        notificationId: result.notificationId
       };
 
     } catch (error) {
@@ -185,7 +181,7 @@ Please contact office for any queries.
       return overdueStudents.map(student => ({
         ...student,
         daysOverdue: Math.floor((new Date() - new Date(student.lastPaymentDate || '2024-01-01')) / (1000 * 60 * 60 * 24)),
-        suggestedLateFee: Math.min(Math.floor((student.currentBalance || 0) * 0.03), 2000) // 3% or max ₹2000
+        suggestedLateFee: Math.min(Math.floor((student.currentBalance || 0) * 0.03), 2000) // 3% or max NPR 2000
       }));
 
     } catch (error) {

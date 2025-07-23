@@ -1,444 +1,396 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Settings as SettingsIcon, 
+  Save, 
+  RotateCcw, 
+  Building, 
+  CreditCard, 
+  Bell, 
+  Shield, 
+  Database,
+  Wrench,
+  Search,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+import { settingsService } from '../services/settingsService';
 
-import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Settings as SettingsIcon, Database, Bell, CreditCard, Users, Download, Shield, Globe } from "lucide-react";
-import { toast } from "sonner";
+interface Setting {
+  id: string;
+  category: string;
+  key: string;
+  value: any;
+  displayName: string;
+  description: string;
+  type: string;
+  options?: string[] | null;
+  isEditable: boolean;
+  isVisible: boolean;
+  lastModified: string;
+  modifiedBy: string;
+}
 
-const Settings = () => {
-  const [settings, setSettings] = useState({
-    // System Settings
-    currency: "NPR",
-    language: "English",
-    timezone: "Asia/Kathmandu",
-    dateFormat: "DD/MM/YYYY",
+interface SettingsFormData {
+  [key: string]: any;
+}
+
+const Settings: React.FC = () => {
+  const [settings, setSettings] = useState<Setting[]>([]);
+  const [formData, setFormData] = useState<SettingsFormData>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('system');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  const categoryIcons = {
+    system: Building,
+    billing: CreditCard,
+    notification: Bell,
+    security: Shield,
+    backup: Database,
+    maintenance: Wrench
+  };
+
+  const categoryLabels = {
+    system: 'System Settings',
+    billing: 'Billing & Payments',
+    notification: 'Notifications',
+    security: 'Security',
+    backup: 'Backup & Recovery',
+    maintenance: 'Maintenance'
+  };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const data = await settingsService.getAllSettings();
+      setSettings(data);
+      
+      // Initialize form data with current values
+      const initialFormData: SettingsFormData = {};
+      data.forEach(setting => {
+        initialFormData[setting.key] = setting.value;
+      });
+      setFormData(initialFormData);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (key: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: value
+    }));
+    setHasChanges(true);
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setSaving(true);
+      
+      // Prepare updates for changed settings
+      const updates = settings
+        .filter(setting => formData[setting.key] !== setting.value)
+        .map(setting => ({
+          id: setting.id,
+          value: formData[setting.key],
+          modifiedBy: 'admin'
+        }));
+
+      if (updates.length > 0) {
+        await settingsService.bulkUpdateSettings(updates);
+        await loadSettings(); // Reload to get updated timestamps
+        setHasChanges(false);
+        setSaveMessage('Settings saved successfully!');
+        setTimeout(() => setSaveMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveMessage('Error saving settings. Please try again.');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetCategory = async () => {
+    const categorySettings = settings.filter(s => s.category === activeCategory);
+    const resetFormData = { ...formData };
     
-    // Billing Settings
-    invoiceDueDate: 5, // Days from month start
-    latePaymentFee: 500,
-    autoGenerateInvoices: true,
-    sendReminderEmails: true,
+    categorySettings.forEach(setting => {
+      resetFormData[setting.key] = setting.value;
+    });
     
-    // Payment Settings
-    acceptCash: true,
-    acceptBank: true,
-    acceptESewa: true,
-    acceptKhalti: true,
-    acceptPayPal: false,
+    setFormData(resetFormData);
+    setHasChanges(false);
+  };
+
+  const renderSettingInput = (setting: Setting) => {
+    const value = formData[setting.key];
     
-    // Notification Settings
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
+    switch (setting.type) {
+      case 'text':
+      case 'email':
+        return (
+          <Input
+            type={setting.type}
+            value={value || ''}
+            onChange={(e) => handleInputChange(setting.key, e.target.value)}
+            disabled={!setting.isEditable}
+            className="max-w-md"
+          />
+        );
+      
+      case 'textarea':
+        return (
+          <Textarea
+            value={value || ''}
+            onChange={(e) => handleInputChange(setting.key, e.target.value)}
+            disabled={!setting.isEditable}
+            className="max-w-md"
+            rows={3}
+          />
+        );
+      
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={value || ''}
+            onChange={(e) => handleInputChange(setting.key, parseFloat(e.target.value) || 0)}
+            disabled={!setting.isEditable}
+            className="max-w-md"
+          />
+        );
+      
+      case 'boolean':
+        return (
+          <Switch
+            checked={value || false}
+            onCheckedChange={(checked) => handleInputChange(setting.key, checked)}
+            disabled={!setting.isEditable}
+          />
+        );
+      
+      case 'select':
+        return (
+          <Select
+            value={value || ''}
+            onValueChange={(newValue) => handleInputChange(setting.key, newValue)}
+            disabled={!setting.isEditable}
+          >
+            <SelectTrigger className="max-w-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {setting.options?.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      
+      case 'time':
+        return (
+          <Input
+            type="time"
+            value={value || ''}
+            onChange={(e) => handleInputChange(setting.key, e.target.value)}
+            disabled={!setting.isEditable}
+            className="max-w-md"
+          />
+        );
+      
+      default:
+        return (
+          <Input
+            value={value || ''}
+            onChange={(e) => handleInputChange(setting.key, e.target.value)}
+            disabled={!setting.isEditable}
+            className="max-w-md"
+          />
+        );
+    }
+  };
+
+  const filteredSettings = settings.filter(setting => {
+    const matchesSearch = searchTerm === '' || 
+      setting.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      setting.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      setting.key.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Security Settings
-    requireTwoFactor: false,
-    sessionTimeout: 30, // minutes
-    enableAuditLog: true,
+    const matchesCategory = setting.category === activeCategory;
     
-    // Booking Settings
-    allowOnlineBooking: true,
-    requireApproval: true,
-    maxAdvanceBooking: 30, // days
+    return matchesSearch && matchesCategory && setting.isVisible;
   });
 
-  const handleSave = () => {
-    toast.success("Settings saved successfully!");
-    console.log("Saving settings:", settings);
-  };
+  const categories = [...new Set(settings.map(s => s.category))];
 
-  const handleExportData = () => {
-    toast.success("Data export started. You'll receive an email when ready.");
-  };
-
-  const handleBackupData = () => {
-    toast.success("Backup created successfully!");
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <SettingsIcon className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <MainLayout activeTab="settings">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">⚙️ System Settings</h2>
-            <p className="text-gray-600 mt-1">Configure system behavior and preferences</p>
-          </div>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-            💾 Save All Settings
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">
+            Configure your hostel management system
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <Button
+              variant="outline"
+              onClick={handleResetCategory}
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset Changes
+            </Button>
+          )}
+          <Button
+            onClick={handleSaveSettings}
+            disabled={!hasChanges || saving}
+            className="flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* System Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                System Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="currency">Currency</Label>
-                <Select value={settings.currency} onValueChange={(value) => setSettings({...settings, currency: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NPR">Nepalese Rupee (NPR)</SelectItem>
-                    <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                    <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="language">Language</Label>
-                <Select value={settings.language} onValueChange={(value) => setSettings({...settings, language: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Nepali">नेपाली</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select value={settings.timezone} onValueChange={(value) => setSettings({...settings, timezone: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Asia/Kathmandu">Asia/Kathmandu (NPT)</SelectItem>
-                    <SelectItem value="UTC">UTC</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="dateFormat">Date Format</Label>
-                <Select value={settings.dateFormat} onValueChange={(value) => setSettings({...settings, dateFormat: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Billing Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Billing Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="invoiceDue">Invoice Due Date (Days from month start)</Label>
-                <Input
-                  id="invoiceDue"
-                  type="number"
-                  value={settings.invoiceDueDate}
-                  onChange={(e) => setSettings({...settings, invoiceDueDate: parseInt(e.target.value)})}
-                  min="1"
-                  max="31"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="lateFee">Late Payment Fee (₨)</Label>
-                <Input
-                  id="lateFee"
-                  type="number"
-                  value={settings.latePaymentFee}
-                  onChange={(e) => setSettings({...settings, latePaymentFee: parseInt(e.target.value)})}
-                  min="0"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="autoInvoice">Auto-generate Monthly Invoices</Label>
-                <Switch
-                  id="autoInvoice"
-                  checked={settings.autoGenerateInvoices}
-                  onCheckedChange={(checked) => setSettings({...settings, autoGenerateInvoices: checked})}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="reminderEmails">Send Payment Reminder Emails</Label>
-                <Switch
-                  id="reminderEmails"
-                  checked={settings.sendReminderEmails}
-                  onCheckedChange={(checked) => setSettings({...settings, sendReminderEmails: checked})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment Methods */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Methods
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>💵</span>
-                    <Label>Cash Payments</Label>
-                  </div>
-                  <Switch
-                    checked={settings.acceptCash}
-                    onCheckedChange={(checked) => setSettings({...settings, acceptCash: checked})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>🏦</span>
-                    <Label>Bank Transfer</Label>
-                  </div>
-                  <Switch
-                    checked={settings.acceptBank}
-                    onCheckedChange={(checked) => setSettings({...settings, acceptBank: checked})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>📱</span>
-                    <Label>eSewa</Label>
-                  </div>
-                  <Switch
-                    checked={settings.acceptESewa}
-                    onCheckedChange={(checked) => setSettings({...settings, acceptESewa: checked})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>📱</span>
-                    <Label>Khalti</Label>
-                  </div>
-                  <Switch
-                    checked={settings.acceptKhalti}
-                    onCheckedChange={(checked) => setSettings({...settings, acceptKhalti: checked})}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="emailNotif">Email Notifications</Label>
-                <Switch
-                  id="emailNotif"
-                  checked={settings.emailNotifications}
-                  onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="smsNotif">SMS Notifications</Label>
-                <Switch
-                  id="smsNotif"
-                  checked={settings.smsNotifications}
-                  onCheckedChange={(checked) => setSettings({...settings, smsNotifications: checked})}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="pushNotif">Push Notifications</Label>
-                <Switch
-                  id="pushNotif"
-                  checked={settings.pushNotifications}
-                  onCheckedChange={(checked) => setSettings({...settings, pushNotifications: checked})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Security Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Security & Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="twoFactor">Require Two-Factor Authentication</Label>
-                <Switch
-                  id="twoFactor"
-                  checked={settings.requireTwoFactor}
-                  onCheckedChange={(checked) => setSettings({...settings, requireTwoFactor: checked})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
-                <Input
-                  id="sessionTimeout"
-                  type="number"
-                  value={settings.sessionTimeout}
-                  onChange={(e) => setSettings({...settings, sessionTimeout: parseInt(e.target.value)})}
-                  min="5"
-                  max="480"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="auditLog">Enable Audit Logging</Label>
-                <Switch
-                  id="auditLog"
-                  checked={settings.enableAuditLog}
-                  onCheckedChange={(checked) => setSettings({...settings, enableAuditLog: checked})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Booking Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Booking Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="onlineBooking">Allow Online Booking</Label>
-                <Switch
-                  id="onlineBooking"
-                  checked={settings.allowOnlineBooking}
-                  onCheckedChange={(checked) => setSettings({...settings, allowOnlineBooking: checked})}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="requireApproval">Require Admin Approval</Label>
-                <Switch
-                  id="requireApproval"
-                  checked={settings.requireApproval}
-                  onCheckedChange={(checked) => setSettings({...settings, requireApproval: checked})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="maxAdvance">Max Advance Booking (days)</Label>
-                <Input
-                  id="maxAdvance"
-                  type="number"
-                  value={settings.maxAdvanceBooking}
-                  onChange={(e) => setSettings({...settings, maxAdvanceBooking: parseInt(e.target.value)})}
-                  min="1"
-                  max="365"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Data Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Data Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button
-                onClick={handleExportData}
-                variant="outline"
-                className="h-20 flex-col space-y-2"
-              >
-                <Download className="h-6 w-6" />
-                <span>Export All Data</span>
-              </Button>
-              
-              <Button
-                onClick={handleBackupData}
-                variant="outline"
-                className="h-20 flex-col space-y-2"
-              >
-                <Database className="h-6 w-6" />
-                <span>Create Backup</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="h-20 flex-col space-y-2 text-red-600 hover:text-red-700"
-              >
-                <Shield className="h-6 w-6" />
-                <span>System Reset</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📊 System Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">Active</div>
-                <div className="text-sm text-green-600">System Status</div>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">156</div>
-                <div className="text-sm text-blue-600">Total Users</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">99.9%</div>
-                <div className="text-sm text-purple-600">Uptime</div>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">15GB</div>
-                <div className="text-sm text-orange-600">Data Storage</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-    </MainLayout>
+
+      {/* Save Message */}
+      {saveMessage && (
+        <Alert className={saveMessage.includes('Error') ? 'border-red-200' : 'border-green-200'}>
+          {saveMessage.includes('Error') ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{saveMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search settings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {hasChanges && (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Unsaved changes
+          </Badge>
+        )}
+      </div>
+
+      {/* Settings Tabs */}
+      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+        <TabsList className="grid w-full grid-cols-6">
+          {categories.map((category) => {
+            const Icon = categoryIcons[category as keyof typeof categoryIcons] || SettingsIcon;
+            return (
+              <TabsTrigger key={category} value={category} className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {categoryLabels[category as keyof typeof categoryLabels] || category}
+                </span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        {categories.map((category) => (
+          <TabsContent key={category} value={category} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {React.createElement(categoryIcons[category as keyof typeof categoryIcons] || SettingsIcon, { className: "h-5 w-5" })}
+                  {categoryLabels[category as keyof typeof categoryLabels] || category}
+                </CardTitle>
+                <CardDescription>
+                  Configure {category} related settings for your hostel management system
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {filteredSettings.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? 'No settings match your search.' : 'No settings available in this category.'}
+                  </div>
+                ) : (
+                  filteredSettings.map((setting, index) => (
+                    <div key={setting.id}>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={setting.key} className="text-sm font-medium">
+                            {setting.displayName}
+                          </Label>
+                          {!setting.isEditable && (
+                            <Badge variant="secondary" className="text-xs">
+                              Read Only
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {setting.description}
+                        </p>
+                        <div className="pt-1">
+                          {renderSettingInput(setting)}
+                        </div>
+                        {setting.lastModified && (
+                          <p className="text-xs text-muted-foreground">
+                            Last modified: {new Date(setting.lastModified).toLocaleString()} by {setting.modifiedBy}
+                          </p>
+                        )}
+                      </div>
+                      {index < filteredSettings.length - 1 && <Separator className="mt-6" />}
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
   );
 };
 

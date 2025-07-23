@@ -1,11 +1,11 @@
 
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Dashboard } from "@/components/admin/Dashboard";
+import { SystemDashboard } from "@/components/dashboard/SystemDashboard";
 
 const Index = () => {
   return (
     <MainLayout activeTab="dashboard">
-      <Dashboard />
+      <SystemDashboard />
     </MainLayout>
   );
 };

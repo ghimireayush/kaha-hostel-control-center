@@ -18,7 +18,8 @@
     "availableBeds": 2,
     "lastCleaned": "2024-01-15",
     "maintenanceStatus": "Good",
-    "pricingModel": "monthly"
+    "pricingModel": "monthly",
+    "description": "Shared dormitory with basic amenities - Monthly billing system"
   },
   {
     "id": "room-2",
@@ -38,7 +39,8 @@
     "availableBeds": 2,
     "lastCleaned": "2024-01-14",
     "maintenanceStatus": "Good",
-    "pricingModel": "monthly"
+    "pricingModel": "monthly",
+    "description": "Female-only dormitory with enhanced amenities - Monthly billing system"
   },
   {
     "id": "room-3",
@@ -58,7 +60,8 @@
     "availableBeds": 1,
     "lastCleaned": "2024-01-13",
     "maintenanceStatus": "Excellent",
-    "pricingModel": "monthly"
+    "pricingModel": "monthly",
+    "description": "Private room with premium amenities - Monthly billing with prorated calculations"
   },
   {
     "id": "room-4",
@@ -78,6 +81,7 @@
     "availableBeds": 1,
     "lastCleaned": "2024-01-16",
     "maintenanceStatus": "Excellent",
-    "pricingModel": "monthly"
+    "pricingModel": "monthly",
+    "description": "Luxury suite with all amenities - Monthly billing with mid-month prorated refunds"
   }
 ]

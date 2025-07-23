@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { useAppContext } from "@/contexts/AppContext";
+import { discountService } from "@/services/discountService";
+import { CheckCircle, History, Gift } from "lucide-react";
 
 interface Discount {
   id: string;
@@ -20,118 +25,177 @@ interface Discount {
 }
 
 export const DiscountManagement = () => {
+  const { state, refreshAllData } = useAppContext();
+  const { toast } = useToast();
   const [showDiscountForm, setShowDiscountForm] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
-  const [appliedTo, setAppliedTo] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [discountHistory, setDiscountHistory] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock discount data
-  const [discounts] = useState<Discount[]>([
-    {
-      id: "DISC-001",
-      studentName: "Ram Sharma",
-      room: "A-101",
-      amount: 1000,
-      reason: "Good behavior discount",
-      appliedTo: "March 2024 Invoice",
-      date: "2024-03-10",
-      status: "active"
-    },
-    {
-      id: "DISC-002",
-      studentName: "Sita Poudel",
-      room: "B-205",
-      amount: 2000,
-      reason: "Early payment discount",
-      appliedTo: "February 2024 Invoice",
-      date: "2024-02-05",
-      status: "active"
-    },
-    {
-      id: "DISC-003",
-      studentName: "Hari Thapa",
-      room: "C-301",
-      amount: 500,
-      reason: "Referral bonus",
-      appliedTo: "January 2024 Invoice",
-      date: "2024-01-15",
-      status: "expired"
+  // Load discount history on component mount
+  useEffect(() => {
+    loadDiscountHistory();
+  }, []);
+
+  const loadDiscountHistory = async () => {
+    try {
+      const history = await discountService.getDiscountHistory();
+      setDiscountHistory(history);
+    } catch (error) {
+      console.error('Error loading discount history:', error);
     }
-  ]);
+  };
 
-  const students = [
-    { id: "1", name: "Ram Sharma", room: "A-101" },
-    { id: "2", name: "Sita Poudel", room: "B-205" },
-    { id: "3", name: "Hari Thapa", room: "C-301" }
-  ];
+  // Use real student data from context
+  const students = state.students;
 
   const discountReasons = [
-    "Good behavior discount",
-    "Early payment discount", 
-    "Referral bonus",
-    "Financial hardship",
-    "Long stay discount",
-    "Sibling discount",
-    "Academic excellence",
+    "Good Behavior",
+    "Early Payment", 
+    "Referral Bonus",
+    "Financial Hardship",
+    "Long-term Stay",
+    "Sibling Discount",
+    "Academic Excellence",
     "Custom reason"
   ];
 
-  const totalActiveDiscounts = discounts
+  // Calculate totals
+  const totalActiveDiscounts = discountHistory
     .filter(d => d.status === 'active')
     .reduce((sum, d) => sum + d.amount, 0);
 
-  const handleDiscountSubmit = () => {
-    console.log("Discount submitted:", {
-      student: selectedStudent,
-      amount: discountAmount,
-      reason: discountReason,
-      appliedTo: appliedTo
-    });
-    setShowDiscountForm(false);
-    // Reset form
-    setSelectedStudent("");
-    setDiscountAmount("");
-    setDiscountReason("");
-    setAppliedTo("");
+  const handleDiscountSubmit = async () => {
+    if (!selectedStudent || !discountAmount || !discountReason) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (parseFloat(discountAmount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Discount amount must be greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (discountReason === "Custom reason" && !customReason.trim()) {
+      toast({
+        title: "Missing Custom Reason",
+        description: "Please enter a custom reason for the discount",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const discountData = {
+        studentId: selectedStudent,
+        amount: parseFloat(discountAmount),
+        reason: discountReason === "Custom reason" ? customReason : discountReason,
+        notes: notes.trim(),
+        appliedBy: "Admin" // In real app, get from auth context
+      };
+
+      const result = await discountService.applyDiscount(discountData);
+
+      if (result.success) {
+        toast({
+          title: "Discount Applied Successfully",
+          description: `NPR ${discountAmount} discount applied to ${result.studentName}'s ledger`,
+        });
+
+        // Reset form
+        setSelectedStudent("");
+        setDiscountAmount("");
+        setDiscountReason("");
+        setCustomReason("");
+        setNotes("");
+        setShowDiscountForm(false);
+
+        // Refresh data
+        await refreshAllData();
+        await loadDiscountHistory();
+      } else {
+        throw new Error(result.error);
+      }
+
+    } catch (error) {
+      toast({
+        title: "Error Applying Discount",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">🏷️ Discount Management</h2>
-        <Button onClick={() => setShowDiscountForm(true)}>
+        <h2 className="text-3xl font-bold text-[#231F20]">🏷️ Discount Management</h2>
+        <Button 
+          onClick={() => setShowDiscountForm(true)}
+          className="bg-[#07A64F] hover:bg-[#07A64F]/90 text-white border-0"
+        >
           ➕ Apply New Discount
         </Button>
       </div>
 
       {/* Discount Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              ₨{totalActiveDiscounts.toLocaleString()}
+        <Card className="border-[#1295D0]/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="bg-[#1295D0]/10 p-2 rounded-full">
+              <Gift className="h-5 w-5 text-[#1295D0]" />
             </div>
-            <div className="text-sm text-gray-500">Total Active Discounts</div>
-            <div className="text-xs mt-1 text-blue-600">💰 Currently applied</div>
+            <div>
+              <div className="text-2xl font-bold text-[#1295D0]">
+                ₨{totalActiveDiscounts.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-500">Total Active Discounts</div>
+              <div className="text-xs mt-1 text-[#1295D0]">💰 Currently applied</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {discounts.filter(d => d.status === 'active').length}
+        <Card className="border-[#07A64F]/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="bg-[#07A64F]/10 p-2 rounded-full">
+              <CheckCircle className="h-5 w-5 text-[#07A64F]" />
             </div>
-            <div className="text-sm text-gray-500">Active Discount Records</div>
-            <div className="text-xs mt-1 text-green-600">📊 Current count</div>
+            <div>
+              <div className="text-2xl font-bold text-[#07A64F]">
+                {discountHistory.filter(d => d.status === 'active').length}
+              </div>
+              <div className="text-sm text-gray-500">Active Discount Records</div>
+              <div className="text-xs mt-1 text-[#07A64F]">📊 Current count</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gray-600">
-              {discounts.length}
+        <Card className="border-gray-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="bg-gray-100 p-2 rounded-full">
+              <History className="h-5 w-5 text-gray-600" />
             </div>
-            <div className="text-sm text-gray-500">Total Discount History</div>
-            <div className="text-xs mt-1 text-gray-600">📋 All time</div>
+            <div>
+              <div className="text-2xl font-bold text-gray-600">
+                {discountHistory.length}
+              </div>
+              <div className="text-sm text-gray-500">Total Discount History</div>
+              <div className="text-xs mt-1 text-gray-600">📋 All time</div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -156,36 +220,44 @@ export const DiscountManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {discounts.map((discount) => (
-                <TableRow key={discount.id}>
-                  <TableCell className="font-medium">{discount.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{discount.studentName}</div>
-                      <div className="text-sm text-gray-500">Room: {discount.room}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-bold text-green-600">
-                    ₨{discount.amount.toLocaleString()}
-                  </TableCell>
-                  <TableCell>{discount.reason}</TableCell>
-                  <TableCell>{discount.appliedTo}</TableCell>
-                  <TableCell>{new Date(discount.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge variant={discount.status === 'active' ? 'default' : 'secondary'}>
-                      {discount.status === 'active' ? '✅ Active' : '⏰ Expired'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button size="sm" variant="outline">👁️</Button>
-                      {discount.status === 'active' && (
-                        <Button size="sm" variant="outline">❌</Button>
-                      )}
-                    </div>
+              {discountHistory.length > 0 ? (
+                discountHistory.map((discount) => (
+                  <TableRow key={discount.id}>
+                    <TableCell className="font-medium">{discount.id}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{discount.studentName}</div>
+                        <div className="text-sm text-gray-500">Room: {discount.room}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold text-green-600">
+                      ₨{discount.amount.toLocaleString()}
+                    </TableCell>
+                    <TableCell>{discount.reason}</TableCell>
+                    <TableCell>Ledger</TableCell>
+                    <TableCell>{new Date(discount.date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge variant={discount.status === 'active' ? 'default' : 'secondary'}>
+                        {discount.status === 'active' ? '✅ Active' : '⏰ Expired'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button size="sm" variant="outline">👁️</Button>
+                        {discount.status === 'active' && (
+                          <Button size="sm" variant="outline">❌</Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-4 text-gray-500">
+                    No discount history found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -208,7 +280,7 @@ export const DiscountManagement = () => {
                   <SelectContent>
                     {students.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
-                        {student.name} - Room {student.room}
+                        {student.name} - Room {student.roomNumber}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -248,32 +320,36 @@ export const DiscountManagement = () => {
                   <Input
                     id="customReason"
                     placeholder="Enter custom reason"
-                    onChange={(e) => setDiscountReason(e.target.value)}
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
                   />
                 </div>
               )}
 
               <div>
-                <Label htmlFor="appliedTo">Apply To *</Label>
-                <Select value={appliedTo} onValueChange={setAppliedTo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select invoice to apply discount" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="current">Current Month Invoice</SelectItem>
-                    <SelectItem value="next">Next Month Invoice</SelectItem>
-                    <SelectItem value="outstanding">Outstanding Dues</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="notes">Admin Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Optional notes about this discount"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
               </div>
 
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <h4 className="font-medium text-yellow-800 mb-2">⚠️ Important Notes:</h4>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Discount will be immediately applied to selected invoice</li>
-                  <li>• This action cannot be undone easily</li>
-                  <li>• Ensure the discount amount and reason are correct</li>
-                </ul>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <div className="flex items-start gap-2">
+                  <Gift className="h-4 w-4 text-green-600 mt-0.5" />
+                  <div className="text-sm text-green-800">
+                    <p className="font-medium">Discount will be:</p>
+                    <ul className="mt-1 space-y-1">
+                      <li>• Applied directly to student ledger (not invoice)</li>
+                      <li>• Recorded as one-time discount with history</li>
+                      <li>• Student balance reduced immediately</li>
+                      <li>• Cannot be applied multiple times</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
@@ -282,9 +358,10 @@ export const DiscountManagement = () => {
                 </Button>
                 <Button 
                   onClick={handleDiscountSubmit}
-                  disabled={!selectedStudent || !discountAmount || !discountReason || !appliedTo}
+                  disabled={!selectedStudent || !discountAmount || !discountReason || isProcessing}
+                  className="bg-[#07A64F] hover:bg-[#07A64F]/90 text-white border-0"
                 >
-                  💾 Apply Discount
+                  {isProcessing ? 'Processing...' : '💾 Apply Discount to Ledger'}
                 </Button>
               </div>
             </CardContent>

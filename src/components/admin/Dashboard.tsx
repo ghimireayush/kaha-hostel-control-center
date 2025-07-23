@@ -233,7 +233,7 @@ export const Dashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-red-600 text-xl">
-                          ₹{student.currentBalance.toLocaleString()}
+                          NPR {student.currentBalance.toLocaleString()}
                         </p>
                         <Button 
                           size="sm" 
@@ -427,7 +427,7 @@ export const Dashboard = () => {
                 <span className="font-medium">87%</span>
               </div>
               <Progress value={87} className="h-2" />
-              <p className="text-xs text-gray-600">₹{totalRevenue.toLocaleString()} collected</p>
+              <p className="text-xs text-gray-600">NPR {totalRevenue.toLocaleString()} collected</p>
             </div>
           </CardContent>
         </Card>

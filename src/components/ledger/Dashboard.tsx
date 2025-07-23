@@ -33,17 +33,17 @@ export const Dashboard = () => {
       {/* Header with Real-time Sync Status */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Ledger Dashboard</h2>
+          <h2 className="text-3xl font-bold text-[#231F20]">📊 Ledger Dashboard</h2>
           <div className="flex items-center space-x-2 mt-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-600">Live sync active • Last updated: now</span>
+            <div className="h-2 w-2 bg-[#07A64F] rounded-full animate-pulse"></div>
+            <span className="text-sm text-[#07A64F]">Live sync active • Last updated: now</span>
           </div>
         </div>
         <div className="flex space-x-3">
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-[#1295D0] hover:bg-[#1295D0]/90 text-white border-0">
             📝 Generate Monthly Invoices
           </Button>
-          <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+          <Button variant="outline" className="border-[#07A64F]/30 text-[#07A64F] hover:bg-[#07A64F]/10">
             💰 Bulk Payment Entry
           </Button>
         </div>
@@ -51,7 +51,7 @@ export const Dashboard = () => {
 
       {/* Enhanced Stats Cards with Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-[#1295D0] to-[#1295D0]/80 text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex justify-between items-center">
               Total Students
@@ -62,12 +62,12 @@ export const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{stats.totalStudents}</div>
-            <p className="text-blue-100 text-sm">Active residents</p>
+            <p className="text-white/80 text-sm">Active residents</p>
           </CardContent>
           <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-[#07A64F] to-[#07A64F]/80 text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex justify-between items-center">
               Total Collected
@@ -78,12 +78,12 @@ export const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">₨{stats.totalCollected.toLocaleString()}</div>
-            <p className="text-green-100 text-sm">All time collection</p>
+            <p className="text-white/80 text-sm">All time collection</p>
           </CardContent>
           <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </Card>
 
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex justify-between items-center">
               Outstanding Dues
@@ -99,46 +99,46 @@ export const Dashboard = () => {
           <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-[#1295D0]/80 to-[#07A64F]/80 text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">This Month Collection</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">₨{stats.thisMonthCollection.toLocaleString()}</div>
-            <p className="text-purple-100 text-sm">Current month progress</p>
+            <p className="text-white/80 text-sm">Current month progress</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-[#07A64F]/80 to-[#1295D0]/80 text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Advance Balances</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">₨{stats.advanceBalances.toLocaleString()}</div>
-            <p className="text-yellow-100 text-sm">Student prepayments</p>
+            <p className="text-white/80 text-sm">Student prepayments</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-[#1295D0] to-[#07A64F] text-white relative overflow-hidden border-0 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">84%</div>
-            <p className="text-teal-100 text-sm">Monthly avg collection</p>
+            <p className="text-white/80 text-sm">Monthly avg collection</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Enhanced Highest Due Students with Actions */}
-        <Card>
+        <Card className="border-red-200/50">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-[#231F20]">
               <span className="flex items-center">
                 🚨 Highest Due Students
               </span>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10">
                 View All
               </Button>
             </CardTitle>
@@ -174,13 +174,13 @@ export const Dashboard = () => {
         </Card>
 
         {/* Enhanced Recent Activities with Status */}
-        <Card>
+        <Card className="border-[#1295D0]/20">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-[#231F20]">
               <span className="flex items-center">
                 🕒 Recent Activities
               </span>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10">
                 Activity Log
               </Button>
             </CardTitle>
@@ -219,25 +219,25 @@ export const Dashboard = () => {
       </div>
 
       {/* Quick Actions Panel */}
-      <Card>
+      <Card className="border-[#07A64F]/20">
         <CardHeader>
-          <CardTitle>⚡ Quick Actions</CardTitle>
+          <CardTitle className="text-[#231F20]">⚡ Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button className="h-20 flex-col space-y-2 bg-blue-600 hover:bg-blue-700">
+            <Button className="h-20 flex-col space-y-2 bg-[#1295D0] hover:bg-[#1295D0]/90 text-white border-0 shadow-lg">
               <span className="text-2xl">📝</span>
               <span className="text-sm">Create Invoice</span>
             </Button>
-            <Button className="h-20 flex-col space-y-2 bg-green-600 hover:bg-green-700">
+            <Button className="h-20 flex-col space-y-2 bg-[#07A64F] hover:bg-[#07A64F]/90 text-white border-0 shadow-lg">
               <span className="text-2xl">💰</span>
               <span className="text-sm">Record Payment</span>
             </Button>
-            <Button className="h-20 flex-col space-y-2 bg-purple-600 hover:bg-purple-700">
+            <Button className="h-20 flex-col space-y-2 bg-gradient-to-r from-[#1295D0] to-[#07A64F] hover:from-[#1295D0]/90 hover:to-[#07A64F]/90 text-white border-0 shadow-lg">
               <span className="text-2xl">👥</span>
               <span className="text-sm">Add Student</span>
             </Button>
-            <Button className="h-20 flex-col space-y-2 bg-orange-600 hover:bg-orange-700">
+            <Button className="h-20 flex-col space-y-2 bg-gradient-to-r from-[#07A64F] to-[#1295D0] hover:from-[#07A64F]/90 hover:to-[#1295D0]/90 text-white border-0 shadow-lg">
               <span className="text-2xl">📊</span>
               <span className="text-sm">View Reports</span>
             </Button>

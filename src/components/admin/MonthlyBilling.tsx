@@ -65,7 +65,7 @@ const MonthlyBillingComponent = () => {
 
       toast({
         title: 'Monthly Billing Complete',
-        description: `Generated ${result.successful.length} bills successfully. Total: ₹${result.totalAmount.toLocaleString()}`,
+        description: `Generated ${result.successful.length} bills successfully. Total: NPR ${result.totalAmount.toLocaleString()}`,
       });
 
       if (result.failed.length > 0) {
@@ -106,7 +106,7 @@ const MonthlyBillingComponent = () => {
       if (refund.refundAmount > 0) {
         toast({
           title: 'Refund Calculated',
-          description: `Refund amount: ₹${refund.refundAmount} for ${refund.unusedDays} unused days`,
+          description: `Refund amount: NPR ${refund.refundAmount} for ${refund.unusedDays} unused days`,
         });
       } else {
         toast({
@@ -182,7 +182,7 @@ const MonthlyBillingComponent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-600 font-medium">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-green-700">₹{totalMonthlyRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-700">NPR {totalMonthlyRevenue.toLocaleString()}</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
@@ -207,7 +207,7 @@ const MonthlyBillingComponent = () => {
               <div>
                 <p className="text-sm text-orange-600 font-medium">Avg per Student</p>
                 <p className="text-2xl font-bold text-orange-700">
-                  ₹{activeStudents.length > 0 ? Math.round(totalMonthlyRevenue / activeStudents.length).toLocaleString() : '0'}
+                  NPR {activeStudents.length > 0 ? Math.round(totalMonthlyRevenue / activeStudents.length).toLocaleString() : '0'}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
@@ -267,7 +267,7 @@ const MonthlyBillingComponent = () => {
                   <p className="font-medium">Billing Preview:</p>
                   <ul className="mt-1 space-y-1">
                     <li>• {activeStudents.length} active students will be billed</li>
-                    <li>• Total amount: ₹{totalMonthlyRevenue.toLocaleString()}</li>
+                    <li>• Total amount: NPR {totalMonthlyRevenue.toLocaleString()}</li>
                     <li>• Due date: 10th of {selectedMonth}</li>
                     <li>• Prorated billing for mid-month enrollments</li>
                   </ul>
@@ -294,7 +294,7 @@ const MonthlyBillingComponent = () => {
                   {billingResults.failed.length > 0 && (
                     <p>❌ Failed: {billingResults.failed.length} bills</p>
                   )}
-                  <p>💰 Total Amount: ₹{billingResults.totalAmount.toLocaleString()}</p>
+                  <p>💰 Total Amount: NPR {billingResults.totalAmount.toLocaleString()}</p>
                 </div>
               </div>
             )}
@@ -361,14 +361,14 @@ const MonthlyBillingComponent = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Daily Rate:</span>
-                    <span className="font-medium">₹{refundCalculation.dailyRate}</span>
+                    <span className="font-medium">NPR {refundCalculation.dailyRate}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span className="font-medium">Refund Amount:</span>
                     <span className={`font-bold text-lg ${
                       refundCalculation.refundAmount > 0 ? 'text-green-600' : 'text-gray-600'
                     }`}>
-                      ₹{refundCalculation.refundAmount.toLocaleString()}
+                      NPR {refundCalculation.refundAmount.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 mt-2">{refundCalculation.message}</p>

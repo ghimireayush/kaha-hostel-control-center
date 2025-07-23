@@ -185,73 +185,7 @@ const HostelProfile = () => {
           </Card>
         </div>
 
-        {/* Amenities */}
-        <Card>
-          <CardHeader>
-            <CardTitle>🏨 Amenities & Services</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {hostelData.amenities.map((amenity, index) => {
-                const Icon = amenity.icon;
-                return (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-gray-600" />
-                      <span className="font-medium">{amenity.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {amenity.price && (
-                        <Badge variant="outline">₨{amenity.price}/month</Badge>
-                      )}
-                      <Badge className={amenity.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                        {amenity.available ? 'Available' : 'Not Available'}
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Room Types */}
-        <Card>
-          <CardHeader>
-            <CardTitle>🛏️ Room Types & Pricing</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {hostelData.roomTypes.map((room, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <h4 className="font-semibold text-lg">{room.type}</h4>
-                  <div className="mt-2 space-y-2">
-                    <p className="text-2xl font-bold text-blue-600">₨{room.basePrice.toLocaleString()}/month</p>
-                    <p className="text-sm text-gray-600">{room.beds} bed{room.beds > 1 ? 's' : ''} per room</p>
-                    <Badge variant="outline">{room.available} rooms available</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Hostel Policies */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📋 Hostel Policies</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {hostelData.policies.map((policy, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>{policy}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </MainLayout>
   );

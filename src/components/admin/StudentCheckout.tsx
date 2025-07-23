@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, User, DollarSign, Calendar, FileText } from "lucide-react";
+import { AlertCircle, CheckCircle, User, DollarSign, FileText, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { billingService } from "@/services/billingService";
 
 interface Student {
     id: string;
@@ -30,7 +31,23 @@ export const StudentCheckout = ({ student, onCheckoutComplete, onClose }: Studen
     const [notes, setNotes] = useState("");
     const [duesCleared, setDuesCleared] = useState(student.currentBalance <= 0);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [refundCalculation, setRefundCalculation] = useState(null);
     const { toast } = useToast();
+
+    // Calculate prorated refund on component mount
+    useEffect(() => {
+        const calculateRefund = () => {
+            try {
+                const checkoutDate = new Date().toISOString().split('T')[0];
+                const refund = billingService.calculateCheckoutRefund(student, checkoutDate);
+                setRefundCalculation(refund);
+            } catch (error) {
+                console.error('Error calculating refund:', error);
+            }
+        };
+
+        calculateRefund();
+    }, [student]);
 
     const hasDues = student.currentBalance > 0;
     const canCheckout = !hasDues || duesCleared;
@@ -125,11 +142,11 @@ export const StudentCheckout = ({ student, onCheckoutComplete, onClose }: Studen
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                            <User className="h-5 w-5" />
+                        <span className="flex items-center gap-2 text-[#231F20]">
+                            <User className="h-5 w-5 text-[#1295D0]" />
                             Student Checkout
                         </span>
-                        <Button variant="ghost" onClick={onClose}>✕</Button>
+                        <Button variant="ghost" onClick={onClose} className="hover:bg-gray-100">✕</Button>
                     </CardTitle>
                 </CardHeader>
 
@@ -152,7 +169,7 @@ export const StudentCheckout = ({ student, onCheckoutComplete, onClose }: Studen
                                 </div>
                                 <div className="text-right">
                                     <div className={`text-2xl font-bold ${hasDues ? "text-red-600" : "text-green-600"}`}>
-                                        Rs {student.currentBalance.toLocaleString()}
+                                        NPR {student.currentBalance.toLocaleString()}
                                     </div>
                                     <Badge variant={hasDues ? "destructive" : "default"}>
                                         {hasDues ? "Dues Pending" : "All Clear"}
@@ -191,6 +208,63 @@ export const StudentCheckout = ({ student, onCheckoutComplete, onClose }: Studen
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Prorated Refund Calculation */}
+                    {refundCalculation && duesCleared && (
+                        <Card className="border-[#1295D0]/30 bg-[#1295D0]/5">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center gap-2 text-lg text-[#231F20]">
+                                    <Calculator className="h-5 w-5 text-[#1295D0]" />
+                                    Prorated Refund Calculation
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-gray-600">Total Days in Month</p>
+                                        <p className="font-semibold">{refundCalculation.totalDaysInMonth} days</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600">Checkout Day</p>
+                                        <p className="font-semibold">Day {refundCalculation.checkoutDay}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600">Unused Days</p>
+                                        <p className="font-semibold text-blue-600">{refundCalculation.remainingDays} days</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600">Daily Rate</p>
+                                        <p className="font-semibold">NPR {refundCalculation.dailyRate}/day</p>
+                                    </div>
+                                </div>
+
+                                <div className="border-t pt-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Prorated Refund Amount:</span>
+                                        <span className="text-xl font-bold text-green-600">
+                                            NPR {refundCalculation.refundAmount.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {refundCalculation.hasRefund ? (
+                                        <p className="text-sm text-green-600 mt-1">
+                                            ✅ Refund will be processed for unused days
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            ℹ️ No refund applicable (checkout at month end)
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="bg-blue-100 p-3 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Monthly Billing System:</strong> All charges are calculated monthly.
+                                        When checking out mid-month, unused days are refunded proportionally.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Checkout Reason */}
                     <div className="space-y-2">

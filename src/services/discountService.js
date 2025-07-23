@@ -1,54 +1,132 @@
-
 import discountsData from '../data/discounts.json';
-
-let discounts = [...discountsData];
+import { ledgerService } from './ledgerService.js';
+import { studentService } from './studentService.js';
+import { notificationService } from './notificationService.js';
 
 export const discountService = {
   // Get all discounts
   async getDiscounts() {
     return new Promise((resolve) => {
-      setTimeout(() => resolve([...discounts]), 100);
+      setTimeout(() => resolve(discountsData), 100);
+    });
+  },
+
+  // Get discount history
+  async getDiscountHistory() {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(discountsData), 100);
     });
   },
 
   // Get discount by ID
   async getDiscountById(id) {
     return new Promise((resolve) => {
-      const discount = discounts.find(d => d.id === id);
+      const discount = discountsData.find(d => d.id === id);
       setTimeout(() => resolve(discount), 100);
     });
   },
 
-  // Get discounts by student ID
-  async getDiscountsByStudentId(studentId) {
-    return new Promise((resolve) => {
-      const studentDiscounts = discounts.filter(d => d.studentId === studentId);
-      setTimeout(() => resolve(studentDiscounts), 100);
-    });
-  },
-
-  // Apply new discount
+  // Apply discount directly to ledger
   async applyDiscount(discountData) {
-    return new Promise((resolve) => {
-      const newDiscount = {
-        id: `DIS${String(discounts.length + 1).padStart(3, '0')}`,
-        ...discountData,
-        appliedDate: new Date().toISOString().split('T')[0],
-        appliedBy: 'Admin',
-        status: 'Active'
-      };
-      discounts.push(newDiscount);
-      setTimeout(() => resolve(newDiscount), 100);
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { studentId, amount, reason, notes, appliedBy } = discountData;
+        
+        // Get student details
+        const student = await studentService.getStudentById(studentId);
+        if (!student) {
+          throw new Error('Student not found');
+        }
+
+        // Check if student already has this discount type
+        const existingDiscount = discountsData.find(d => 
+          d.studentId === studentId && 
+          d.reason === reason && 
+          d.status === 'active'
+        );
+
+        if (existingDiscount) {
+          throw new Error('This discount has already been applied to this student');
+        }
+
+        // Create new discount record
+        const newDiscount = {
+          id: `DISC-${Date.now()}`,
+          studentId,
+          studentName: student.name,
+          room: student.roomNumber,
+          amount,
+          reason,
+          notes,
+          appliedBy,
+          date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        };
+        
+        // Add to discount history
+        discountsData.push(newDiscount);
+
+        // Create ledger entry for discount
+        await ledgerService.addLedgerEntry({
+          studentId,
+          type: 'Discount',
+          description: `Discount: ${reason}`,
+          debit: 0,
+          credit: amount, // Credit reduces the amount owed
+          referenceId: newDiscount.id,
+          notes
+        });
+
+        // Update student balance
+        const currentBalance = student.currentBalance || 0;
+        await studentService.updateStudent(studentId, {
+          currentBalance: Math.max(0, currentBalance - amount)
+        });
+
+        // Send notification via Kaha App
+        await notificationService.notifyDiscountApplied(
+          studentId,
+          amount,
+          reason
+        );
+
+        console.log(`Discount applied: NPR ${amount} to ${student.name} (${reason})`);
+        
+        setTimeout(() => resolve({
+          success: true,
+          discount: newDiscount,
+          studentName: student.name
+        }), 500);
+      } catch (error) {
+        console.error('Error applying discount:', error);
+        setTimeout(() => reject({
+          success: false,
+          error: error.message
+        }), 500);
+      }
     });
   },
 
-  // Update discount status
-  async updateDiscountStatus(id, status) {
+  // Update discount
+  async updateDiscount(id, updateData) {
     return new Promise((resolve) => {
-      const index = discounts.findIndex(d => d.id === id);
+      const index = discountsData.findIndex(d => d.id === id);
       if (index !== -1) {
-        discounts[index].status = status;
-        setTimeout(() => resolve(discounts[index]), 100);
+        discountsData[index] = { ...discountsData[index], ...updateData };
+        setTimeout(() => resolve(discountsData[index]), 100);
+      } else {
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
+  // Expire discount
+  async expireDiscount(id) {
+    return new Promise((resolve) => {
+      const index = discountsData.findIndex(d => d.id === id);
+      if (index !== -1) {
+        discountsData[index].status = 'expired';
+        setTimeout(() => resolve(discountsData[index]), 100);
       } else {
         setTimeout(() => resolve(null), 100);
       }
@@ -58,26 +136,15 @@ export const discountService = {
   // Get discount statistics
   async getDiscountStats() {
     return new Promise((resolve) => {
+      const activeDiscounts = discountsData.filter(d => d.status === 'active');
       const stats = {
-        totalDiscounts: discounts.reduce((sum, d) => sum + d.amount, 0),
-        activeDiscounts: discounts.filter(d => d.status === 'Active').length,
-        totalDiscountHistory: discounts.length
+        totalDiscounts: discountsData.length,
+        activeDiscounts: activeDiscounts.length,
+        totalDiscountAmount: activeDiscounts.reduce((sum, d) => sum + d.amount, 0),
+        averageDiscount: activeDiscounts.length > 0 ? 
+          Math.round(activeDiscounts.reduce((sum, d) => sum + d.amount, 0) / activeDiscounts.length) : 0
       };
       setTimeout(() => resolve(stats), 100);
     });
-  },
-
-  // Get discount reasons
-  getDiscountReasons() {
-    return [
-      'Good behavior discount',
-      'Early payment discount',
-      'Referral bonus',
-      'Financial hardship',
-      'Long stay discount',
-      'Sibling discount',
-      'Academic excellence',
-      'Custom reason'
-    ];
   }
 };

@@ -1,0 +1,285 @@
+[
+  {
+    "id": "RPT001",
+    "name": "Monthly Financial Report - January 2024",
+    "type": "financial",
+    "description": "Comprehensive financial report including revenue, expenses, and outstanding dues",
+    "generatedBy": "USR003",
+    "generatedAt": "2024-02-01T08:00:00Z",
+    "parameters": {
+      "month": "2024-01",
+      "includeStudentDetails": true,
+      "includePaymentBreakdown": true,
+      "currency": "NPR"
+    },
+    "data": {
+      "totalRevenue": 450000,
+      "totalExpenses": 125000,
+      "netIncome": 325000,
+      "outstandingDues": 85000,
+      "collectionRate": 84.2,
+      "studentCount": 156,
+      "occupancyRate": 87.2
+    },
+    "format": "pdf",
+    "filePath": "/reports/financial/2024-01-monthly-report.pdf",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "monthly",
+      "dayOfMonth": 1,
+      "time": "08:00",
+      "recipients": ["USR001", "USR003"]
+    }
+  },
+  {
+    "id": "RPT002",
+    "name": "Student Occupancy Report - January 2024",
+    "type": "occupancy",
+    "description": "Room occupancy statistics and student distribution analysis",
+    "generatedBy": "USR002",
+    "generatedAt": "2024-01-31T17:30:00Z",
+    "parameters": {
+      "month": "2024-01",
+      "includeRoomDetails": true,
+      "includeVacancyProjections": true
+    },
+    "data": {
+      "totalRooms": 180,
+      "occupiedRooms": 157,
+      "availableRooms": 23,
+      "occupancyRate": 87.2,
+      "averageStayDuration": 8.5,
+      "turnoverRate": 12.3
+    },
+    "format": "excel",
+    "filePath": "/reports/occupancy/2024-01-occupancy-report.xlsx",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "monthly",
+      "dayOfMonth": 31,
+      "time": "17:00",
+      "recipients": ["USR001", "USR002"]
+    }
+  },
+  {
+    "id": "RPT003",
+    "name": "Outstanding Dues Report",
+    "type": "financial",
+    "description": "List of students with outstanding payments and overdue amounts",
+    "generatedBy": "USR003",
+    "generatedAt": "2024-01-20T10:15:00Z",
+    "parameters": {
+      "asOfDate": "2024-01-20",
+      "minimumAmount": 1000,
+      "includeDaysOverdue": true
+    },
+    "data": {
+      "totalOutstanding": 85000,
+      "studentsWithDues": 23,
+      "averageDueAmount": 3695,
+      "overdueCount": 12,
+      "criticalOverdue": 5
+    },
+    "format": "pdf",
+    "filePath": "/reports/financial/outstanding-dues-2024-01-20.pdf",
+    "isScheduled": false,
+    "scheduleConfig": null
+  },
+  {
+    "id": "RPT004",
+    "name": "Maintenance Summary Report",
+    "type": "maintenance",
+    "description": "Summary of maintenance requests, completions, and pending work",
+    "generatedBy": "USR006",
+    "generatedAt": "2024-01-25T14:00:00Z",
+    "parameters": {
+      "dateRange": {
+        "start": "2024-01-01",
+        "end": "2024-01-25"
+      },
+      "includeCompletedWork": true,
+      "includeCostAnalysis": true
+    },
+    "data": {
+      "totalRequests": 45,
+      "completedRequests": 38,
+      "pendingRequests": 7,
+      "totalCost": 25000,
+      "averageCompletionTime": 2.3
+    },
+    "format": "pdf",
+    "filePath": "/reports/maintenance/maintenance-summary-2024-01.pdf",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "weekly",
+      "dayOfWeek": "friday",
+      "time": "14:00",
+      "recipients": ["USR002", "USR006"]
+    }
+  },
+  {
+    "id": "RPT005",
+    "name": "Student Demographics Report",
+    "type": "student",
+    "description": "Analysis of student demographics, courses, and institutions",
+    "generatedBy": "USR007",
+    "generatedAt": "2024-01-15T11:30:00Z",
+    "parameters": {
+      "includeAgeDistribution": true,
+      "includeCourseBreakdown": true,
+      "includeGeographicDistribution": true
+    },
+    "data": {
+      "totalStudents": 156,
+      "averageAge": 21.5,
+      "maleStudents": 89,
+      "femaleStudents": 67,
+      "topCourses": ["Engineering", "Medicine", "Business"],
+      "topInstitutions": ["Tribhuvan University", "Kathmandu University", "Pokhara University"]
+    },
+    "format": "excel",
+    "filePath": "/reports/student/demographics-2024-01.xlsx",
+    "isScheduled": false,
+    "scheduleConfig": null
+  },
+  {
+    "id": "RPT006",
+    "name": "Payment Collection Analysis",
+    "type": "financial",
+    "description": "Analysis of payment patterns, methods, and collection efficiency",
+    "generatedBy": "USR003",
+    "generatedAt": "2024-01-28T16:45:00Z",
+    "parameters": {
+      "month": "2024-01",
+      "includePaymentMethods": true,
+      "includeTimingAnalysis": true
+    },
+    "data": {
+      "totalCollected": 420000,
+      "onTimePayments": 132,
+      "latePayments": 24,
+      "paymentMethods": {
+        "cash": 35,
+        "upi": 89,
+        "bank_transfer": 32
+      },
+      "averagePaymentDelay": 3.2
+    },
+    "format": "pdf",
+    "filePath": "/reports/financial/payment-analysis-2024-01.pdf",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "monthly",
+      "dayOfMonth": 28,
+      "time": "16:00",
+      "recipients": ["USR001", "USR003"]
+    }
+  },
+  {
+    "id": "RPT007",
+    "name": "Room Utilization Report",
+    "type": "occupancy",
+    "description": "Detailed analysis of room utilization and efficiency metrics",
+    "generatedBy": "USR002",
+    "generatedAt": "2024-01-22T09:20:00Z",
+    "parameters": {
+      "includeRoomTypes": true,
+      "includeUtilizationTrends": true,
+      "includeRevenuePerRoom": true
+    },
+    "data": {
+      "averageUtilization": 87.2,
+      "highestUtilization": 95.5,
+      "lowestUtilization": 72.1,
+      "revenuePerRoom": 2500,
+      "mostPopularRoomType": "Single AC"
+    },
+    "format": "excel",
+    "filePath": "/reports/occupancy/room-utilization-2024-01.xlsx",
+    "isScheduled": false,
+    "scheduleConfig": null
+  },
+  {
+    "id": "RPT008",
+    "name": "Expense Breakdown Report",
+    "type": "financial",
+    "description": "Detailed breakdown of hostel operational expenses by category",
+    "generatedBy": "USR001",
+    "generatedAt": "2024-01-30T13:15:00Z",
+    "parameters": {
+      "month": "2024-01",
+      "includeCategoryBreakdown": true,
+      "includeVendorAnalysis": true
+    },
+    "data": {
+      "totalExpenses": 125000,
+      "utilities": 45000,
+      "maintenance": 25000,
+      "supplies": 30000,
+      "staff": 25000,
+      "topVendors": ["Electric Company", "Water Supply", "Maintenance Co."]
+    },
+    "format": "pdf",
+    "filePath": "/reports/financial/expense-breakdown-2024-01.pdf",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "monthly",
+      "dayOfMonth": 30,
+      "time": "13:00",
+      "recipients": ["USR001", "USR003"]
+    }
+  },
+  {
+    "id": "RPT009",
+    "name": "System Performance Report",
+    "type": "system",
+    "description": "System usage statistics and performance metrics",
+    "generatedBy": "USR001",
+    "generatedAt": "2024-01-26T12:00:00Z",
+    "parameters": {
+      "includeUserActivity": true,
+      "includeSystemHealth": true,
+      "includeNotificationStats": true
+    },
+    "data": {
+      "systemUptime": 99.8,
+      "averageResponseTime": 180,
+      "totalTransactions": 2847,
+      "notificationsSent": 1250,
+      "activeUsers": 8
+    },
+    "format": "json",
+    "filePath": "/reports/system/performance-2024-01.json",
+    "isScheduled": true,
+    "scheduleConfig": {
+      "frequency": "weekly",
+      "dayOfWeek": "friday",
+      "time": "12:00",
+      "recipients": ["USR001"]
+    }
+  },
+  {
+    "id": "RPT010",
+    "name": "Discount Impact Analysis",
+    "type": "financial",
+    "description": "Analysis of discounts applied and their impact on revenue",
+    "generatedBy": "USR003",
+    "generatedAt": "2024-01-24T15:30:00Z",
+    "parameters": {
+      "month": "2024-01",
+      "includeDiscountTypes": true,
+      "includeStudentImpact": true
+    },
+    "data": {
+      "totalDiscounts": 45000,
+      "discountCount": 89,
+      "averageDiscount": 506,
+      "topDiscountReasons": ["Good behavior", "Early payment", "Financial hardship"],
+      "revenueImpact": -2.1
+    },
+    "format": "excel",
+    "filePath": "/reports/financial/discount-analysis-2024-01.xlsx",
+    "isScheduled": false,
+    "scheduleConfig": null
+  }
+]

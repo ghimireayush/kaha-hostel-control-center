@@ -1,5 +1,8 @@
 
 import paymentsData from '../data/payments.json';
+import { studentService } from './studentService.js';
+import { ledgerService } from './ledgerService.js';
+import { notificationService } from './notificationService.js';
 
 let payments = [...paymentsData];
 
@@ -29,15 +32,52 @@ export const paymentService = {
 
   // Record new payment
   async recordPayment(paymentData) {
-    return new Promise((resolve) => {
-      const newPayment = {
-        id: `PAY${String(payments.length + 1).padStart(3, '0')}`,
-        ...paymentData,
-        paymentDate: new Date().toISOString().split('T')[0],
-        receivedBy: 'Admin'
-      };
-      payments.push(newPayment);
-      setTimeout(() => resolve(newPayment), 100);
+    return new Promise(async (resolve) => {
+      try {
+        const newPayment = {
+          id: `PAY${String(payments.length + 1).padStart(3, '0')}`,
+          ...paymentData,
+          paymentDate: new Date().toISOString().split('T')[0],
+          receivedBy: 'Admin'
+        };
+        
+        payments.push(newPayment);
+
+        // Get student details for notification
+        const student = await studentService.getStudentById(paymentData.studentId);
+        if (student) {
+          // Calculate remaining balance after payment
+          const remainingBalance = Math.max(0, (student.currentBalance || 0) - paymentData.amount);
+          
+          // Send payment confirmation via Kaha App
+          await notificationService.notifyPaymentReceived(
+            paymentData.studentId,
+            paymentData.amount,
+            remainingBalance
+          );
+
+          // Create ledger entry for payment
+          await ledgerService.addLedgerEntry({
+            studentId: paymentData.studentId,
+            type: 'Payment',
+            description: `Payment received - ${paymentData.paymentMode}`,
+            debit: 0,
+            credit: paymentData.amount,
+            referenceId: newPayment.id,
+            notes: paymentData.notes || ''
+          });
+
+          // Update student balance
+          await studentService.updateStudent(paymentData.studentId, {
+            currentBalance: remainingBalance
+          });
+        }
+
+        setTimeout(() => resolve(newPayment), 100);
+      } catch (error) {
+        console.error('Error recording payment:', error);
+        setTimeout(() => resolve(newPayment), 100);
+      }
     });
   },
 

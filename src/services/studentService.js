@@ -1,5 +1,6 @@
 
 import studentsData from '../data/students.json';
+import { notificationService } from './notificationService.js';
 
 let students = [...studentsData];
 
@@ -38,6 +39,11 @@ export const studentService = {
       };
       
       students.push(newStudent);
+      
+      // Send welcome notification via Kaha App
+      const message = `Welcome to Kaha Hostel! Your profile has been created. Room ${newStudent.roomNumber} has been assigned to you.`;
+      console.log(`📱 Kaha App Notification sent to ${newStudent.name}:`, message);
+      
       console.log('New student created:', newStudent);
       setTimeout(() => resolve(newStudent), 100);
     });
