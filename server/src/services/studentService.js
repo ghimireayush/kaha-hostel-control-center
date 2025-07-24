@@ -102,6 +102,85 @@ async function getStudentById(id) {
 }
 
 /**
+ * Create a new student
+ * @param {Object} studentData - Student data
+ * @returns {Promise<Object>} Created student
+ */
+async function createStudent(studentData) {
+    const students = await readStudentData();
+    
+    // Generate new student ID
+    const existingIds = students.map(s => parseInt(s.id.replace('S', '')) || 0);
+    const nextId = Math.max(...existingIds, 0) + 1;
+    const newId = `S${String(nextId).padStart(3, '0')}`;
+    
+    // Create new student with default values
+    const newStudent = {
+        id: newId,
+        name: studentData.name,
+        phone: studentData.phone,
+        email: studentData.email,
+        roomNumber: studentData.roomNumber,
+        guardianName: studentData.guardianName || '',
+        guardianPhone: studentData.guardianPhone || '',
+        address: studentData.address || '',
+        baseMonthlyFee: studentData.baseMonthlyFee || 0,
+        laundryFee: studentData.laundryFee || 0,
+        foodFee: studentData.foodFee || 0,
+        enrollmentDate: new Date().toISOString().split('T')[0],
+        status: 'Active',
+        currentBalance: studentData.currentBalance || 0,
+        advanceBalance: studentData.advanceBalance || 0,
+        emergencyContact: studentData.emergencyContact || '',
+        course: studentData.course || '',
+        institution: studentData.institution || '',
+        idProofType: studentData.idProofType || '',
+        idProofNumber: studentData.idProofNumber || '',
+        bookingRequestId: studentData.bookingRequestId || null
+    };
+    
+    // Add to students array
+    students.push(newStudent);
+    
+    // Save updated students
+    await writeStudentData(students);
+    
+    return newStudent;
+}
+
+/**
+ * Update an existing student
+ * @param {string} id - Student ID
+ * @param {Object} updates - Updates to apply
+ * @returns {Promise<Object>} Updated student
+ */
+async function updateStudent(id, updates) {
+    const students = await readStudentData();
+    const studentIndex = students.findIndex(s => s.id === id);
+
+    if (studentIndex === -1) {
+        const error = new Error('Student not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // Update student with provided data
+    const updatedStudent = {
+        ...students[studentIndex],
+        ...updates,
+        // Ensure ID cannot be changed
+        id: students[studentIndex].id
+    };
+    
+    students[studentIndex] = updatedStudent;
+    
+    // Save updated students
+    await writeStudentData(students);
+    
+    return updatedStudent;
+}
+
+/**
  * Process student checkout
  * @param {string} id - Student ID
  * @param {Object} checkoutDetails - Checkout details
@@ -177,5 +256,7 @@ module.exports = {
     getAllStudents,
     getStudentStats,
     getStudentById,
+    createStudent,
+    updateStudent,
     processCheckout
 };

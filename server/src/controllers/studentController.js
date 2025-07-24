@@ -88,6 +88,63 @@ async function getStudentById(req, res, next) {
 }
 
 /**
+ * Create a new student
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function createStudent(req, res, next) {
+    try {
+        const studentData = req.body;
+
+        // Basic validation for required fields
+        const requiredFields = ['name', 'phone', 'email', 'roomNumber'];
+        const missingFields = requiredFields.filter(field => !studentData[field]);
+        
+        if (missingFields.length > 0) {
+            const error = new Error('Missing required fields');
+            error.statusCode = 422;
+            error.details = missingFields.reduce((acc, field) => {
+                acc[field] = `${field} is required`;
+                return acc;
+            }, {});
+            throw error;
+        }
+
+        const result = await studentService.createStudent(studentData);
+
+        res.status(201).json({
+            status: 201,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * Update an existing student
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function updateStudent(req, res, next) {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const result = await studentService.updateStudent(id, updates);
+
+        res.status(200).json({
+            status: 200,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
  * Process student checkout
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -121,5 +178,7 @@ module.exports = {
     getAllStudents,
     getStudentStats,
     getStudentById,
+    createStudent,
+    updateStudent,
     processCheckout
 };
