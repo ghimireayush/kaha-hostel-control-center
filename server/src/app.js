@@ -6,6 +6,7 @@ const path = require('path');
 
 // Import routes
 const bookingRoutes = require('./routes/bookingRoutes');
+const studentRoutes = require('./routes/studentRoutes');
 
 // Swagger setup
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -42,16 +43,18 @@ const options = {
     ],
   },
   // Paths to files containing OpenAPI definitions (JSDoc comments)
-  apis: ['./src/controllers/*.js', './src/routes/*.js'], // Point to where JSDoc is in controllers and routes
+  apis: [path.join(__dirname, 'controllers/*.js'), path.join(__dirname, 'routes/*.js')], // Use absolute paths
 };
 
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // --- End Swagger Configuration ---
-
 // --- Routes ---
 // Mount the booking routes under the /api/v1/booking-requests path
 app.use('/api/v1/booking-requests', bookingRoutes);
+// Mount the student routes under the /api/v1/students path
+app.use('/api/v1/students', studentRoutes);
+
 
 // --- Error Handling Middleware (Basic) ---
 // Catch 404 and forward to error handler

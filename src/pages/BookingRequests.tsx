@@ -12,7 +12,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useNavigation } from "@/hooks/useNavigation";
 
 const BookingRequests = () => {
-  const { state, approveBooking } = useAppContext();
+  const { state, approveBooking, refreshAllData } = useAppContext();
   const { goToLedger } = useNavigation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -49,9 +49,14 @@ const BookingRequests = () => {
 
   const handleReject = async (request: any) => {
     try {
-      // In a real app, you'd call an API here
+      const { bookingService } = await import("@/services/bookingService");
+      await bookingService.rejectBookingRequest(request.id, "Rejected by admin");
+      
       toast.error(`${request.name}'s request has been rejected.`);
       setSelectedRequest(null);
+      
+      // Refresh the data to show updated status
+      await refreshAllData();
     } catch (error) {
       toast.error("Error rejecting booking request");
       console.error("Rejection error:", error);

@@ -12,12 +12,13 @@
     "requestDate": "2024-01-10",
     "checkInDate": "2024-02-01",
     "duration": "12 months",
-    "status": "Pending",
+    "status": "Approved",
     "notes": "Vegetarian food preference",
     "emergencyContact": "+977-9861234569",
     "address": "Dharan, Nepal",
     "idProofType": "Citizenship",
-    "idProofNumber": "34-56-78-90123"
+    "idProofNumber": "34-56-78-90123",
+    "approvedDate": "2025-07-24"
   },
   {
     "id": "BR002",

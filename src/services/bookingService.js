@@ -1,63 +1,84 @@
 
-import bookingRequestsData from '../data/bookingRequests.json';
 import { studentService } from './studentService.js';
 import { ledgerService } from './ledgerService.js';
-import { invoiceService } from './invoiceService.js';
 import { billingService } from './billingService.js';
 import { notificationService } from './notificationService.js';
 
-let bookingRequests = [...bookingRequestsData];
+const API_BASE_URL = 'http://localhost:3001/api/v1';
+
+// Helper function to handle API requests
+async function apiRequest(endpoint, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.data; // API returns data in { status, data } format
+  } catch (error) {
+    console.error('API Request Error:', error);
+    throw error;
+  }
+}
 
 export const bookingService = {
   // Get all booking requests
   async getBookingRequests() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...bookingRequests]), 100);
-    });
+    try {
+      const result = await apiRequest('/booking-requests');
+      return result.items || []; // API returns { items, pagination }
+    } catch (error) {
+      console.error('Error fetching booking requests:', error);
+      throw error;
+    }
   },
 
   // Get booking request by ID
   async getBookingRequestById(id) {
-    return new Promise((resolve) => {
-      const request = bookingRequests.find(r => r.id === id);
-      setTimeout(() => resolve(request), 100);
-    });
+    try {
+      return await apiRequest(`/booking-requests/${id}`);
+    } catch (error) {
+      console.error('Error fetching booking request by ID:', error);
+      throw error;
+    }
   },
 
   // Create new booking request
   async createBookingRequest(requestData) {
-    return new Promise((resolve) => {
-      const newRequest = {
-        id: `BR${String(bookingRequests.length + 1).padStart(3, '0')}`,
-        ...requestData,
-        requestDate: new Date().toISOString().split('T')[0],
-        status: 'Pending'
-      };
-      bookingRequests.push(newRequest);
-      setTimeout(() => resolve(newRequest), 100);
-    });
+    try {
+      return await apiRequest('/booking-requests', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+    } catch (error) {
+      console.error('Error creating booking request:', error);
+      throw error;
+    }
   },
 
   // Approve booking and trigger student profile creation
   async approveBookingRequest(bookingId, roomAssignment) {
-    return new Promise(async (resolve) => {
-      const requestIndex = bookingRequests.findIndex(r => r.id === bookingId);
-      if (requestIndex === -1) {
-        setTimeout(() => resolve(null), 100);
-        return;
-      }
+    try {
+      // Call the API to approve the booking
+      const result = await apiRequest(`/booking-requests/${bookingId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ roomAssignment }),
+      });
 
-      const request = bookingRequests[requestIndex];
+      // The API returns { booking, student } - we'll use the booking data
+      // and create our own student profile using existing services
+      const request = await this.getBookingRequestById(bookingId);
       
-      // Update booking status
-      bookingRequests[requestIndex] = {
-        ...request,
-        status: 'Approved',
-        approvedDate: new Date().toISOString().split('T')[0],
-        assignedRoom: roomAssignment
-      };
-
-      // Create student profile
+      // Create student profile using existing services
       const studentData = {
         name: request.name,
         phone: request.phone,
@@ -77,63 +98,75 @@ export const bookingService = {
         bookingRequestId: bookingId
       };
 
-      try {
-        // Create student profile
-        const newStudent = await studentService.createStudent(studentData);
-        
-        // Create initial ledger entry for enrollment
-        await ledgerService.addLedgerEntry({
-          studentId: newStudent.id,
-          type: 'Enrollment',
-          description: 'Student enrollment - Welcome to hostel',
-          debit: 0,
-          credit: 0,
-          referenceId: bookingId
-        });
+      // Create student profile
+      const newStudent = await studentService.createStudent(studentData);
+      
+      // Create initial ledger entry for enrollment
+      await ledgerService.addLedgerEntry({
+        studentId: newStudent.id,
+        type: 'Enrollment',
+        description: 'Student enrollment - Welcome to hostel',
+        debit: 0,
+        credit: 0,
+        referenceId: bookingId
+      });
 
-        // Generate prorated initial invoice using billing service
-        const initialInvoice = await billingService.generateInitialInvoice(newStudent);
-        
-        // Update student balance with initial invoice amount
-        await studentService.updateStudent(newStudent.id, {
-          currentBalance: initialInvoice.total
-        });
+      // Generate prorated initial invoice using billing service
+      const initialInvoice = await billingService.generateInitialInvoice(newStudent);
+      
+      // Update student balance with initial invoice amount
+      await studentService.updateStudent(newStudent.id, {
+        currentBalance: initialInvoice.total
+      });
 
-        // Send welcome notification via Kaha App
-        await notificationService.notifyWelcome(
-          newStudent.id,
-          newStudent.name,
-          roomAssignment
-        );
+      // Send welcome notification via Kaha App
+      await notificationService.notifyWelcome(
+        newStudent.id,
+        newStudent.name,
+        roomAssignment
+      );
 
-        console.log(`✅ Student approved and enrolled: ${newStudent.name}`);
-        console.log(`📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${initialInvoice.isProrated ? '(Prorated)' : '(Full Month)'}`);
-        console.log(`🏠 Room assigned: ${roomAssignment}`);
-        console.log(`⚙️ Next step: Configure detailed charges for ${newStudent.name}`);
+      console.log(`✅ Student approved and enrolled: ${newStudent.name}`);
+      console.log(`📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${initialInvoice.isProrated ? '(Prorated)' : '(Full Month)'}`);
+      console.log(`🏠 Room assigned: ${roomAssignment}`);
+      console.log(`⚙️ Next step: Configure detailed charges for ${newStudent.name}`);
 
-        setTimeout(() => resolve({
-          booking: bookingRequests[requestIndex],
-          student: newStudent
-        }), 100);
-      } catch (error) {
-        console.error('Error in approval workflow:', error);
-        setTimeout(() => resolve(null), 100);
-      }
-    });
+      return {
+        booking: result.booking,
+        student: newStudent
+      };
+    } catch (error) {
+      console.error('Error in approval workflow:', error);
+      throw error;
+    }
   },
 
-  // Update booking status
+  // Reject booking request
+  async rejectBookingRequest(bookingId, reason = '') {
+    try {
+      return await apiRequest(`/booking-requests/${bookingId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+    } catch (error) {
+      console.error('Error rejecting booking request:', error);
+      throw error;
+    }
+  },
+
+  // Update booking status (generic method - kept for compatibility)
   async updateBookingStatus(id, status, notes = '') {
-    return new Promise((resolve) => {
-      const index = bookingRequests.findIndex(r => r.id === id);
-      if (index !== -1) {
-        bookingRequests[index].status = status;
-        if (notes) bookingRequests[index].notes = notes;
-        setTimeout(() => resolve(bookingRequests[index]), 100);
-      } else {
-        setTimeout(() => resolve(null), 100);
+    try {
+      if (status.toLowerCase() === 'rejected') {
+        return await this.rejectBookingRequest(id, notes);
       }
-    });
+      // For other status updates, we'd need to implement specific API endpoints
+      // For now, just return the current booking data
+      return await this.getBookingRequestById(id);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      throw error;
+    }
   },
 
   // Calculate base fee based on room type
@@ -148,24 +181,22 @@ export const bookingService = {
 
   // Get booking statistics
   async getBookingStats() {
-    return new Promise((resolve) => {
-      const stats = {
-        total: bookingRequests.length,
-        pending: bookingRequests.filter(r => r.status === 'Pending').length,
-        approved: bookingRequests.filter(r => r.status === 'Approved').length,
-        rejected: bookingRequests.filter(r => r.status === 'Rejected').length
-      };
-      setTimeout(() => resolve(stats), 100);
-    });
+    try {
+      return await apiRequest('/booking-requests/stats');
+    } catch (error) {
+      console.error('Error fetching booking stats:', error);
+      throw error;
+    }
   },
 
   // Filter requests by status
   async filterRequestsByStatus(status) {
-    return new Promise((resolve) => {
-      const filtered = status === 'all' 
-        ? bookingRequests 
-        : bookingRequests.filter(r => r.status.toLowerCase() === status.toLowerCase());
-      setTimeout(() => resolve(filtered), 100);
-    });
+    try {
+      const result = await apiRequest(`/booking-requests?status=${status}`);
+      return result.items || [];
+    } catch (error) {
+      console.error('Error filtering booking requests:', error);
+      throw error;
+    }
   }
 };
