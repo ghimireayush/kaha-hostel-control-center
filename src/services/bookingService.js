@@ -1,17 +1,16 @@
+import { studentService } from "./studentService.js";
+import { ledgerService } from "./ledgerService.js";
+import { billingService } from "./billingService.js";
+import { notificationService } from "./notificationService.js";
 
-import { studentService } from './studentService.js';
-import { ledgerService } from './ledgerService.js';
-import { billingService } from './billingService.js';
-import { notificationService } from './notificationService.js';
-
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = "http://localhost:3001/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -19,13 +18,15 @@ async function apiRequest(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
     }
 
     const data = await response.json();
     return data.data; // API returns data in { status, data } format
   } catch (error) {
-    console.error('API Request Error:', error);
+    console.error("API Request Error:", error);
     throw error;
   }
 }
@@ -34,10 +35,10 @@ export const bookingService = {
   // Get all booking requests
   async getBookingRequests() {
     try {
-      const result = await apiRequest('/booking-requests');
+      const result = await apiRequest("/booking-requests");
       return result.items || []; // API returns { items, pagination }
     } catch (error) {
-      console.error('Error fetching booking requests:', error);
+      console.error("Error fetching booking requests:", error);
       throw error;
     }
   },
@@ -47,7 +48,7 @@ export const bookingService = {
     try {
       return await apiRequest(`/booking-requests/${id}`);
     } catch (error) {
-      console.error('Error fetching booking request by ID:', error);
+      console.error("Error fetching booking request by ID:", error);
       throw error;
     }
   },
@@ -55,12 +56,12 @@ export const bookingService = {
   // Create new booking request
   async createBookingRequest(requestData) {
     try {
-      return await apiRequest('/booking-requests', {
-        method: 'POST',
+      return await apiRequest("/booking-requests", {
+        method: "POST",
         body: JSON.stringify(requestData),
       });
     } catch (error) {
-      console.error('Error creating booking request:', error);
+      console.error("Error creating booking request:", error);
       throw error;
     }
   },
@@ -69,15 +70,18 @@ export const bookingService = {
   async approveBookingRequest(bookingId, roomAssignment) {
     try {
       // Call the API to approve the booking
-      const result = await apiRequest(`/booking-requests/${bookingId}/approve`, {
-        method: 'POST',
-        body: JSON.stringify({ roomAssignment }),
-      });
+      const result = await apiRequest(
+        `/booking-requests/${bookingId}/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify({ roomAssignment }),
+        }
+      );
 
       // The API returns { booking, student } - we'll use the booking data
       // and create our own student profile using existing services
       const request = await this.getBookingRequestById(bookingId);
-      
+
       // Create student profile using existing services
       const studentData = {
         name: request.name,
@@ -95,28 +99,30 @@ export const bookingService = {
         baseMonthlyFee: this.calculateBaseFee(request.preferredRoom),
         laundryFee: 500,
         foodFee: 0,
-        bookingRequestId: bookingId
+        bookingRequestId: bookingId,
       };
 
       // Create student profile
       const newStudent = await studentService.createStudent(studentData);
-      
+
       // Create initial ledger entry for enrollment
       await ledgerService.addLedgerEntry({
         studentId: newStudent.id,
-        type: 'Enrollment',
-        description: 'Student enrollment - Welcome to hostel',
+        type: "Enrollment",
+        description: "Student enrollment - Welcome to hostel",
         debit: 0,
         credit: 0,
-        referenceId: bookingId
+        referenceId: bookingId,
       });
 
       // Generate prorated initial invoice using billing service
-      const initialInvoice = await billingService.generateInitialInvoice(newStudent);
-      
+      const initialInvoice = await billingService.generateInitialInvoice(
+        newStudent
+      );
+
       // Update student balance with initial invoice amount
       await studentService.updateStudent(newStudent.id, {
-        currentBalance: initialInvoice.total
+        currentBalance: initialInvoice.total,
       });
 
       // Send welcome notification via Kaha App
@@ -127,44 +133,50 @@ export const bookingService = {
       );
 
       console.log(`✅ Student approved and enrolled: ${newStudent.name}`);
-      console.log(`📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${initialInvoice.isProrated ? '(Prorated)' : '(Full Month)'}`);
+      console.log(
+        `📋 Initial invoice generated: ₨${initialInvoice.total.toLocaleString()} ${
+          initialInvoice.isProrated ? "(Prorated)" : "(Full Month)"
+        }`
+      );
       console.log(`🏠 Room assigned: ${roomAssignment}`);
-      console.log(`⚙️ Next step: Configure detailed charges for ${newStudent.name}`);
+      console.log(
+        `⚙️ Next step: Configure detailed charges for ${newStudent.name}`
+      );
 
       return {
         booking: result.booking,
-        student: newStudent
+        student: newStudent,
       };
     } catch (error) {
-      console.error('Error in approval workflow:', error);
+      console.error("Error in approval workflow:", error);
       throw error;
     }
   },
 
   // Reject booking request
-  async rejectBookingRequest(bookingId, reason = '') {
+  async rejectBookingRequest(bookingId, reason = "") {
     try {
       return await apiRequest(`/booking-requests/${bookingId}/reject`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ reason }),
       });
     } catch (error) {
-      console.error('Error rejecting booking request:', error);
+      console.error("Error rejecting booking request:", error);
       throw error;
     }
   },
 
   // Update booking status (generic method - kept for compatibility)
-  async updateBookingStatus(id, status, notes = '') {
+  async updateBookingStatus(id, status, notes = "") {
     try {
-      if (status.toLowerCase() === 'rejected') {
+      if (status.toLowerCase() === "rejected") {
         return await this.rejectBookingRequest(id, notes);
       }
       // For other status updates, we'd need to implement specific API endpoints
       // For now, just return the current booking data
       return await this.getBookingRequestById(id);
     } catch (error) {
-      console.error('Error updating booking status:', error);
+      console.error("Error updating booking status:", error);
       throw error;
     }
   },
@@ -172,9 +184,9 @@ export const bookingService = {
   // Calculate base fee based on room type
   calculateBaseFee(roomType) {
     const feeMap = {
-      'Single Room': 15000,
-      'Shared Room': 12000,
-      'Dormitory': 8000
+      "Single Room": 15000,
+      "Shared Room": 12000,
+      Dormitory: 8000,
     };
     return feeMap[roomType] || 10000;
   },
@@ -182,9 +194,9 @@ export const bookingService = {
   // Get booking statistics
   async getBookingStats() {
     try {
-      return await apiRequest('/booking-requests/stats');
+      return await apiRequest("/booking-requests/stats");
     } catch (error) {
-      console.error('Error fetching booking stats:', error);
+      console.error("Error fetching booking stats:", error);
       throw error;
     }
   },
@@ -195,8 +207,8 @@ export const bookingService = {
       const result = await apiRequest(`/booking-requests?status=${status}`);
       return result.items || [];
     } catch (error) {
-      console.error('Error filtering booking requests:', error);
+      console.error("Error filtering booking requests:", error);
       throw error;
     }
-  }
+  },
 };
