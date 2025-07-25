@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppContext } from '@/contexts/AppContext';
+import { dashboardService } from '@/services/dashboardService';
 import { notificationService } from '@/services/notificationService';
 import { 
   Users, 
@@ -18,8 +19,11 @@ import {
 
 export const SystemDashboard = () => {
   const { state } = useAppContext();
+  const [dashboardData, setDashboardData] = useState(null);
   const [notificationStats, setNotificationStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -27,7 +31,21 @@ export const SystemDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const notifications = await notificationService.getNotificationStats();
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Loading dashboard data from API...');
+      
+      // Load dashboard data from API
+      const [dashboardApiData, notifications] = await Promise.all([
+        dashboardService.getDashboardData(),
+        notificationService.getNotificationStats()
+      ]);
+      
+      console.log('✅ Dashboard API data received:', dashboardApiData);
+      console.log('✅ Notification stats received:', notifications);
+      
+      setDashboardData(dashboardApiData);
       setNotificationStats(notifications);
 
       // Mock recent activity
@@ -67,15 +85,53 @@ export const SystemDashboard = () => {
       ]);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Calculate key metrics with null checks
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">Error: {error}</p>
+            <Button onClick={loadDashboardData}>Retry</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use API data if available, fallback to AppContext data
   const totalStudents = state.students?.length || 0;
   const activeStudents = state.students?.filter(s => s.status === 'Active').length || 0;
   const totalBalance = state.students?.reduce((sum, s) => sum + (s.currentBalance || 0), 0) || 0;
   const overdueStudents = state.students?.filter(s => (s.currentBalance || 0) > 0).length || 0;
-  const occupancyRate = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
+  
+  // Use API data for occupancy rate if available
+  const occupancyRate = dashboardData?.summary?.avgOccupancy || 
+    (totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0);
+  
+  // Use API data for revenue if available
+  const monthlyRevenue = dashboardData?.summary?.monthlyRevenue || 0;
+  const totalBookings = dashboardData?.summary?.totalBookings || 0;
 
   return (
     <div className="space-y-6">
@@ -86,6 +142,15 @@ export const SystemDashboard = () => {
           <p className="text-gray-600 mt-1">Complete hostel management system with integrated notifications</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={loadDashboardData}
+            disabled={loading}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Home className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
           <Badge variant="outline" className="flex items-center gap-1">
             <Smartphone className="h-3 w-3" />
             Kaha App Integrated
@@ -103,11 +168,11 @@ export const SystemDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#1295D0] font-medium">Total Students</p>
-                <p className="text-3xl font-bold text-[#1295D0]">{totalStudents}</p>
-                <p className="text-xs text-[#1295D0] mt-1">{activeStudents} active</p>
+                <p className="text-sm text-[#1295D0] font-medium">Monthly Revenue</p>
+                <p className="text-3xl font-bold text-[#1295D0]">₨{monthlyRevenue.toLocaleString()}</p>
+                <p className="text-xs text-[#1295D0] mt-1">+{dashboardData?.summary?.revenueGrowth || 0}% growth</p>
               </div>
-              <Users className="h-12 w-12 text-[#1295D0]" />
+              <DollarSign className="h-12 w-12 text-[#1295D0]" />
             </div>
           </CardContent>
         </Card>
@@ -116,11 +181,11 @@ export const SystemDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#07A64F] font-medium">Outstanding Balance</p>
-                <p className="text-3xl font-bold text-[#07A64F]">NPR {totalBalance.toLocaleString()}</p>
-                <p className="text-xs text-[#07A64F] mt-1">{overdueStudents} students</p>
+                <p className="text-sm text-[#07A64F] font-medium">Total Bookings</p>
+                <p className="text-3xl font-bold text-[#07A64F]">{totalBookings}</p>
+                <p className="text-xs text-[#07A64F] mt-1">+{dashboardData?.summary?.bookingsGrowth || 0}% growth</p>
               </div>
-              <DollarSign className="h-12 w-12 text-[#07A64F]" />
+              <Users className="h-12 w-12 text-[#07A64F]" />
             </div>
           </CardContent>
         </Card>
@@ -131,7 +196,7 @@ export const SystemDashboard = () => {
               <div>
                 <p className="text-sm text-[#1295D0] font-medium">Occupancy Rate</p>
                 <p className="text-3xl font-bold text-[#1295D0]">{occupancyRate}%</p>
-                <p className="text-xs text-[#1295D0] mt-1">Room utilization</p>
+                <p className="text-xs text-[#1295D0] mt-1">+{dashboardData?.summary?.occupancyGrowth || 0}% growth</p>
               </div>
               <Home className="h-12 w-12 text-[#1295D0]" />
             </div>
@@ -142,9 +207,9 @@ export const SystemDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#07A64F] font-medium">Notifications Today</p>
-                <p className="text-3xl font-bold text-[#07A64F]">{notificationStats?.todaySent || 0}</p>
-                <p className="text-xs text-[#07A64F] mt-1">{notificationStats?.deliveryRate || 0}% delivered</p>
+                <p className="text-sm text-[#07A64F] font-medium">Growth Rate</p>
+                <p className="text-3xl font-bold text-[#07A64F]">{dashboardData?.summary?.growthRate || 0}%</p>
+                <p className="text-xs text-[#07A64F] mt-1">Overall performance</p>
               </div>
               <Bell className="h-12 w-12 text-[#07A64F]" />
             </div>

@@ -7,6 +7,7 @@ const path = require('path');
 // Import routes
 const bookingRoutes = require('./routes/bookingRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Swagger setup
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -54,6 +55,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 app.use('/api/v1/booking-requests', bookingRoutes);
 // Mount the student routes under the /api/v1/students path
 app.use('/api/v1/students', studentRoutes);
+// Mount the analytics routes under the /api/v1/analytics path
+app.use('/api/v1/analytics', analyticsRoutes);
 
 
 // --- Error Handling Middleware (Basic) ---
