@@ -1,5 +1,5 @@
 // Maintenance Service - Handle room and facility maintenance
-import maintenanceData from '../data/maintenance.json';
+import maintenanceData from '../data/maintenance.json' with { type: 'json' };
 
 let maintenanceRequests = [...maintenanceData];
 

@@ -1,5 +1,5 @@
 // User Service - Staff and admin user management
-import usersData from '../data/users.json';
+import usersData from '../data/users.json' with { type: 'json' };
 
 let users = [...usersData];
 

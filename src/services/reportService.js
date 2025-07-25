@@ -1,5 +1,5 @@
 // Report Service - Generate and manage system reports
-import reportsData from '../data/reports.json';
+import reportsData from '../data/reports.json' with { type: 'json' };
 
 let reports = [...reportsData];
 

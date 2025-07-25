@@ -1,5 +1,5 @@
 // Settings Service - System configuration management
-import settingsData from '../data/settings.json';
+import settingsData from '../data/settings.json' with { type: 'json' };
 
 let settings = [...settingsData];
 

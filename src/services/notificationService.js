@@ -1,6 +1,6 @@
 // Notification Service for Kaha App Integration
 // Handles all student notifications through the Kaha mobile app
-import notificationsData from '../data/notifications.json';
+import notificationsData from '../data/notifications.json' with { type: 'json' };
 
 let notifications = [...notificationsData];
 

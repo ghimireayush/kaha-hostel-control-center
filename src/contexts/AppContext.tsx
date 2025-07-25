@@ -190,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useAppContext() {
   const context = useContext(AppContext);
   if (context === undefined) {
+    console.error('useAppContext called outside of AppProvider. Component tree:', new Error().stack);
     throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;

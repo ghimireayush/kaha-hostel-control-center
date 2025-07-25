@@ -1,65 +1,103 @@
 
-import invoicesData from '../data/invoices.json';
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 
-let invoices = [...invoicesData];
+// Helper function to handle API requests
+async function apiRequest(endpoint, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    // Handle the specific API response format: { status, result: { items, pagination } }
+    if (data.result && data.result.items) {
+      return data.result.items;
+    }
+    // For single item responses, return the result directly
+    if (data.result && !data.result.items) {
+      return data.result;
+    }
+    // Fallback for other formats
+    return data.data || data;
+  } catch (error) {
+    console.error('Invoice API Request Error:', error);
+    throw error;
+  }
+}
 
 export const invoiceService = {
   // Get all invoices
   async getInvoices() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...invoices]), 100);
-    });
+    try {
+      const result = await apiRequest('/invoices');
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      throw error;
+    }
   },
 
   // Get invoice by ID
   async getInvoiceById(id) {
-    return new Promise((resolve) => {
-      const invoice = invoices.find(i => i.id === id);
-      setTimeout(() => resolve(invoice), 100);
-    });
+    try {
+      return await apiRequest(`/invoices/${id}`);
+    } catch (error) {
+      console.error('Error fetching invoice by ID:', error);
+      throw error;
+    }
   },
 
   // Get invoices by student ID
   async getInvoicesByStudentId(studentId) {
-    return new Promise((resolve) => {
-      const studentInvoices = invoices.filter(i => i.studentId === studentId);
-      setTimeout(() => resolve(studentInvoices), 100);
-    });
+    try {
+      const result = await apiRequest(`/invoices?studentId=${studentId}`);
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error fetching invoices by student ID:', error);
+      throw error;
+    }
   },
 
   // Create new invoice
   async createInvoice(invoiceData) {
-    return new Promise((resolve) => {
-      const newInvoice = {
-        id: `INV${String(invoices.length + 1).padStart(3, '0')}`,
-        ...invoiceData,
-        issueDate: new Date().toISOString().split('T')[0],
-        status: 'Unpaid',
-        amountPaid: 0,
-        paidDate: null,
-        paymentMode: null
-      };
-      invoices.push(newInvoice);
-      setTimeout(() => resolve(newInvoice), 100);
-    });
+    try {
+      return await apiRequest('/invoices', {
+        method: 'POST',
+        body: JSON.stringify(invoiceData),
+      });
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      throw error;
+    }
   },
 
   // Update invoice
   async updateInvoice(id, updates) {
-    return new Promise((resolve) => {
-      const index = invoices.findIndex(i => i.id === id);
-      if (index !== -1) {
-        invoices[index] = { ...invoices[index], ...updates };
-        setTimeout(() => resolve(invoices[index]), 100);
-      } else {
-        setTimeout(() => resolve(null), 100);
-      }
-    });
+    try {
+      return await apiRequest(`/invoices/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      throw error;
+    }
   },
 
   // Get invoice statistics
   async getInvoiceStats() {
-    return new Promise((resolve) => {
+    try {
+      // Get all invoices and calculate stats
+      const invoices = await this.getInvoices();
       const stats = {
         totalPaid: invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.total, 0),
         totalUnpaid: invoices.filter(i => i.status === 'Unpaid').reduce((sum, i) => sum + i.total, 0),
@@ -68,17 +106,24 @@ export const invoiceService = {
           i.status !== 'Paid' && new Date(i.dueDate) < new Date()
         ).length
       };
-      setTimeout(() => resolve(stats), 100);
-    });
+      return stats;
+    } catch (error) {
+      console.error('Error fetching invoice stats:', error);
+      throw error;
+    }
   },
 
   // Filter invoices by status
   async filterInvoicesByStatus(status) {
-    return new Promise((resolve) => {
-      const filtered = status === 'all' 
-        ? invoices 
-        : invoices.filter(i => i.status.toLowerCase() === status.toLowerCase());
-      setTimeout(() => resolve(filtered), 100);
-    });
+    try {
+      if (status === 'all') {
+        return await this.getInvoices();
+      }
+      const result = await apiRequest(`/invoices?status=${status}`);
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error filtering invoices by status:', error);
+      throw error;
+    }
   }
 };

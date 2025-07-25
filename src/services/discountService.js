@@ -1,4 +1,4 @@
-import discountsData from '../data/discounts.json';
+import discountsData from '../data/discounts.json' with { type: 'json' };
 import { ledgerService } from './ledgerService.js';
 import { studentService } from './studentService.js';
 import { notificationService } from './notificationService.js';

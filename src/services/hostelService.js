@@ -1,5 +1,5 @@
 
-import hostelProfileData from '../data/hostelProfile.json';
+import hostelProfileData from '../data/hostelProfile.json' with { type: 'json' };
 
 let hostelProfile = { ...hostelProfileData };
 

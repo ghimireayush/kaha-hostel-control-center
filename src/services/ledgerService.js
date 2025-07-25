@@ -1,5 +1,5 @@
 
-import ledgerData from '../data/ledger.json';
+import ledgerData from '../data/ledger.json' with { type: 'json' };
 
 let ledgerEntries = [...ledgerData];
 

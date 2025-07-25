@@ -1,5 +1,5 @@
 
-import roomsData from '../data/rooms.json';
+import roomsData from '../data/rooms.json' with { type: 'json' };
 
 let rooms = [...roomsData];
 

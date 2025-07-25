@@ -8,6 +8,8 @@ const path = require('path');
 const bookingRoutes = require('./routes/bookingRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // Swagger setup
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -57,6 +59,10 @@ app.use('/api/v1/booking-requests', bookingRoutes);
 app.use('/api/v1/students', studentRoutes);
 // Mount the analytics routes under the /api/v1/analytics path
 app.use('/api/v1/analytics', analyticsRoutes);
+// Mount the invoice routes under the /api/v1/invoices path
+app.use('/api/v1/invoices', invoiceRoutes);
+// Mount the payment routes under the /api/v1/payments path
+app.use('/api/v1/payments', paymentRoutes);
 
 
 // --- Error Handling Middleware (Basic) ---
