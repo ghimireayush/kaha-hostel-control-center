@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/rooms:
  *   get:
+ *     tags: [Room Management]
  *     summary: Get all rooms
  *     description: Retrieve a list of rooms with optional filtering and pagination
  *     parameters:
@@ -78,6 +79,7 @@ router.get("/", roomController.getAllRooms);
  * @swagger
  * /api/v1/rooms/stats:
  *   get:
+ *     tags: [Room Management]
  *     summary: Get room statistics
  *     description: Retrieve comprehensive room statistics including occupancy and revenue data
  *     responses:
@@ -123,6 +125,7 @@ router.get("/stats", roomController.getRoomStats);
  * @swagger
  * /api/v1/rooms/available:
  *   get:
+ *     tags: [Room Management]
  *     summary: Get available rooms
  *     description: Retrieve all rooms that are active and have available beds
  *     responses:
@@ -152,6 +155,7 @@ router.get("/available", roomController.getAvailableRooms);
  * @swagger
  * /api/v1/rooms/{id}:
  *   get:
+ *     tags: [Room Management]
  *     summary: Get room by ID
  *     description: Retrieve a specific room by its ID
  *     parameters:
@@ -226,6 +230,7 @@ router.get("/:id", roomController.getRoomById);
  * @swagger
  * /api/v1/rooms:
  *   post:
+ *     tags: [Room Management]
  *     summary: Create a new room (Placeholder)
  *     description: Create a new room with the provided data
  *     requestBody:
@@ -267,6 +272,7 @@ router.post("/", roomController.createRoom);
  * @swagger
  * /api/v1/rooms/{id}:
  *   put:
+ *     tags: [Room Management]
  *     summary: Update a room (Placeholder)
  *     description: Update an existing room with the provided data
  *     parameters:
@@ -315,6 +321,7 @@ router.put("/:id", roomController.updateRoom);
  * @swagger
  * /api/v1/rooms/{id}/assign:
  *   post:
+ *     tags: [Room Management]
  *     summary: Assign student to room (Placeholder)
  *     description: Assign a student to the specified room
  *     parameters:
@@ -350,6 +357,7 @@ router.post("/:id/assign", roomController.assignStudent);
  * @swagger
  * /api/v1/rooms/{id}/vacate:
  *   post:
+ *     tags: [Room Management]
  *     summary: Remove student from room (Placeholder)
  *     description: Remove a student from the specified room
  *     parameters:
@@ -385,6 +393,7 @@ router.post("/:id/vacate", roomController.vacateStudent);
  * @swagger
  * /api/v1/rooms/{id}/maintenance:
  *   post:
+ *     tags: [Room Management]
  *     summary: Schedule room maintenance (Placeholder)
  *     description: Schedule maintenance for the specified room
  *     parameters:

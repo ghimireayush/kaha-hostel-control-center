@@ -53,6 +53,7 @@ router.get('/stats', ledgerController.getLedgerStats);
  * @swagger
  * /api/v1/ledgers/generate:
  *   post:
+ *     tags: [Ledger Management]
  *     summary: Generate ledger entries from invoices and payments
  *     description: Automatically generate ledger entries from existing invoices and payments
  *     requestBody:
@@ -108,6 +109,7 @@ router.post('/generate', ledgerController.generateLedgerEntries);
  * @swagger
  * /api/v1/ledgers/student/{studentId}:
  *   get:
+ *     tags: [Ledger Management]
  *     summary: Get ledger entries for a specific student
  *     description: Retrieve all ledger entries for a specific student
  *     parameters:
@@ -165,6 +167,7 @@ router.get('/student/:studentId', ledgerController.getStudentLedger);
  * @swagger
  * /api/v1/ledgers/balance/{studentId}:
  *   get:
+ *     tags: [Ledger Management]
  *     summary: Get student balance summary
  *     description: Get comprehensive balance summary for a specific student
  *     parameters:
@@ -219,6 +222,7 @@ router.get('/balance/:studentId', ledgerController.getStudentBalance);
  * @swagger
  * /api/v1/ledgers:
  *   get:
+ *     tags: [Ledger Management]
  *     summary: Get all ledger entries
  *     description: Retrieve a list of ledger entries with optional filtering and pagination
  *     parameters:
@@ -290,6 +294,7 @@ router.get('/', ledgerController.getAllLedgerEntries);
  * @swagger
  * /api/v1/ledgers:
  *   post:
+ *     tags: [Ledger Management]
  *     summary: Create new ledger entry
  *     description: Create a new manual ledger entry
  *     requestBody:
@@ -352,6 +357,7 @@ router.post('/', ledgerController.createLedgerEntry);
  * @swagger
  * /api/v1/ledgers/{id}:
  *   put:
+ *     tags: [Ledger Management]
  *     summary: Update ledger entry
  *     description: Update an existing ledger entry
  *     parameters:

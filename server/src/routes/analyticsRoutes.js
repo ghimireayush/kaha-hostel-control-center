@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/analytics/dashboard:
  *   get:
+ *     tags: [Analytics & Reports]
  *     summary: Get dashboard analytics data
  *     description: Retrieve comprehensive dashboard analytics including revenue, bookings, occupancy, and performance metrics
  *     responses:
