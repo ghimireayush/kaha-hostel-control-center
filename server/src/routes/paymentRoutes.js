@@ -1,5 +1,5 @@
-const express = require('express');
-const paymentController = require('../controllers/paymentController');
+const express = require("express");
+const paymentController = require("../controllers/paymentController");
 
 const router = express.Router();
 
@@ -9,6 +9,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/payments/stats:
  *   get:
+ *     tags: [Payment Management]
  *     summary: Get payment statistics
  *     description: Retrieve statistics about payments including totals, counts, and trends
  *     responses:
@@ -44,12 +45,13 @@ const router = express.Router();
  *                     recentPayments:
  *                       type: array
  */
-router.get('/stats', paymentController.getPaymentStats);
+router.get("/stats", paymentController.getPaymentStats);
 
 /**
  * @swagger
  * /api/v1/payments/bulk:
  *   post:
+ *     tags: [Payment Management]
  *     summary: Process bulk payments
  *     description: Process multiple payments at once
  *     requestBody:
@@ -106,12 +108,13 @@ router.get('/stats', paymentController.getPaymentStats);
  *                     failedCount:
  *                       type: integer
  */
-router.post('/bulk', paymentController.processBulkPayments);
+router.post("/bulk", paymentController.processBulkPayments);
 
 /**
  * @swagger
  * /api/v1/payments/student/{studentId}:
  *   get:
+ *     tags: [Payment Management]
  *     summary: Get payments by student ID
  *     description: Retrieve all payments for a specific student
  *     parameters:
@@ -139,12 +142,13 @@ router.post('/bulk', paymentController.processBulkPayments);
  *       404:
  *         description: Student not found
  */
-router.get('/student/:studentId', paymentController.getPaymentsByStudentId);
+router.get("/student/:studentId", paymentController.getPaymentsByStudentId);
 
 /**
  * @swagger
  * /api/v1/payments:
  *   get:
+ *     tags: [Payment Management]
  *     summary: Get all payments
  *     description: Retrieve a list of payments with optional filtering and pagination
  *     parameters:
@@ -210,12 +214,13 @@ router.get('/student/:studentId', paymentController.getPaymentsByStudentId);
  *                     pagination:
  *                       type: object
  */
-router.get('/', paymentController.getAllPayments);
+router.get("/", paymentController.getAllPayments);
 
 /**
  * @swagger
  * /api/v1/payments:
  *   post:
+ *     tags: [Payment Management]
  *     summary: Record new payment
  *     description: Record a new payment from a student
  *     requestBody:
@@ -273,12 +278,13 @@ router.get('/', paymentController.getAllPayments);
  *       422:
  *         description: Validation error
  */
-router.post('/', paymentController.recordPayment);
+router.post("/", paymentController.recordPayment);
 
 /**
  * @swagger
  * /api/v1/payments/{id}:
  *   get:
+ *     tags: [Payment Management]
  *     summary: Get payment by ID
  *     description: Retrieve a specific payment by its ID
  *     parameters:
@@ -304,12 +310,13 @@ router.post('/', paymentController.recordPayment);
  *       404:
  *         description: Payment not found
  */
-router.get('/:id', paymentController.getPaymentById);
+router.get("/:id", paymentController.getPaymentById);
 
 /**
  * @swagger
  * /api/v1/payments/{id}:
  *   put:
+ *     tags: [Payment Management]
  *     summary: Update payment
  *     description: Update an existing payment
  *     parameters:
@@ -356,12 +363,13 @@ router.get('/:id', paymentController.getPaymentById);
  *       404:
  *         description: Payment not found
  */
-router.put('/:id', paymentController.updatePayment);
+router.put("/:id", paymentController.updatePayment);
 
 /**
  * @swagger
  * /api/v1/payments/{id}/allocate:
  *   post:
+ *     tags: [Payment Management]
  *     summary: Allocate payment to invoices
  *     description: Allocate a payment amount to specific invoices
  *     parameters:
@@ -420,6 +428,6 @@ router.put('/:id', paymentController.updatePayment);
  *       422:
  *         description: Validation error or allocation exceeds payment amount
  */
-router.post('/:id/allocate', paymentController.allocatePaymentToInvoices);
+router.post("/:id/allocate", paymentController.allocatePaymentToInvoices);
 
 module.exports = router;

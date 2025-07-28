@@ -32,13 +32,42 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 export const bookingService = {
-  // Get all booking requests
-  async getBookingRequests() {
+  // Get all booking requests with filtering and pagination
+  async getBookingRequests(filters = {}) {
     try {
-      const result = await apiRequest("/booking-requests");
-      return result.items || []; // API returns { items, pagination }
+      console.log('📝 Fetching booking requests from API...');
+      const queryParams = new URLSearchParams();
+      
+      // Add filters as query parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+      
+      const endpoint = `/booking-requests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Booking requests API response:', data);
+      
+      // Handle different response formats - ensure we return an array
+      if (data.data && data.data.items) {
+        return data.data.items; // Paginated response
+      } else if (data.data && Array.isArray(data.data)) {
+        return data.data; // Direct array response
+      } else if (Array.isArray(data)) {
+        return data; // Direct array
+      } else {
+        return []; // Fallback to empty array
+      }
     } catch (error) {
-      console.error("Error fetching booking requests:", error);
+      console.error('❌ Error fetching booking requests:', error);
       throw error;
     }
   },
@@ -204,10 +233,31 @@ export const bookingService = {
   // Filter requests by status
   async filterRequestsByStatus(status) {
     try {
-      const result = await apiRequest(`/booking-requests?status=${status}`);
-      return result.items || [];
+      return await this.getBookingRequests({ status });
     } catch (error) {
       console.error("Error filtering booking requests:", error);
+      throw error;
+    }
+  },
+
+  // Search booking requests
+  async searchBookingRequests(searchTerm, filters = {}) {
+    try {
+      console.log(`🔍 Searching booking requests: ${searchTerm}`);
+      return await this.getBookingRequests({ search: searchTerm, ...filters });
+    } catch (error) {
+      console.error('❌ Error searching booking requests:', error);
+      throw error;
+    }
+  },
+
+  // Get booking requests with pagination
+  async getBookingRequestsPaginated(page = 1, limit = 10, filters = {}) {
+    try {
+      console.log(`📄 Fetching booking requests page ${page}`);
+      return await this.getBookingRequests({ page, limit, ...filters });
+    } catch (error) {
+      console.error('❌ Error fetching paginated booking requests:', error);
       throw error;
     }
   },

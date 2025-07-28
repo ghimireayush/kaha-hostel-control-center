@@ -1,12 +1,11 @@
-
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = "http://localhost:3001/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -14,7 +13,9 @@ async function apiRequest(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -29,7 +30,7 @@ async function apiRequest(endpoint, options = {}) {
     // Fallback for other formats
     return data.data || data;
   } catch (error) {
-    console.error('Ledger API Request Error:', error);
+    console.error("Ledger API Request Error:", error);
     throw error;
   }
 }
@@ -38,23 +39,25 @@ export const ledgerService = {
   // Get all ledger entries with filtering and pagination
   async getLedgerEntries(filters = {}) {
     try {
-      console.log('📊 Fetching ledger entries from API...');
+      console.log("📊 Fetching ledger entries from API...");
       const queryParams = new URLSearchParams();
-      
+
       // Add filters as query parameters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
           queryParams.append(key, value);
         }
       });
-      
-      const endpoint = `/ledgers${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+      const endpoint = `/ledgers${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
       const response = await apiRequest(endpoint);
-      console.log('✅ Ledger entries API response:', response);
-      
+      console.log("✅ Ledger entries API response:", response);
+
       return response.result?.items || response || []; // Handle different response formats
     } catch (error) {
-      console.error('❌ Error fetching ledger entries:', error);
+      console.error("❌ Error fetching ledger entries:", error);
       throw error;
     }
   },
@@ -62,19 +65,19 @@ export const ledgerService = {
   // Get ledger statistics from API
   async getLedgerStats() {
     try {
-      console.log('📊 Fetching ledger statistics from API...');
+      console.log("📊 Fetching ledger statistics from API...");
       const response = await fetch(`${API_BASE_URL}/ledgers/stats`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      console.log('✅ Ledger stats API response:', data);
-      
+      console.log("✅ Ledger stats API response:", data);
+
       return data.stats || data;
     } catch (error) {
-      console.error('❌ Error fetching ledger stats:', error);
+      console.error("❌ Error fetching ledger stats:", error);
       throw error;
     }
   },
@@ -83,18 +86,20 @@ export const ledgerService = {
   async getLedgerByStudentId(studentId) {
     try {
       console.log(`📊 Fetching ledger for student ${studentId}...`);
-      const response = await fetch(`${API_BASE_URL}/ledgers/student/${studentId}`);
-      
+      const response = await fetch(
+        `${API_BASE_URL}/ledgers/student/${studentId}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      console.log('✅ Student ledger fetched');
-      
+      console.log("✅ Student ledger fetched");
+
       return data.data || [];
     } catch (error) {
-      console.error('❌ Error fetching student ledger:', error);
+      console.error("❌ Error fetching student ledger:", error);
       throw error;
     }
   },
@@ -103,18 +108,20 @@ export const ledgerService = {
   async getStudentBalance(studentId) {
     try {
       console.log(`📊 Fetching balance for student ${studentId}...`);
-      const response = await fetch(`${API_BASE_URL}/ledgers/balance/${studentId}`);
-      
+      const response = await fetch(
+        `${API_BASE_URL}/ledgers/balance/${studentId}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      console.log('✅ Student balance fetched');
-      
+      console.log("✅ Student balance fetched");
+
       return data.data || {};
     } catch (error) {
-      console.error('❌ Error fetching student balance:', error);
+      console.error("❌ Error fetching student balance:", error);
       throw error;
     }
   },
@@ -122,26 +129,28 @@ export const ledgerService = {
   // Add/Create ledger entry
   async addLedgerEntry(entryData) {
     try {
-      console.log('📊 Creating new ledger entry via API...');
+      console.log("📊 Creating new ledger entry via API...");
       const response = await fetch(`${API_BASE_URL}/ledgers`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(entryData),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      console.log('✅ Ledger entry created successfully');
-      
+      console.log("✅ Ledger entry created successfully");
+
       return data.data || data;
     } catch (error) {
-      console.error('❌ Error creating ledger entry:', error);
+      console.error("❌ Error creating ledger entry:", error);
       throw error;
     }
   },
@@ -151,24 +160,26 @@ export const ledgerService = {
     try {
       console.log(`📊 Updating ledger entry ${entryId} via API...`);
       const response = await fetch(`${API_BASE_URL}/ledgers/${entryId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      console.log('✅ Ledger entry updated successfully');
-      
+      console.log("✅ Ledger entry updated successfully");
+
       return data.data || data;
     } catch (error) {
-      console.error('❌ Error updating ledger entry:', error);
+      console.error("❌ Error updating ledger entry:", error);
       throw error;
     }
   },
@@ -176,26 +187,28 @@ export const ledgerService = {
   // Generate ledger entries from invoices and payments
   async generateLedgerEntries(options = {}) {
     try {
-      console.log('📊 Generating ledger entries from invoices/payments...');
+      console.log("📊 Generating ledger entries from invoices/payments...");
       const response = await fetch(`${API_BASE_URL}/ledgers/generate`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(options),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      console.log('✅ Ledger entries generated successfully');
-      
+      console.log("✅ Ledger entries generated successfully");
+
       return data.data || data;
     } catch (error) {
-      console.error('❌ Error generating ledger entries:', error);
+      console.error("❌ Error generating ledger entries:", error);
       throw error;
     }
   },
@@ -207,10 +220,10 @@ export const ledgerService = {
       return {
         balance: balanceData.currentBalance,
         balanceType: balanceData.balanceType,
-        rawBalance: balanceData.rawBalance
+        rawBalance: balanceData.rawBalance,
       };
     } catch (error) {
-      console.error('❌ Error calculating student balance:', error);
+      console.error("❌ Error calculating student balance:", error);
       throw error;
     }
   },
@@ -218,9 +231,9 @@ export const ledgerService = {
   // Get ledger summary for all students
   async getLedgerSummary() {
     try {
-      console.log('📊 Fetching ledger summary...');
+      console.log("📊 Fetching ledger summary...");
       const stats = await this.getLedgerStats();
-      
+
       // Transform stats into summary format
       const summary = {
         totalEntries: stats.totalEntries,
@@ -230,12 +243,12 @@ export const ledgerService = {
         advanceAmount: stats.advanceAmount,
         studentsWithBalance: stats.studentsWithBalance,
         studentsWithCredit: stats.studentsWithCredit,
-        studentsWithDebit: stats.studentsWithDebit
+        studentsWithDebit: stats.studentsWithDebit,
       };
-      
+
       return summary;
     } catch (error) {
-      console.error('❌ Error fetching ledger summary:', error);
+      console.error("❌ Error fetching ledger summary:", error);
       throw error;
     }
   },
@@ -246,7 +259,7 @@ export const ledgerService = {
       console.log(`🔍 Searching ledger entries: ${searchTerm}`);
       return await this.getLedgerEntries({ search: searchTerm, ...filters });
     } catch (error) {
-      console.error('❌ Error searching ledger entries:', error);
+      console.error("❌ Error searching ledger entries:", error);
       throw error;
     }
   },
@@ -257,7 +270,7 @@ export const ledgerService = {
       console.log(`🔍 Filtering ledger entries by type: ${type}`);
       return await this.getLedgerEntries({ type });
     } catch (error) {
-      console.error('❌ Error filtering ledger entries by type:', error);
+      console.error("❌ Error filtering ledger entries by type:", error);
       throw error;
     }
   },
@@ -265,11 +278,13 @@ export const ledgerService = {
   // Filter ledger entries by date range
   async filterLedgerEntriesByDateRange(dateFrom, dateTo) {
     try {
-      console.log(`🔍 Filtering ledger entries by date range: ${dateFrom} to ${dateTo}`);
+      console.log(
+        `🔍 Filtering ledger entries by date range: ${dateFrom} to ${dateTo}`
+      );
       return await this.getLedgerEntries({ dateFrom, dateTo });
     } catch (error) {
-      console.error('❌ Error filtering ledger entries by date range:', error);
+      console.error("❌ Error filtering ledger entries by date range:", error);
       throw error;
     }
-  }
+  },
 };

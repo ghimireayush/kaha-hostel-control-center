@@ -76,7 +76,10 @@ const BookingRequests = () => {
     }
   };
 
-  const filteredRequests = state.bookingRequests.filter(request => {
+  // Ensure bookingRequests is always an array
+  const bookingRequests = Array.isArray(state.bookingRequests) ? state.bookingRequests : [];
+
+  const filteredRequests = bookingRequests.filter(request => {
     const matchesSearch = request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.phone.includes(searchTerm);
     const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter.toLowerCase();
@@ -84,9 +87,37 @@ const BookingRequests = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = state.bookingRequests.filter(req => req.status === 'Pending').length;
-  const approvedCount = state.bookingRequests.filter(req => req.status === 'Approved').length;
-  const rejectedCount = state.bookingRequests.filter(req => req.status === 'Rejected').length;
+  const [stats, setStats] = useState(null);
+
+  // Fetch real-time statistics from API
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { bookingService } = await import("@/services/bookingService");
+        const statsData = await bookingService.getBookingStats();
+        setStats(statsData);
+      } catch (error) {
+        console.error('Error fetching booking stats:', error);
+        // Fallback to calculated stats
+        const safeBookingRequests = Array.isArray(state.bookingRequests) ? state.bookingRequests : [];
+        const pendingCount = safeBookingRequests.filter(req => req.status === 'Pending').length;
+        const approvedCount = safeBookingRequests.filter(req => req.status === 'Approved').length;
+        const rejectedCount = safeBookingRequests.filter(req => req.status === 'Rejected').length;
+        setStats({
+          pending: pendingCount,
+          approved: approvedCount,
+          rejected: rejectedCount,
+          total: safeBookingRequests.length
+        });
+      }
+    };
+    
+    fetchStats();
+  }, [state.bookingRequests]);
+
+  const pendingCount = stats?.pending || bookingRequests.filter(req => req.status === 'Pending').length;
+  const approvedCount = stats?.approved || bookingRequests.filter(req => req.status === 'Approved').length;
+  const rejectedCount = stats?.rejected || bookingRequests.filter(req => req.status === 'Rejected').length;
 
   if (state.loading) {
     return (
@@ -162,7 +193,7 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Total Requests</p>
-                  <p className="text-3xl font-bold text-blue-700">{state.bookingRequests.length}</p>
+                  <p className="text-3xl font-bold text-blue-700">{bookingRequests.length}</p>
                 </div>
                 <UserPlus className="h-8 w-8 text-blue-600" />
               </div>

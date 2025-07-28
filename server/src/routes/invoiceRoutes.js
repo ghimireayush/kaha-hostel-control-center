@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/invoices:
  *   get:
+ *     tags: [Invoice Management]
  *     summary: Get all invoices
  *     description: Retrieve a list of invoices with optional filtering and pagination
  *     parameters:
@@ -78,6 +79,7 @@ router.get('/', invoiceController.getAllInvoices);
  * @swagger
  * /api/v1/invoices/stats:
  *   get:
+ *     tags: [Invoice Management]
  *     summary: Get invoice statistics
  *     description: Retrieve statistics about invoices including totals, counts, and collection rates
  *     responses:
@@ -119,6 +121,7 @@ router.get('/stats', invoiceController.getInvoiceStats);
  * @swagger
  * /api/v1/invoices:
  *   post:
+ *     tags: [Invoice Management]
  *     summary: Create new invoice
  *     description: Create a new invoice for a student
  *     requestBody:
@@ -165,6 +168,7 @@ router.post('/', invoiceController.createInvoice);
  * @swagger
  * /api/v1/invoices/generate-monthly:
  *   post:
+ *     tags: [Invoice Management]
  *     summary: Generate monthly invoices
  *     description: Generate invoices for all active students for a specific month
  *     requestBody:
@@ -220,6 +224,7 @@ router.post('/generate-monthly', invoiceController.generateMonthlyInvoices);
  * @swagger
  * /api/v1/invoices/{id}:
  *   get:
+ *     tags: [Invoice Management]
  *     summary: Get invoice by ID
  *     description: Retrieve a specific invoice by its ID
  *     parameters:
@@ -284,6 +289,7 @@ router.get('/:id', invoiceController.getInvoiceById);
  * @swagger
  * /api/v1/invoices/{id}:
  *   put:
+ *     tags: [Invoice Management]
  *     summary: Update invoice
  *     description: Update an existing invoice
  *     parameters:
@@ -330,6 +336,7 @@ router.put('/:id', invoiceController.updateInvoice);
  * @swagger
  * /api/v1/invoices/{id}/send:
  *   post:
+ *     tags: [Invoice Management]
  *     summary: Send invoice to student
  *     description: Send invoice to student via email or SMS
  *     parameters:

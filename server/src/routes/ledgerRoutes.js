@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/ledgers/stats:
  *   get:
+ *     tags: [Ledger Management]
  *     summary: Get ledger statistics
  *     description: Retrieve comprehensive statistics about ledger entries
  *     responses:

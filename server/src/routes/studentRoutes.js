@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/students:
  *   get:
+ *     tags: [Student Management]
  *     summary: Get all students
  *     description: Retrieve a list of students with optional filtering and pagination
  *     parameters:
@@ -44,6 +45,7 @@ router.get('/', studentController.getAllStudents);
  * @swagger
  * /api/v1/students/stats:
  *   get:
+ *     tags: [Student Management]
  *     summary: Get student statistics
  *     description: Retrieve statistics about students including counts and financial data
  *     responses:
@@ -56,6 +58,7 @@ router.get('/stats', studentController.getStudentStats);
  * @swagger
  * /api/v1/students/{id}:
  *   get:
+ *     tags: [Student Management]
  *     summary: Get a student by ID
  *     description: Retrieve a specific student by their ID
  *     parameters:
@@ -77,6 +80,7 @@ router.get('/:id', studentController.getStudentById);
  * @swagger
  * /api/v1/students:
  *   post:
+ *     tags: [Student Management]
  *     summary: Create a new student
  *     description: Create a new student profile
  *     requestBody:
@@ -151,6 +155,7 @@ router.post('/', studentController.createStudent);
  * @swagger
  * /api/v1/students/{id}:
  *   put:
+ *     tags: [Student Management]
  *     summary: Update a student
  *     description: Update an existing student's information
  *     parameters:
@@ -214,6 +219,7 @@ router.put('/:id', studentController.updateStudent);
  * @swagger
  * /api/v1/students/{id}/checkout:
  *   post:
+ *     tags: [Student Management]
  *     summary: Process student checkout
  *     description: Process a student checkout with optional refund and notes
  *     parameters:

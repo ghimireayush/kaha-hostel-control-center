@@ -39,14 +39,49 @@ const options = {
     info: {
       title: 'Kaha Hostel Control Center API',
       version: '1.0.0',
-      description: 'API for managing bookings, students, rooms, and billing for Kaha Hostel.',
+      description: 'Comprehensive API for managing hostel operations including bookings, students, rooms, billing, payments, invoices, and ledger management.',
+      contact: {
+        name: 'Kaha Hostel Control Center',
+        url: 'http://localhost:3001',
+        email: 'admin@kaha-hostel.com'
+      }
     },
     servers: [
       {
-        url: 'http://localhost:3001', // Base URL without /api/v1 to avoid path duplication
+        url: 'http://localhost:3001',
         description: 'Development server',
       },
     ],
+    tags: [
+      {
+        name: 'Booking Requests',
+        description: 'Student booking request management - handle admission requests, approvals, and rejections'
+      },
+      {
+        name: 'Student Management',
+        description: 'Student profile management - CRUD operations, search, bulk operations, and checkout'
+      },
+      {
+        name: 'Invoice Management',
+        description: 'Invoice generation and management - create, update, send invoices, and monthly billing'
+      },
+      {
+        name: 'Payment Management',
+        description: 'Payment recording and tracking - record payments, bulk operations, and allocation to invoices'
+      },
+      {
+        name: 'Ledger Management',
+        description: 'Financial ledger and balance tracking - ledger entries, student balances, and financial reporting'
+      },
+      {
+        name: 'Room Management',
+        description: 'Room and accommodation management - room availability, assignments, and statistics'
+      },
+      {
+        name: 'Analytics & Reports',
+        description: 'Business analytics and reporting - statistics, trends, and performance metrics'
+      }
+    ]
   },
   // Paths to files containing OpenAPI definitions (JSDoc comments)
   apis: [path.join(__dirname, 'controllers/*.js'), path.join(__dirname, 'routes/*.js')], // Use absolute paths

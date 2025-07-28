@@ -7,6 +7,7 @@ const router = express.Router();
  * @swagger
  * /api/v1/booking-requests:
  *   get:
+ *     tags: [Booking Requests]
  *     summary: Get all booking requests
  *     description: Retrieve a list of booking requests with optional filtering and pagination
  *     parameters:
@@ -44,6 +45,7 @@ router.get('/', bookingController.getAllBookingRequests);
  * @swagger
  * /api/v1/booking-requests/stats:
  *   get:
+ *     tags: [Booking Requests]
  *     summary: Get booking request statistics
  *     description: Retrieve statistics about booking requests
  *     responses:
@@ -56,6 +58,7 @@ router.get('/stats', bookingController.getBookingStats);
  * @swagger
  * /api/v1/booking-requests/{id}:
  *   get:
+ *     tags: [Booking Requests]
  *     summary: Get a booking request by ID
  *     description: Retrieve a specific booking request by its ID
  *     parameters:
@@ -77,6 +80,7 @@ router.get('/:id', bookingController.getBookingRequestById);
  * @swagger
  * /api/v1/booking-requests/{id}/approve:
  *   post:
+ *     tags: [Booking Requests]
  *     summary: Approve a booking request
  *     description: Approve a booking request and assign a room
  *     parameters:
@@ -112,6 +116,7 @@ router.post('/:id/approve', bookingController.approveBookingRequest);
  * @swagger
  * /api/v1/booking-requests/{id}/reject:
  *   post:
+ *     tags: [Booking Requests]
  *     summary: Reject a booking request
  *     description: Reject a booking request with an optional reason
  *     parameters:
@@ -144,6 +149,7 @@ router.post('/:id/reject', bookingController.rejectBookingRequest);
  * @swagger
  * /api/v1/booking-requests:
  *   post:
+ *     tags: [Booking Requests]
  *     summary: Create a new booking request
  *     description: Submit a new booking request
  *     requestBody:

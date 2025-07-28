@@ -189,8 +189,9 @@ export const LedgerManagement = () => {
         variant: "destructive"
       });
     }
-  };  co
-nst handleUpdateEntry = async () => {
+  };
+
+  const handleUpdateEntry = async () => {
     try {
       if (!selectedEntry || !editFormData) return;
 
