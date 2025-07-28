@@ -1,16 +1,15 @@
+import { studentService } from "./studentService.js";
+import { ledgerService } from "./ledgerService.js";
+import { notificationService } from "./notificationService.js";
 
-import { studentService } from './studentService.js';
-import { ledgerService } from './ledgerService.js';
-import { notificationService } from './notificationService.js';
-
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = "http://localhost:3001/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -18,7 +17,9 @@ async function apiRequest(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -33,19 +34,54 @@ async function apiRequest(endpoint, options = {}) {
     // Fallback for other formats
     return data.data || data;
   } catch (error) {
-    console.error('Payment API Request Error:', error);
+    console.error("Payment API Request Error:", error);
     throw error;
   }
 }
 
 export const paymentService = {
-  // Get all payments
-  async getPayments() {
+  // Get all payments with filtering and pagination
+  async getPayments(filters = {}) {
     try {
-      const result = await apiRequest('/payments');
-      return Array.isArray(result) ? result : [];
+      console.log("💰 Fetching payments from API...");
+      const queryParams = new URLSearchParams();
+
+      // Add filters as query parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/payments${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
+      const response = await apiRequest(endpoint);
+      console.log("✅ Payments API response:", response);
+
+      return response.result?.items || response || []; // Handle different response formats
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      console.error("❌ Error fetching payments:", error);
+      throw error;
+    }
+  },
+
+  // Get payment statistics from API
+  async getPaymentStats() {
+    try {
+      console.log("📊 Fetching payment statistics from API...");
+      const response = await fetch(`${API_BASE_URL}/payments/stats`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Payment stats API response:", data);
+
+      return data.stats || data;
+    } catch (error) {
+      console.error("❌ Error fetching payment stats:", error);
       throw error;
     }
   },
@@ -53,9 +89,19 @@ export const paymentService = {
   // Get payment by ID
   async getPaymentById(id) {
     try {
-      return await apiRequest(`/payments/${id}`);
+      console.log(`💰 Fetching payment ${id} from API...`);
+      const response = await fetch(`${API_BASE_URL}/payments/${id}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Payment details fetched");
+
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching payment by ID:', error);
+      console.error("❌ Error fetching payment by ID:", error);
       throw error;
     }
   },
@@ -63,10 +109,21 @@ export const paymentService = {
   // Get payments by student ID
   async getPaymentsByStudentId(studentId) {
     try {
-      const result = await apiRequest(`/payments?studentId=${studentId}`);
-      return Array.isArray(result) ? result : [];
+      console.log(`💰 Fetching payments for student ${studentId}...`);
+      const response = await fetch(
+        `${API_BASE_URL}/payments/student/${studentId}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Student payments fetched");
+
+      return data.data || [];
     } catch (error) {
-      console.error('Error fetching payments by student ID:', error);
+      console.error("❌ Error fetching payments by student ID:", error);
       throw error;
     }
   },
@@ -74,104 +131,158 @@ export const paymentService = {
   // Record new payment
   async recordPayment(paymentData) {
     try {
-      // Create payment via API
-      const newPayment = await apiRequest('/payments', {
-        method: 'POST',
+      console.log("💰 Recording new payment via API...");
+      const response = await fetch(`${API_BASE_URL}/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           ...paymentData,
-          paymentDate: new Date().toISOString().split('T')[0],
-          receivedBy: 'Admin'
+          paymentDate:
+            paymentData.paymentDate || new Date().toISOString().split("T")[0],
         }),
       });
 
-      // Get student details for notification
-      const student = await studentService.getStudentById(paymentData.studentId);
-      if (student) {
-        // Calculate remaining balance after payment
-        const remainingBalance = Math.max(0, (student.currentBalance || 0) - paymentData.amount);
-        
-        // Send payment confirmation via Kaha App
-        await notificationService.notifyPaymentReceived(
-          paymentData.studentId,
-          paymentData.amount,
-          remainingBalance
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
         );
-
-        // Create ledger entry for payment
-        await ledgerService.addLedgerEntry({
-          studentId: paymentData.studentId,
-          type: 'Payment',
-          description: `Payment received - ${paymentData.paymentMode}`,
-          debit: 0,
-          credit: paymentData.amount,
-          referenceId: newPayment.id,
-          notes: paymentData.notes || ''
-        });
-
-        // Update student balance
-        await studentService.updateStudent(paymentData.studentId, {
-          currentBalance: remainingBalance
-        });
       }
 
-      return newPayment;
+      const data = await response.json();
+      console.log("✅ Payment recorded successfully");
+
+      return data.data || data;
     } catch (error) {
-      console.error('Error recording payment:', error);
+      console.error("❌ Error recording payment:", error);
       throw error;
     }
   },
 
-  // Get payment statistics
-  async getPaymentStats() {
+  // Update payment
+  async updatePayment(id, updates) {
     try {
-      const payments = await this.getPayments();
-      const today = new Date();
-      const thisMonth = payments.filter(p => {
-        const paymentDate = new Date(p.paymentDate);
-        return paymentDate.getMonth() === today.getMonth() && 
-               paymentDate.getFullYear() === today.getFullYear();
+      console.log(`💰 Updating payment ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/payments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updates),
       });
 
-      const stats = {
-        totalCollected: payments.reduce((sum, p) => sum + p.amount, 0),
-        monthlyCollection: thisMonth.reduce((sum, p) => sum + p.amount, 0),
-        paymentCount: payments.length,
-        monthlyPaymentCount: thisMonth.length,
-        paymentModes: await this.getPaymentModeStats()
-      };
-      return stats;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("✅ Payment updated successfully");
+
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching payment stats:', error);
+      console.error("❌ Error updating payment:", error);
       throw error;
     }
   },
 
-  // Get payment mode statistics
-  async getPaymentModeStats() {
+  // Process bulk payments
+  async processBulkPayments(payments) {
     try {
-      const payments = await this.getPayments();
-      const modes = {};
-      payments.forEach(p => {
-        modes[p.paymentMode] = (modes[p.paymentMode] || 0) + 1;
+      console.log("💰 Processing bulk payments via API...");
+      const response = await fetch(`${API_BASE_URL}/payments/bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ payments }),
       });
-      return modes;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("✅ Bulk payments processed successfully");
+
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching payment mode stats:', error);
+      console.error("❌ Error processing bulk payments:", error);
       throw error;
     }
   },
 
-  // Get recent payments
-  async getRecentPayments(limit = 10) {
+  // Allocate payment to invoices
+  async allocatePaymentToInvoices(paymentId, invoiceAllocations) {
     try {
-      const payments = await this.getPayments();
-      const recent = payments
-        .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
-        .slice(0, limit);
-      return recent;
+      console.log(`💰 Allocating payment ${paymentId} to invoices...`);
+      const response = await fetch(
+        `${API_BASE_URL}/payments/${paymentId}/allocate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ invoiceAllocations }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("✅ Payment allocated successfully");
+
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching recent payments:', error);
+      console.error("❌ Error allocating payment:", error);
       throw error;
     }
-  }
+  },
+
+  // Search payments
+  async searchPayments(searchTerm, filters = {}) {
+    try {
+      console.log(`🔍 Searching payments: ${searchTerm}`);
+      return await this.getPayments({ search: searchTerm, ...filters });
+    } catch (error) {
+      console.error("❌ Error searching payments:", error);
+      throw error;
+    }
+  },
+
+  // Filter payments by method
+  async filterPaymentsByMethod(paymentMethod) {
+    try {
+      console.log(`🔍 Filtering payments by method: ${paymentMethod}`);
+      return await this.getPayments({ paymentMethod });
+    } catch (error) {
+      console.error("❌ Error filtering payments by method:", error);
+      throw error;
+    }
+  },
+
+  // Filter payments by date range
+  async filterPaymentsByDateRange(dateFrom, dateTo) {
+    try {
+      console.log(
+        `🔍 Filtering payments by date range: ${dateFrom} to ${dateTo}`
+      );
+      return await this.getPayments({ dateFrom, dateTo });
+    } catch (error) {
+      console.error("❌ Error filtering payments by date range:", error);
+      throw error;
+    }
+  },
 };

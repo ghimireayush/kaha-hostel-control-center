@@ -1,5 +1,5 @@
 const express = require('express');
-const billingController = require('../controllers/billingController');
+const invoiceController = require('../controllers/invoiceController');
 
 const router = express.Router();
 
@@ -72,7 +72,149 @@ const router = express.Router();
  *       422:
  *         description: Invalid query parameters
  */
-router.get('/', billingController.getAllInvoices);
+router.get('/', invoiceController.getAllInvoices);
+
+/**
+ * @swagger
+ * /api/v1/invoices/stats:
+ *   get:
+ *     summary: Get invoice statistics
+ *     description: Retrieve statistics about invoices including totals, counts, and collection rates
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved invoice statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 stats:
+ *                   type: object
+ *                   properties:
+ *                     totalInvoices:
+ *                       type: integer
+ *                     paidInvoices:
+ *                       type: integer
+ *                     unpaidInvoices:
+ *                       type: integer
+ *                     partiallyPaidInvoices:
+ *                       type: integer
+ *                     overdueInvoices:
+ *                       type: integer
+ *                     totalAmount:
+ *                       type: number
+ *                     paidAmount:
+ *                       type: number
+ *                     outstandingAmount:
+ *                       type: number
+ *                     collectionRate:
+ *                       type: number
+ */
+router.get('/stats', invoiceController.getInvoiceStats);
+
+/**
+ * @swagger
+ * /api/v1/invoices:
+ *   post:
+ *     summary: Create new invoice
+ *     description: Create a new invoice for a student
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - month
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *                 description: Student ID
+ *               month:
+ *                 type: string
+ *                 pattern: '^[0-9]{4}-[0-9]{2}$'
+ *                 description: Month in YYYY-MM format
+ *               notes:
+ *                 type: string
+ *                 description: Additional notes
+ *     responses:
+ *       201:
+ *         description: Invoice created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 201
+ *                 data:
+ *                   type: object
+ *       404:
+ *         description: Student not found
+ *       422:
+ *         description: Validation error or invoice already exists
+ */
+router.post('/', invoiceController.createInvoice);
+
+/**
+ * @swagger
+ * /api/v1/invoices/generate-monthly:
+ *   post:
+ *     summary: Generate monthly invoices
+ *     description: Generate invoices for all active students for a specific month
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - month
+ *             properties:
+ *               month:
+ *                 type: string
+ *                 pattern: '^[0-9]{4}-[0-9]{2}$'
+ *                 description: Month in YYYY-MM format
+ *               studentIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Optional array of specific student IDs
+ *     responses:
+ *       200:
+ *         description: Monthly invoices generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     successful:
+ *                       type: array
+ *                     failed:
+ *                       type: array
+ *                     skipped:
+ *                       type: array
+ *                     successCount:
+ *                       type: integer
+ *                     failedCount:
+ *                       type: integer
+ *                     skippedCount:
+ *                       type: integer
+ *       422:
+ *         description: Validation error
+ */
+router.post('/generate-monthly', invoiceController.generateMonthlyInvoices);
 
 /**
  * @swagger
@@ -98,7 +240,7 @@ router.get('/', billingController.getAllInvoices);
  *                 status:
  *                   type: integer
  *                   example: 200
- *                 invoice:
+ *                 data:
  *                   type: object
  *                   properties:
  *                     id:
@@ -136,6 +278,110 @@ router.get('/', billingController.getAllInvoices);
  *       404:
  *         description: Invoice not found
  */
-router.get('/:id', billingController.getInvoiceById);
+router.get('/:id', invoiceController.getInvoiceById);
+
+/**
+ * @swagger
+ * /api/v1/invoices/{id}:
+ *   put:
+ *     summary: Update invoice
+ *     description: Update an existing invoice
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [Paid, Unpaid, Partially Paid]
+ *               notes:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       200:
+ *         description: Invoice updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *       404:
+ *         description: Invoice not found
+ */
+router.put('/:id', invoiceController.updateInvoice);
+
+/**
+ * @swagger
+ * /api/v1/invoices/{id}/send:
+ *   post:
+ *     summary: Send invoice to student
+ *     description: Send invoice to student via email or SMS
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               method:
+ *                 type: string
+ *                 enum: [email, sms]
+ *                 default: email
+ *                 description: Method to send invoice
+ *     responses:
+ *       200:
+ *         description: Invoice sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     invoiceId:
+ *                       type: string
+ *                     studentId:
+ *                       type: string
+ *                     studentName:
+ *                       type: string
+ *                     method:
+ *                       type: string
+ *                     sentAt:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     message:
+ *                       type: string
+ *       404:
+ *         description: Invoice not found
+ */
+router.post('/:id/send', invoiceController.sendInvoice);
 
 module.exports = router;

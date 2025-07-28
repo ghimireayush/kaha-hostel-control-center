@@ -145,6 +145,69 @@ async function updateStudent(req, res, next) {
 }
 
 /**
+ * Advanced search for students
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function searchStudents(req, res, next) {
+    try {
+        const { q: query, filters = {} } = req.body;
+        
+        if (!query || query.trim().length === 0) {
+            const error = new Error('Search query is required');
+            error.statusCode = 422;
+            error.details = { query: 'Search query cannot be empty' };
+            throw error;
+        }
+
+        const result = await studentService.searchStudents(query, filters);
+
+        res.status(200).json({
+            status: 200,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * Bulk update students
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function bulkUpdateStudents(req, res, next) {
+    try {
+        const { studentIds, updates } = req.body;
+
+        if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+            const error = new Error('Student IDs array is required');
+            error.statusCode = 422;
+            error.details = { studentIds: 'Must provide an array of student IDs' };
+            throw error;
+        }
+
+        if (!updates || typeof updates !== 'object') {
+            const error = new Error('Updates object is required');
+            error.statusCode = 422;
+            error.details = { updates: 'Must provide an updates object' };
+            throw error;
+        }
+
+        const result = await studentService.bulkUpdateStudents(studentIds, updates);
+
+        res.status(200).json({
+            status: 200,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
  * Process student checkout
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -180,5 +243,7 @@ module.exports = {
     getStudentById,
     createStudent,
     updateStudent,
+    searchStudents,
+    bulkUpdateStudents,
     processCheckout
 };

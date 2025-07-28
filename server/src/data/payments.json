@@ -23,7 +23,9 @@
     "notes": "Partial payment for Feb invoice",
     "createdBy": "admin",
     "createdAt": "2024-02-10T14:30:00Z",
-    "invoiceIds": ["INV002"]
+    "invoiceIds": [
+      "INV002"
+    ]
   },
   {
     "id": "PMT003",
@@ -36,6 +38,22 @@
     "notes": "Full payment for March",
     "createdBy": "admin",
     "createdAt": "2024-03-12T11:15:00Z",
-    "invoiceIds": ["INV003"]
+    "invoiceIds": [
+      "INV003"
+    ]
+  },
+  {
+    "id": "PMT1753697220500",
+    "studentId": "S001",
+    "studentName": "SUNITA Thapa",
+    "amount": 3000,
+    "paymentMethod": "Bank Transfer",
+    "paymentDate": "2025-07-28",
+    "reference": "Test-BT-001",
+    "notes": "Test payment via API",
+    "createdBy": "admin",
+    "createdAt": "2025-07-28T10:07:00.500Z",
+    "invoiceIds": [],
+    "status": "Completed"
   }
 ]

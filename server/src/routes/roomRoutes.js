@@ -1,5 +1,5 @@
-const express = require('express');
-const roomController = require('../controllers/roomController');
+const express = require("express");
+const roomController = require("../controllers/roomController");
 
 const router = express.Router();
 
@@ -72,7 +72,7 @@ const router = express.Router();
  *       422:
  *         description: Invalid query parameters
  */
-router.get('/', roomController.getAllRooms);
+router.get("/", roomController.getAllRooms);
 
 /**
  * @swagger
@@ -117,7 +117,36 @@ router.get('/', roomController.getAllRooms);
  *                     byType:
  *                       type: object
  */
-router.get('/stats', roomController.getRoomStats);
+router.get("/stats", roomController.getRoomStats);
+
+/**
+ * @swagger
+ * /api/v1/rooms/available:
+ *   get:
+ *     summary: Get available rooms
+ *     description: Retrieve all rooms that are active and have available beds
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved available rooms
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     count:
+ *                       type: integer
+ */
+router.get("/available", roomController.getAvailableRooms);
 
 /**
  * @swagger
@@ -191,7 +220,7 @@ router.get('/stats', roomController.getRoomStats);
  *       404:
  *         description: Room not found
  */
-router.get('/:id', roomController.getRoomById);
+router.get("/:id", roomController.getRoomById);
 
 /**
  * @swagger
@@ -232,7 +261,7 @@ router.get('/:id', roomController.getRoomById);
  *       422:
  *         description: Invalid request data
  */
-router.post('/', roomController.createRoom);
+router.post("/", roomController.createRoom);
 
 /**
  * @swagger
@@ -280,7 +309,7 @@ router.post('/', roomController.createRoom);
  *       422:
  *         description: Invalid request data
  */
-router.put('/:id', roomController.updateRoom);
+router.put("/:id", roomController.updateRoom);
 
 /**
  * @swagger
@@ -315,7 +344,7 @@ router.put('/:id', roomController.updateRoom);
  *       422:
  *         description: Invalid request data or room not available
  */
-router.post('/:id/assign', roomController.assignStudent);
+router.post("/:id/assign", roomController.assignStudent);
 
 /**
  * @swagger
@@ -350,7 +379,7 @@ router.post('/:id/assign', roomController.assignStudent);
  *       422:
  *         description: Invalid request data or student not in room
  */
-router.post('/:id/vacate', roomController.vacateStudent);
+router.post("/:id/vacate", roomController.vacateStudent);
 
 /**
  * @swagger
@@ -387,6 +416,6 @@ router.post('/:id/vacate', roomController.vacateStudent);
  *       422:
  *         description: Invalid request data
  */
-router.post('/:id/maintenance', roomController.scheduleMaintenance);
+router.post("/:id/maintenance", roomController.scheduleMaintenance);
 
 module.exports = router;

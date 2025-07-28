@@ -59,5 +59,26 @@
     "address": "Lalitpur, Nepal",
     "idProofType": "Citizenship",
     "idProofNumber": "98-76-54-32109"
+  },
+  {
+    "id": "BR004",
+    "name": "Raj Sharma",
+    "phone": "+977-9851234567",
+    "email": "raj.sharma@email.com",
+    "guardianName": "Ram Sharma",
+    "guardianPhone": "+977-9851234568",
+    "preferredRoom": "Single Room",
+    "course": "Computer Science",
+    "institution": "Tribhuvan University",
+    "requestDate": "2024-07-24",
+    "checkInDate": "2024-08-01",
+    "duration": "12 months",
+    "status": "Approved",
+    "notes": "Prefers ground floor room",
+    "emergencyContact": "+977-9851234569",
+    "address": "Kathmandu, Nepal",
+    "idProofType": "Citizenship",
+    "idProofNumber": "11-22-33-44555",
+    "approvedDate": "2025-07-28"
   }
 ]

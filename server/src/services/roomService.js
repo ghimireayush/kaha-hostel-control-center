@@ -148,37 +148,68 @@ async function getRoomStats() {
 }
 
 /**
- * Create a new room (placeholder implementation)
+ * Create a new room
  * @param {Object} roomData - Room data to create
  * @returns {Promise<Object>} Created room object
  */
 async function createRoom(roomData) {
     const rooms = await readRoomData();
     
-    // In a real implementation:
-    // 1. Validate roomData
-    // 2. Generate a new ID
-    // 3. Add default values for missing fields
-    // 4. Add to rooms array
-    // 5. Write back to file
-    // 6. Return the created room
+    // Validate required fields
+    if (!roomData.name || !roomData.type || !roomData.bedCount) {
+        const error = new Error('Missing required fields: name, type, and bedCount are required');
+        error.statusCode = 422;
+        error.details = {
+            name: !roomData.name ? 'Name is required' : undefined,
+            type: !roomData.type ? 'Type is required' : undefined,
+            bedCount: !roomData.bedCount ? 'Bed count is required' : undefined
+        };
+        throw error;
+    }
+
+    // Generate room number if not provided
+    const roomNumber = roomData.roomNumber || `${roomData.type.charAt(0)}-${String(rooms.length + 1).padStart(3, '0')}`;
     
-    const mockNewRoom = {
-        id: `room-${rooms.length + 1}`,
-        ...roomData,
-        status: roomData.status || "Active", // Default status
+    // Check if room number already exists
+    if (rooms.some(r => r.roomNumber === roomNumber)) {
+        const error = new Error('Room number already exists');
+        error.statusCode = 422;
+        error.details = { roomNumber: 'Room number must be unique' };
+        throw error;
+    }
+
+    const newRoom = {
+        id: `room-${Date.now()}`,
+        name: roomData.name,
+        type: roomData.type,
+        bedCount: parseInt(roomData.bedCount),
+        occupancy: 0,
+        gender: roomData.gender || 'Mixed',
+        monthlyRate: parseInt(roomData.baseRate || roomData.monthlyRate || 12000),
+        dailyRate: Math.round((roomData.baseRate || roomData.monthlyRate || 12000) / 30),
+        amenities: roomData.amenities || [],
+        status: roomData.status || 'Active',
+        layout: null,
+        floor: roomData.floor || 'Ground Floor',
+        roomNumber: roomNumber,
+        occupants: [],
+        availableBeds: parseInt(roomData.bedCount),
+        lastCleaned: new Date().toISOString().split('T')[0],
+        maintenanceStatus: 'Good',
+        pricingModel: 'monthly',
+        description: roomData.description || `${roomData.type} room with ${roomData.bedCount} beds`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
     
-    // rooms.push(mockNewRoom);
-    // await writeRoomData(rooms);
+    rooms.push(newRoom);
+    await writeRoomData(rooms);
     
-    return mockNewRoom;
+    return newRoom;
 }
 
 /**
- * Update an existing room (placeholder implementation)
+ * Update an existing room
  * @param {string} id - Room ID
  * @param {Object} updateData - Data to update
  * @returns {Promise<Object>} Updated room object
@@ -193,21 +224,31 @@ async function updateRoom(id, updateData) {
         throw error;
     }
 
-    // In a real implementation:
-    // 1. Validate updateData
-    // 2. Update the room object
-    // 3. Update the updatedAt timestamp
-    // 4. Write back to file
-    // 5. Return the updated room
+    // Validate room number uniqueness if being updated
+    if (updateData.roomNumber && updateData.roomNumber !== rooms[roomIndex].roomNumber) {
+        if (rooms.some(r => r.roomNumber === updateData.roomNumber && r.id !== id)) {
+            const error = new Error('Room number already exists');
+            error.statusCode = 422;
+            error.details = { roomNumber: 'Room number must be unique' };
+            throw error;
+        }
+    }
 
+    // Update numeric fields properly
     const updatedRoom = {
         ...rooms[roomIndex],
         ...updateData,
+        // Ensure numeric fields are properly converted
+        bedCount: updateData.bedCount ? parseInt(updateData.bedCount) : rooms[roomIndex].bedCount,
+        monthlyRate: updateData.monthlyRate ? parseInt(updateData.monthlyRate) : 
+                    updateData.baseRate ? parseInt(updateData.baseRate) : rooms[roomIndex].monthlyRate,
+        dailyRate: updateData.monthlyRate ? Math.round(parseInt(updateData.monthlyRate) / 30) :
+                  updateData.baseRate ? Math.round(parseInt(updateData.baseRate) / 30) : rooms[roomIndex].dailyRate,
         updatedAt: new Date().toISOString()
     };
     
-    // rooms[roomIndex] = updatedRoom;
-    // await writeRoomData(rooms);
+    rooms[roomIndex] = updatedRoom;
+    await writeRoomData(rooms);
     
     return updatedRoom;
 }
@@ -257,6 +298,22 @@ async function vacateStudentFromRoom(roomId, studentId) {
 }
 
 /**
+ * Get available rooms (rooms with available beds and active status)
+ * @returns {Promise<Array>} Array of available rooms
+ */
+async function getAvailableRooms() {
+    const rooms = await readRoomData();
+    
+    // Filter rooms that are active and have available beds
+    const availableRooms = rooms.filter(room => 
+        room.status === 'Active' && 
+        room.availableBeds > 0
+    );
+
+    return availableRooms;
+}
+
+/**
  * Schedule maintenance for a room (placeholder implementation)
  * @param {string} roomId - Room ID
  * @param {Object} maintenanceData - Maintenance details
@@ -286,5 +343,6 @@ module.exports = {
     updateRoom,
     assignStudentToRoom,
     vacateStudentFromRoom,
+    getAvailableRooms,
     scheduleRoomMaintenance
 };

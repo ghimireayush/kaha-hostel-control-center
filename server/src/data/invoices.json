@@ -105,5 +105,37 @@
     "discountTotal": 0,
     "paymentTotal": 12500,
     "balanceDue": 0
+  },
+  {
+    "id": "INV1753688624724",
+    "studentId": "S001",
+    "studentName": "SUNITA Thapa",
+    "roomNumber": "A-101",
+    "month": "2024-07",
+    "total": 15500,
+    "status": "Unpaid",
+    "dueDate": "2025-08-12",
+    "createdAt": "2025-07-28T07:43:44.724Z",
+    "items": [
+      {
+        "id": "ITEM17536886247241",
+        "description": "Room Rent - A-101",
+        "amount": 15000,
+        "category": "Accommodation"
+      },
+      {
+        "id": "ITEM17536886247242",
+        "description": "Laundry Service",
+        "amount": 500,
+        "category": "Services"
+      }
+    ],
+    "payments": [],
+    "discounts": [],
+    "subtotal": 15500,
+    "discountTotal": 0,
+    "paymentTotal": 0,
+    "balanceDue": 15500,
+    "notes": ""
   }
 ]

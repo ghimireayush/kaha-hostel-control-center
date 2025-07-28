@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,101 +9,217 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Edit } from "lucide-react";
+import { Edit, Plus, Send, FileText, Loader2 } from "lucide-react";
+import { invoiceService } from "@/services/invoiceService.js";
 
 interface Invoice {
   id: string;
+  studentId: string;
   studentName: string;
-  room: string;
+  roomNumber: string;
   month: string;
-  baseFee: number;
-  extraServices: number;
-  previousDue: number;
-  discount: number;
-  totalAmount: number;
-  status: 'unpaid' | 'partially_paid' | 'paid';
-  createdDate: string;
+  total: number;
+  status: 'Paid' | 'Unpaid' | 'Partially Paid';
   dueDate: string;
+  createdAt: string;
+  items: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    category: string;
+  }>;
+  payments: Array<any>;
+  discounts: Array<any>;
+  subtotal: number;
+  discountTotal: number;
+  paymentTotal: number;
+  balanceDue: number;
+  notes?: string;
+}
+
+interface InvoiceStats {
+  totalInvoices: number;
+  paidInvoices: number;
+  unpaidInvoices: number;
+  partiallyPaidInvoices: number;
+  overdueInvoices: number;
+  totalAmount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  collectionRate: number;
 }
 
 export const InvoiceManagement = () => {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [stats, setStats] = useState<InvoiceStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [editFormData, setEditFormData] = useState<{
-    baseFee: number;
-    extraServices: number;
-    previousDue: number;
-    discount: number;
     status: string;
+    notes: string;
     dueDate: string;
   } | null>(null);
+  const [createFormData, setCreateFormData] = useState({
+    studentId: '',
+    month: '',
+    notes: ''
+  });
+  const [generateFormData, setGenerateFormData] = useState({
+    month: '',
+    studentIds: [] as string[]
+  });
   const { toast } = useToast();
 
-  // Mock invoice data
-  const [invoices] = useState<Invoice[]>([
-    {
-      id: "INV-2024-001",
-      studentName: "Ram Sharma",
-      room: "A-101",
-      month: "March 2024",
-      baseFee: 12000,
-      extraServices: 2500,
-      previousDue: 5000,
-      discount: 0,
-      totalAmount: 19500,
-      status: "partially_paid",
-      createdDate: "2024-03-01",
-      dueDate: "2024-03-10"
-    },
-    {
-      id: "INV-2024-002",
-      studentName: "Sita Poudel",
-      room: "B-205",
-      month: "March 2024",
-      baseFee: 15000,
-      extraServices: 2000,
-      previousDue: 0,
-      discount: 1000,
-      totalAmount: 16000,
-      status: "paid",
-      createdDate: "2024-03-01",
-      dueDate: "2024-03-10"
-    },
-    {
-      id: "INV-2024-003",
-      studentName: "Hari Thapa",
-      room: "C-301",
-      month: "March 2024",
-      baseFee: 10000,
-      extraServices: 1500,
-      previousDue: 3000,
-      discount: 500,
-      totalAmount: 14000,
-      status: "unpaid",
-      createdDate: "2024-03-01",
-      dueDate: "2024-03-10"
+  // Fetch invoices and stats
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const filters = {
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        month: filterMonth !== 'all' ? filterMonth : undefined,
+        search: searchTerm || undefined
+      };
+      
+      const [invoicesData, statsData] = await Promise.all([
+        invoiceService.getInvoices(filters),
+        invoiceService.getInvoiceStats()
+      ]);
+      
+      setInvoices(invoicesData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch invoices. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const statusMatch = filterStatus === "all" || invoice.status === filterStatus;
-    const monthMatch = filterMonth === "all" || invoice.month.includes(filterMonth);
-    return statusMatch && monthMatch;
-  });
+  useEffect(() => {
+    fetchInvoices();
+  }, [filterStatus, filterMonth, searchTerm]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
+      case "Paid":
         return <Badge className="bg-green-100 text-green-800">✅ Paid</Badge>;
-      case "partially_paid":
+      case "Partially Paid":
         return <Badge className="bg-yellow-100 text-yellow-800">⚠️ Partially Paid</Badge>;
-      case "unpaid":
+      case "Unpaid":
         return <Badge className="bg-red-100 text-red-800">❌ Unpaid</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  // Handle invoice operations
+  const handleCreateInvoice = async () => {
+    try {
+      if (!createFormData.studentId || !createFormData.month) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await invoiceService.createInvoice(createFormData);
+      toast({
+        title: "Success",
+        description: "Invoice created successfully!",
+      });
+      
+      setShowCreateDialog(false);
+      setCreateFormData({ studentId: '', month: '', notes: '' });
+      fetchInvoices();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateInvoice = async () => {
+    try {
+      if (!selectedInvoice || !editFormData) return;
+
+      await invoiceService.updateInvoice(selectedInvoice.id, editFormData);
+      toast({
+        title: "Success",
+        description: "Invoice updated successfully!",
+      });
+      
+      setShowEditDialog(false);
+      fetchInvoices();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update invoice.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleGenerateMonthlyInvoices = async () => {
+    try {
+      if (!generateFormData.month) {
+        toast({
+          title: "Validation Error",
+          description: "Please select a month.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const result = await invoiceService.generateMonthlyInvoices(
+        generateFormData.month,
+        generateFormData.studentIds.length > 0 ? generateFormData.studentIds : null
+      );
+      
+      toast({
+        title: "Success",
+        description: `Generated ${result.successCount} invoices successfully! ${result.skippedCount} skipped, ${result.failedCount} failed.`,
+      });
+      
+      setShowGenerateDialog(false);
+      setGenerateFormData({ month: '', studentIds: [] });
+      fetchInvoices();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate invoices.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendInvoice = async (invoiceId: string) => {
+    try {
+      await invoiceService.sendInvoice(invoiceId, 'email');
+      toast({
+        title: "Success",
+        description: "Invoice sent successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invoice.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -124,11 +240,8 @@ export const InvoiceManagement = () => {
   const handleEditInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setEditFormData({
-      baseFee: invoice.baseFee,
-      extraServices: invoice.extraServices,
-      previousDue: invoice.previousDue,
-      discount: invoice.discount,
       status: invoice.status,
+      notes: invoice.notes || '',
       dueDate: invoice.dueDate
     });
     setShowEditDialog(true);
@@ -141,13 +254,59 @@ export const InvoiceManagement = () => {
         <Button>➕ Generate Bulk Invoices</Button>
       </div>
 
-      {/* Filters */}
+      {/* Statistics Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-green-600">
+                ₨{stats.paidAmount.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-500">Total Paid ({stats.paidInvoices} invoices)</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-red-600">
+                ₨{stats.outstandingAmount.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-500">Outstanding ({stats.unpaidInvoices + stats.partiallyPaidInvoices} invoices)</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-yellow-600">
+                {stats.partiallyPaidInvoices}
+              </div>
+              <div className="text-sm text-gray-500">Partially Paid</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.collectionRate}%
+              </div>
+              <div className="text-sm text-gray-500">Collection Rate</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters and Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>🔍 Filter Invoices</CardTitle>
+          <CardTitle>🔍 Filter & Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div>
+              <Input
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
+            </div>
             <div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-48">
@@ -155,9 +314,9 @@ export const InvoiceManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="paid">✅ Paid</SelectItem>
-                  <SelectItem value="partially_paid">⚠️ Partially Paid</SelectItem>
-                  <SelectItem value="unpaid">❌ Unpaid</SelectItem>
+                  <SelectItem value="Paid">✅ Paid</SelectItem>
+                  <SelectItem value="Partially Paid">⚠️ Partially Paid</SelectItem>
+                  <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -168,11 +327,25 @@ export const InvoiceManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Months</SelectItem>
-                  <SelectItem value="March">March 2024</SelectItem>
-                  <SelectItem value="February">February 2024</SelectItem>
-                  <SelectItem value="January">January 2024</SelectItem>
+                  <SelectItem value="2024-07">July 2024</SelectItem>
+                  <SelectItem value="2024-06">June 2024</SelectItem>
+                  <SelectItem value="2024-05">May 2024</SelectItem>
+                  <SelectItem value="2024-04">April 2024</SelectItem>
+                  <SelectItem value="2024-03">March 2024</SelectItem>
+                  <SelectItem value="2024-02">February 2024</SelectItem>
+                  <SelectItem value="2024-01">January 2024</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2">
+                <Plus size={16} />
+                Create Invoice
+              </Button>
+              <Button onClick={() => setShowGenerateDialog(true)} variant="outline" className="flex items-center gap-2">
+                <FileText size={16} />
+                Generate Monthly
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -181,126 +354,192 @@ export const InvoiceManagement = () => {
       {/* Invoices Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Invoice List ({filteredInvoices.length} invoices)</CardTitle>
+          <CardTitle>Invoice List ({invoices.length} invoices)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice ID</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Month</TableHead>
-                <TableHead>Amount Breakdown</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{invoice.studentName}</div>
-                      <div className="text-sm text-gray-500">Room: {invoice.room}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{invoice.month}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>Base Fee: ₨{invoice.baseFee.toLocaleString()}</div>
-                      {invoice.extraServices > 0 && (
-                        <div>Extra Services: ₨{invoice.extraServices.toLocaleString()}</div>
-                      )}
-                      {invoice.previousDue > 0 && (
-                        <div className="text-red-600">Previous Due: ₨{invoice.previousDue.toLocaleString()}</div>
-                      )}
-                      {invoice.discount > 0 && (
-                        <div className="text-green-600">Discount: -₨{invoice.discount.toLocaleString()}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-bold text-lg">
-                    ₨{invoice.totalAmount.toLocaleString()}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                  <TableCell>
-                    <div className={`${new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid' ? 'text-red-600 font-medium' : ''}`}>
-                      {new Date(invoice.dueDate).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleViewInvoice(invoice)}
-                        title="View Invoice"
-                      >
-                        👁️
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handlePrintInvoice(invoice)}
-                        title="Print Invoice"
-                      >
-                        🖨️
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleEditInvoice(invoice)}
-                        title="Edit Invoice"
-                      >
-                        ✏️
-                      </Button>
-                    </div>
-                  </TableCell>
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading invoices...</span>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice ID</TableHead>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Month</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.id}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{invoice.studentName}</div>
+                        <div className="text-sm text-gray-500">Room: {invoice.roomNumber}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{invoice.month}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {invoice.items.map((item, index) => (
+                          <div key={item.id}>
+                            {item.description}: ₨{item.amount.toLocaleString()}
+                          </div>
+                        ))}
+                        {invoice.discountTotal > 0 && (
+                          <div className="text-green-600">Discount: -₨{invoice.discountTotal.toLocaleString()}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold text-lg">
+                      ₨{invoice.total.toLocaleString()}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                    <TableCell>
+                      <div className={`${new Date(invoice.dueDate) < new Date() && invoice.status !== 'Paid' ? 'text-red-600 font-medium' : ''}`}>
+                        {new Date(invoice.dueDate).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewInvoice(invoice)}
+                          title="View Invoice"
+                        >
+                          👁️
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handlePrintInvoice(invoice)}
+                          title="Print Invoice"
+                        >
+                          🖨️
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditInvoice(invoice)}
+                          title="Edit Invoice"
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleSendInvoice(invoice.id)}
+                          title="Send Invoice"
+                        >
+                          <Send size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              ₨{invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.totalAmount, 0).toLocaleString()}
+      {/* Create Invoice Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="studentId">Student ID *</Label>
+              <Input
+                id="studentId"
+                placeholder="Enter student ID (e.g., S001)"
+                value={createFormData.studentId}
+                onChange={(e) => setCreateFormData({...createFormData, studentId: e.target.value})}
+              />
             </div>
-            <div className="text-sm text-gray-500">Total Paid</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">
-              ₨{invoices.filter(i => i.status === 'unpaid').reduce((sum, i) => sum + i.totalAmount, 0).toLocaleString()}
+            <div>
+              <Label htmlFor="month">Month *</Label>
+              <Input
+                id="month"
+                type="month"
+                value={createFormData.month}
+                onChange={(e) => setCreateFormData({...createFormData, month: e.target.value})}
+              />
             </div>
-            <div className="text-sm text-gray-500">Total Unpaid</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              ₨{invoices.filter(i => i.status === 'partially_paid').reduce((sum, i) => sum + i.totalAmount, 0).toLocaleString()}
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                placeholder="Optional notes"
+                value={createFormData.notes}
+                onChange={(e) => setCreateFormData({...createFormData, notes: e.target.value})}
+              />
             </div>
-            <div className="text-sm text-gray-500">Partially Paid</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {invoices.filter(i => new Date(i.dueDate) < new Date() && i.status !== 'paid').length}
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleCreateInvoice} className="flex-1">
+                Create Invoice
+              </Button>
             </div>
-            <div className="text-sm text-gray-500">Overdue Invoices</div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Monthly Invoices Dialog */}
+      <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generate Monthly Invoices</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="generateMonth">Month *</Label>
+              <Input
+                id="generateMonth"
+                type="month"
+                value={generateFormData.month}
+                onChange={(e) => setGenerateFormData({...generateFormData, month: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="studentIds">Specific Students (Optional)</Label>
+              <Input
+                id="studentIds"
+                placeholder="Enter student IDs separated by commas (e.g., S001,S002)"
+                value={generateFormData.studentIds.join(',')}
+                onChange={(e) => setGenerateFormData({
+                  ...generateFormData, 
+                  studentIds: e.target.value.split(',').map(id => id.trim()).filter(id => id)
+                })}
+              />
+              <div className="text-sm text-gray-500 mt-1">
+                Leave empty to generate for all active students
+              </div>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowGenerateDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleGenerateMonthlyInvoices} className="flex-1">
+                Generate Invoices
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* View Invoice Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
@@ -314,7 +553,7 @@ export const InvoiceManagement = () => {
                 <div>
                   <h4 className="font-semibold">Student Information</h4>
                   <p>Name: {selectedInvoice.studentName}</p>
-                  <p>Room: {selectedInvoice.room}</p>
+                  <p>Room: {selectedInvoice.roomNumber}</p>
                 </div>
                 <div>
                   <h4 className="font-semibold">Invoice Information</h4>
@@ -325,33 +564,27 @@ export const InvoiceManagement = () => {
               </div>
               
               <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Amount Breakdown</h4>
+                <h4 className="font-semibold mb-2">Invoice Items</h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Base Fee:</span>
-                    <span>₨{selectedInvoice.baseFee.toLocaleString()}</span>
-                  </div>
-                  {selectedInvoice.extraServices > 0 && (
-                    <div className="flex justify-between">
-                      <span>Extra Services:</span>
-                      <span>₨{selectedInvoice.extraServices.toLocaleString()}</span>
+                  {selectedInvoice.items.map((item) => (
+                    <div key={item.id} className="flex justify-between">
+                      <span>{item.description}:</span>
+                      <span>₨{item.amount.toLocaleString()}</span>
                     </div>
-                  )}
-                  {selectedInvoice.previousDue > 0 && (
-                    <div className="flex justify-between text-red-600">
-                      <span>Previous Due:</span>
-                      <span>₨{selectedInvoice.previousDue.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {selectedInvoice.discount > 0 && (
+                  ))}
+                  {selectedInvoice.discountTotal > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Discount:</span>
-                      <span>-₨{selectedInvoice.discount.toLocaleString()}</span>
+                      <span>-₨{selectedInvoice.discountTotal.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-lg border-t pt-2">
                     <span>Total Amount:</span>
-                    <span>₨{selectedInvoice.totalAmount.toLocaleString()}</span>
+                    <span>₨{selectedInvoice.total.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Balance Due:</span>
+                    <span>₨{selectedInvoice.balanceDue.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -371,78 +604,49 @@ export const InvoiceManagement = () => {
 
       {/* Edit Invoice Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Invoice - {selectedInvoice?.id}</DialogTitle>
           </DialogHeader>
           {selectedInvoice && editFormData && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="baseFee">Base Fee (₨)</Label>
-                  <Input
-                    id="baseFee"
-                    type="number"
-                    value={editFormData.baseFee}
-                    onChange={(e) => setEditFormData({...editFormData, baseFee: Number(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="extraServices">Extra Services (₨)</Label>
-                  <Input
-                    id="extraServices"
-                    type="number"
-                    value={editFormData.extraServices}
-                    onChange={(e) => setEditFormData({...editFormData, extraServices: Number(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="previousDue">Previous Due (₨)</Label>
-                  <Input
-                    id="previousDue"
-                    type="number"
-                    value={editFormData.previousDue}
-                    onChange={(e) => setEditFormData({...editFormData, previousDue: Number(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="discount">Discount (₨)</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    value={editFormData.discount}
-                    onChange={(e) => setEditFormData({...editFormData, discount: Number(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unpaid">❌ Unpaid</SelectItem>
-                      <SelectItem value="partially_paid">⚠️ Partially Paid</SelectItem>
-                      <SelectItem value="paid">✅ Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="dueDate">Due Date</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={editFormData.dueDate}
-                    onChange={(e) => setEditFormData({...editFormData, dueDate: e.target.value})}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
+                    <SelectItem value="Partially Paid">⚠️ Partially Paid</SelectItem>
+                    <SelectItem value="Paid">✅ Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={editFormData.dueDate}
+                  onChange={(e) => setEditFormData({...editFormData, dueDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Input
+                  id="notes"
+                  placeholder="Optional notes"
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                />
               </div>
 
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total Amount:</span>
                   <span className="text-blue-600">
-                    ₨{(editFormData.baseFee + editFormData.extraServices + editFormData.previousDue - editFormData.discount).toLocaleString()}
+                    ₨{selectedInvoice.total.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -451,19 +655,7 @@ export const InvoiceManagement = () => {
                 <Button variant="outline" onClick={() => setShowEditDialog(false)} className="flex-1">
                   Cancel
                 </Button>
-                <Button onClick={() => {
-                  const updatedInvoice = {
-                    ...selectedInvoice,
-                    ...editFormData,
-                    totalAmount: editFormData.baseFee + editFormData.extraServices + editFormData.previousDue - editFormData.discount
-                  };
-                  
-                  toast({
-                    title: "Invoice Updated",
-                    description: `Invoice ${updatedInvoice.id} has been updated successfully.`,
-                  });
-                  setShowEditDialog(false);
-                }} className="flex-1">
+                <Button onClick={handleUpdateInvoice} className="flex-1">
                   Save Changes
                 </Button>
               </div>

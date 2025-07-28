@@ -35,13 +35,46 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 export const invoiceService = {
-  // Get all invoices
-  async getInvoices() {
+  // Get all invoices with filtering and pagination
+  async getInvoices(filters = {}) {
     try {
-      const result = await apiRequest('/invoices');
-      return Array.isArray(result) ? result : [];
+      console.log('📄 Fetching invoices from API...');
+      const queryParams = new URLSearchParams();
+      
+      // Add filters as query parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+      
+      const endpoint = `/invoices${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await apiRequest(endpoint);
+      console.log('✅ Invoices API response:', response);
+      
+      return response.result?.items || response || []; // Handle different response formats
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      console.error('❌ Error fetching invoices:', error);
+      throw error;
+    }
+  },
+
+  // Get invoice statistics from API
+  async getInvoiceStats() {
+    try {
+      console.log('📊 Fetching invoice statistics from API...');
+      const response = await fetch(`${API_BASE_URL}/invoices/stats`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Invoice stats API response:', data);
+      
+      return data.stats || data;
+    } catch (error) {
+      console.error('❌ Error fetching invoice stats:', error);
       throw error;
     }
   },
@@ -49,9 +82,19 @@ export const invoiceService = {
   // Get invoice by ID
   async getInvoiceById(id) {
     try {
-      return await apiRequest(`/invoices/${id}`);
+      console.log(`📄 Fetching invoice ${id} from API...`);
+      const response = await fetch(`${API_BASE_URL}/invoices/${id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Invoice details fetched');
+      
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching invoice by ID:', error);
+      console.error('❌ Error fetching invoice by ID:', error);
       throw error;
     }
   },
@@ -59,10 +102,10 @@ export const invoiceService = {
   // Get invoices by student ID
   async getInvoicesByStudentId(studentId) {
     try {
-      const result = await apiRequest(`/invoices?studentId=${studentId}`);
-      return Array.isArray(result) ? result : [];
+      console.log(`📄 Fetching invoices for student ${studentId}...`);
+      return await this.getInvoices({ studentId });
     } catch (error) {
-      console.error('Error fetching invoices by student ID:', error);
+      console.error('❌ Error fetching invoices by student ID:', error);
       throw error;
     }
   },
@@ -70,12 +113,26 @@ export const invoiceService = {
   // Create new invoice
   async createInvoice(invoiceData) {
     try {
-      return await apiRequest('/invoices', {
+      console.log('📝 Creating new invoice via API...');
+      const response = await fetch(`${API_BASE_URL}/invoices`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(invoiceData),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Invoice created successfully');
+      
+      return data.data || data;
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      console.error('❌ Error creating invoice:', error);
       throw error;
     }
   },
@@ -83,32 +140,80 @@ export const invoiceService = {
   // Update invoice
   async updateInvoice(id, updates) {
     try {
-      return await apiRequest(`/invoices/${id}`, {
+      console.log(`📝 Updating invoice ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(updates),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Invoice updated successfully');
+      
+      return data.data || data;
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      console.error('❌ Error updating invoice:', error);
       throw error;
     }
   },
 
-  // Get invoice statistics
-  async getInvoiceStats() {
+  // Generate monthly invoices for all active students
+  async generateMonthlyInvoices(month, studentIds = null) {
     try {
-      // Get all invoices and calculate stats
-      const invoices = await this.getInvoices();
-      const stats = {
-        totalPaid: invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.total, 0),
-        totalUnpaid: invoices.filter(i => i.status === 'Unpaid').reduce((sum, i) => sum + i.total, 0),
-        totalPartiallyPaid: invoices.filter(i => i.status === 'Partially Paid').reduce((sum, i) => sum + i.amountPaid, 0),
-        overdueCount: invoices.filter(i => 
-          i.status !== 'Paid' && new Date(i.dueDate) < new Date()
-        ).length
-      };
-      return stats;
+      console.log(`📅 Generating monthly invoices for ${month}...`);
+      const response = await fetch(`${API_BASE_URL}/invoices/generate-monthly`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ month, studentIds }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Monthly invoices generated successfully');
+      
+      return data.data || data;
     } catch (error) {
-      console.error('Error fetching invoice stats:', error);
+      console.error('❌ Error generating monthly invoices:', error);
+      throw error;
+    }
+  },
+
+  // Send invoice to student
+  async sendInvoice(invoiceId, method = 'email') {
+    try {
+      console.log(`📧 Sending invoice ${invoiceId} via ${method}...`);
+      const response = await fetch(`${API_BASE_URL}/invoices/${invoiceId}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ method }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Invoice sent successfully');
+      
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error sending invoice:', error);
       throw error;
     }
   },
@@ -116,13 +221,21 @@ export const invoiceService = {
   // Filter invoices by status
   async filterInvoicesByStatus(status) {
     try {
-      if (status === 'all') {
-        return await this.getInvoices();
-      }
-      const result = await apiRequest(`/invoices?status=${status}`);
-      return Array.isArray(result) ? result : [];
+      console.log(`🔍 Filtering invoices by status: ${status}`);
+      return await this.getInvoices({ status });
     } catch (error) {
-      console.error('Error filtering invoices by status:', error);
+      console.error('❌ Error filtering invoices by status:', error);
+      throw error;
+    }
+  },
+
+  // Search invoices
+  async searchInvoices(searchTerm, filters = {}) {
+    try {
+      console.log(`🔍 Searching invoices: ${searchTerm}`);
+      return await this.getInvoices({ search: searchTerm, ...filters });
+    } catch (error) {
+      console.error('❌ Error searching invoices:', error);
       throw error;
     }
   }

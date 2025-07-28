@@ -1,68 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Plus, Edit, Trash2, Users, Settings, Layout } from "lucide-react";
+import { Bed, Plus, Edit, Trash2, Users, Settings, Layout, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { RoomDesigner } from "./RoomDesigner";
+import { roomService } from "@/services/roomService";
 
 export const RoomConfiguration = () => {
   const { translations } = useLanguage();
-  const [rooms, setRooms] = useState([
-    {
-      id: "room-1",
-      name: "Dorm A - Mixed",
-      type: "Dormitory",
-      bedCount: 8,
-      occupancy: 6,
-      gender: "Mixed",
-      baseRate: 12000,
-      amenities: ["Wi-Fi", "Lockers", "Reading Light"],
-      status: "Active",
-      layout: null
-    },
-    {
-      id: "room-2",
-      name: "Dorm B - Female Only",
-      type: "Dormitory",
-      bedCount: 6,
-      occupancy: 4,
-      gender: "Female",
-      baseRate: 15000,
-      amenities: ["Wi-Fi", "Lockers", "Reading Light", "Private Bathroom"],
-      status: "Active"
-    },
-    {
-      id: "room-3",
-      name: "Private Room 1",
-      type: "Private",
-      bedCount: 2,
-      occupancy: 0,
-      gender: "Mixed",
-      baseRate: 25000,
-      amenities: ["Wi-Fi", "Private Bathroom", "AC", "TV"],
-      status: "Active"
-    },
-    {
-      id: "room-4",
-      name: "Capsule Pod Section",
-      type: "Capsule",
-      bedCount: 12,
-      occupancy: 8,
-      gender: "Mixed",
-      baseRate: 18000,
-      amenities: ["Wi-Fi", "Personal Locker", "Reading Light", "Power Outlet"],
-      status: "Maintenance"
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch rooms on component mount
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const fetchRooms = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('🏠 Fetching rooms from API...');
+      const roomsData = await roomService.getRooms();
+      console.log('✅ Rooms fetched:', roomsData);
+      setRooms(roomsData);
+    } catch (error) {
+      console.error('❌ Error fetching rooms:', error);
+      setError('Failed to load rooms. Please try again.');
+      toast.error('Failed to load rooms');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showRoomDesigner, setShowRoomDesigner] = useState(false);
   const [selectedRoomForDesign, setSelectedRoomForDesign] = useState<string | null>(null);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
     type: "Dormitory",
@@ -79,15 +59,141 @@ export const RoomConfiguration = () => {
     "AC", "TV", "Power Outlet", "Personal Locker", "Bunk Bed"
   ];
 
-  const handleAddRoom = () => {
-    const room = {
-      id: `room-${Date.now()}`,
-      ...newRoom,
-      occupancy: 0,
-      status: "Active",
-      layout: null
-    };
-    setRooms([...rooms, room]);
+  const handleAddRoom = async () => {
+    try {
+      console.log('🏠 Creating new room via API...');
+      const roomData = {
+        ...newRoom,
+        monthlyRate: newRoom.baseRate,
+        dailyRate: Math.round(newRoom.baseRate / 30),
+        amenities: newRoom.amenities,
+        status: "Active",
+      };
+      
+      const createdRoom = await roomService.createRoom(roomData);
+      console.log('✅ Room created:', createdRoom);
+      
+      // Refresh the rooms list
+      await fetchRooms();
+      
+      // Reset form
+      setNewRoom({
+        name: "",
+        type: "Dormitory",
+        bedCount: 1,
+        gender: "Mixed",
+        baseRate: 12000,
+        amenities: []
+      });
+      setShowAddRoom(false);
+      toast.success("Room added successfully!");
+    } catch (error) {
+      console.error('❌ Error creating room:', error);
+      toast.error("Failed to add room. Please try again.");
+    }
+  };
+
+  const openRoomDesigner = (roomId: string) => {
+    setSelectedRoomForDesign(roomId);
+    setShowRoomDesigner(true);
+  };
+
+  const handleSaveLayout = async (layout: any) => {
+    if (selectedRoomForDesign) {
+      try {
+        console.log('🎨 Saving room layout via API...');
+        await roomService.updateRoom(selectedRoomForDesign, { layout });
+        console.log('✅ Room layout saved');
+        
+        // Refresh the rooms list to get updated data
+        await fetchRooms();
+        
+        setShowRoomDesigner(false);
+        setSelectedRoomForDesign(null);
+        toast.success("Room layout saved successfully!");
+      } catch (error) {
+        console.error('❌ Error saving room layout:', error);
+        toast.error("Failed to save room layout. Please try again.");
+      }
+    }
+  };
+
+  const closeRoomDesigner = () => {
+    setShowRoomDesigner(false);
+    setSelectedRoomForDesign(null);
+  };
+
+  const handleEditRoom = (room: any) => {
+    setEditingRoom(room);
+    setNewRoom({
+      name: room.name,
+      type: room.type,
+      bedCount: room.bedCount,
+      gender: room.gender,
+      baseRate: room.monthlyRate || room.baseRate,
+      amenities: room.amenities || []
+    });
+    setShowAddRoom(true);
+  };
+
+  const handleUpdateRoom = async () => {
+    if (!editingRoom) return;
+    
+    try {
+      console.log('🏠 Updating room via API...');
+      const roomData = {
+        ...newRoom,
+        monthlyRate: newRoom.baseRate,
+        dailyRate: Math.round(newRoom.baseRate / 30),
+        amenities: newRoom.amenities,
+      };
+      
+      await roomService.updateRoom(editingRoom.id, roomData);
+      console.log('✅ Room updated');
+      
+      // Refresh the rooms list
+      await fetchRooms();
+      
+      // Reset form and editing state
+      setNewRoom({
+        name: "",
+        type: "Dormitory",
+        bedCount: 1,
+        gender: "Mixed",
+        baseRate: 12000,
+        amenities: []
+      });
+      setEditingRoom(null);
+      setShowAddRoom(false);
+      toast.success("Room updated successfully!");
+    } catch (error) {
+      console.error('❌ Error updating room:', error);
+      toast.error("Failed to update room. Please try again.");
+    }
+  };
+
+  const handleDeleteRoom = async (room: any) => {
+    if (!confirm(`Are you sure you want to delete "${room.name}"? This will mark it as inactive.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting room via API...');
+      await roomService.deleteRoom(room.id);
+      console.log('✅ Room deleted');
+      
+      // Refresh the rooms list
+      await fetchRooms();
+      
+      toast.success("Room deleted successfully!");
+    } catch (error) {
+      console.error('❌ Error deleting room:', error);
+      toast.error("Failed to delete room. Please try again.");
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingRoom(null);
     setNewRoom({
       name: "",
       type: "Dormitory",
@@ -97,30 +203,6 @@ export const RoomConfiguration = () => {
       amenities: []
     });
     setShowAddRoom(false);
-    toast.success("Room added successfully!");
-  };
-
-  const openRoomDesigner = (roomId: string) => {
-    setSelectedRoomForDesign(roomId);
-    setShowRoomDesigner(true);
-  };
-
-  const handleSaveLayout = (layout: any) => {
-    if (selectedRoomForDesign) {
-      setRooms(rooms.map(room => 
-        room.id === selectedRoomForDesign 
-          ? { ...room, layout }
-          : room
-      ));
-      setShowRoomDesigner(false);
-      setSelectedRoomForDesign(null);
-      toast.success("Room layout saved successfully!");
-    }
-  };
-
-  const closeRoomDesigner = () => {
-    setShowRoomDesigner(false);
-    setSelectedRoomForDesign(null);
   };
 
   if (showRoomDesigner && selectedRoomForDesign) {
@@ -131,6 +213,35 @@ export const RoomConfiguration = () => {
         onClose={closeRoomDesigner}
         roomData={roomData?.layout}
       />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading rooms...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchRooms} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -147,7 +258,7 @@ export const RoomConfiguration = () => {
       {showAddRoom && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Room</CardTitle>
+            <CardTitle>{editingRoom ? 'Edit Room' : 'Add New Room'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,8 +317,12 @@ export const RoomConfiguration = () => {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button onClick={handleAddRoom}>Add Room</Button>
-              <Button variant="outline" onClick={() => setShowAddRoom(false)}>Cancel</Button>
+              <Button onClick={editingRoom ? handleUpdateRoom : handleAddRoom}>
+                {editingRoom ? 'Update Room' : 'Add Room'}
+              </Button>
+              <Button variant="outline" onClick={editingRoom ? cancelEdit : () => setShowAddRoom(false)}>
+                Cancel
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -245,10 +360,19 @@ export const RoomConfiguration = () => {
                   >
                     <Layout className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEditRoom(room)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => handleDeleteRoom(room)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -274,10 +398,10 @@ export const RoomConfiguration = () => {
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm text-gray-600 mb-1">Monthly Rate</div>
                   <div className="text-xl font-bold text-blue-600">
-                    NPR {room.baseRate.toLocaleString()}/month
+                    NPR {(room.monthlyRate || room.baseRate || 0).toLocaleString()}/month
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Daily: NPR {Math.round(room.baseRate / 30)}/day
+                    Daily: NPR {room.dailyRate || Math.round((room.monthlyRate || room.baseRate || 0) / 30)}/day
                   </div>
                 </div>
 
