@@ -1,61 +1,143 @@
 // Report Service - Generate and manage system reports
-import reportsData from '../data/reports.json' with { type: 'json' };
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 
-let reports = [...reportsData];
+// Helper function to handle API requests
+async function apiRequest(endpoint, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    // Handle the specific API response format: { status, result: { items, pagination } }
+    if (data.result && data.result.items) {
+      return data.result.items;
+    }
+    // For single item responses, return the result directly
+    if (data.result && !data.result.items) {
+      return data.result;
+    }
+    // Fallback for other formats
+    return data.data || data;
+  } catch (error) {
+    console.error('Report API Request Error:', error);
+    throw error;
+  }
+}
 
 export const reportService = {
-  // READ Operations
-  async getAllReports() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...reports]), 100);
-    });
+  // Get all reports with filtering and pagination
+  async getAllReports(filters = {}) {
+    try {
+      console.log('📊 Fetching reports from API...');
+      const queryParams = new URLSearchParams();
+      
+      // Add filters as query parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+      
+      const endpoint = `/reports${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await apiRequest(endpoint);
+      console.log('✅ Reports API response:', response);
+      
+      return response.result?.items || response || []; // Handle different response formats
+    } catch (error) {
+      console.error('❌ Error fetching reports:', error);
+      throw error;
+    }
   },
 
+  // Get report by ID
   async getReportById(id) {
-    return new Promise((resolve) => {
-      const report = reports.find(r => r.id === id);
-      setTimeout(() => resolve(report), 100);
-    });
+    try {
+      console.log(`📊 Fetching report ${id} from API...`);
+      const response = await fetch(`${API_BASE_URL}/reports/${id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Report details fetched');
+      
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error fetching report by ID:', error);
+      throw error;
+    }
   },
 
+  // Get reports by type
   async getReportsByType(type) {
-    return new Promise((resolve) => {
-      const typeReports = reports.filter(r => r.type === type);
-      setTimeout(() => resolve(typeReports), 100);
-    });
+    try {
+      console.log(`📊 Fetching reports by type: ${type}`);
+      return await this.getAllReports({ type });
+    } catch (error) {
+      console.error('❌ Error fetching reports by type:', error);
+      throw error;
+    }
   },
 
+  // Get reports by user
   async getReportsByUser(userId) {
-    return new Promise((resolve) => {
-      const userReports = reports.filter(r => r.generatedBy === userId);
-      setTimeout(() => resolve(userReports), 100);
-    });
+    try {
+      console.log(`📊 Fetching reports by user: ${userId}`);
+      return await this.getAllReports({ generatedBy: userId });
+    } catch (error) {
+      console.error('❌ Error fetching reports by user:', error);
+      throw error;
+    }
   },
 
+  // Get scheduled reports
   async getScheduledReports() {
-    return new Promise((resolve) => {
-      const scheduledReports = reports.filter(r => r.isScheduled);
-      setTimeout(() => resolve(scheduledReports), 100);
-    });
+    try {
+      console.log('📊 Fetching scheduled reports...');
+      const reports = await this.getAllReports();
+      return reports.filter(r => r.isScheduled);
+    } catch (error) {
+      console.error('❌ Error fetching scheduled reports:', error);
+      throw error;
+    }
   },
 
-  // CREATE Operations
+  // Generate new report
   async generateReport(reportData) {
-    return new Promise((resolve) => {
-      const newReport = {
-        id: `RPT${String(reports.length + 1).padStart(3, '0')}`,
-        ...reportData,
-        generatedAt: new Date().toISOString(),
-        filePath: `/reports/${reportData.type}/${reportData.name.toLowerCase().replace(/\s+/g, '-')}.${reportData.format}`,
-        isScheduled: reportData.isScheduled || false
-      };
+    try {
+      console.log('📊 Generating new report via API...');
+      const response = await fetch(`${API_BASE_URL}/reports/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Report generated successfully');
       
-      reports.push(newReport);
-      
-      console.log(`📊 Report generated: ${newReport.name}`);
-      
-      setTimeout(() => resolve(newReport), 500); // Simulate report generation time
-    });
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error generating report:', error);
+      throw error;
+    }
   },
 
   async generateFinancialReport(parameters) {
@@ -148,18 +230,27 @@ export const reportService = {
     });
   },
 
-  // DELETE Operations
+  // Delete report via API
   async deleteReport(id) {
-    return new Promise((resolve, reject) => {
-      const index = reports.findIndex(r => r.id === id);
-      if (index === -1) {
-        setTimeout(() => reject(new Error('Report not found')), 100);
-        return;
+    try {
+      console.log(`📊 Deleting report ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/reports/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const deletedReport = reports.splice(index, 1)[0];
-      setTimeout(() => resolve(deletedReport), 100);
-    });
+      const data = await response.json();
+      console.log('✅ Report deleted successfully');
+      
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error deleting report:', error);
+      throw error;
+    }
   },
 
   // SEARCH Operations
@@ -208,33 +299,24 @@ export const reportService = {
     });
   },
 
-  // STATISTICS Operations
+  // Get report statistics from API
   async getReportStats() {
-    return new Promise((resolve) => {
-      const stats = {
-        total: reports.length,
-        scheduled: reports.filter(r => r.isScheduled).length,
-        byType: {},
-        byFormat: {},
-        recentReports: reports.filter(r => {
-          const reportDate = new Date(r.generatedAt);
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          return reportDate > weekAgo;
-        }).length
-      };
+    try {
+      console.log('📊 Fetching report statistics from API...');
+      const response = await fetch(`${API_BASE_URL}/reports/stats`);
       
-      // Count by type
-      reports.forEach(report => {
-        stats.byType[report.type] = (stats.byType[report.type] || 0) + 1;
-      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
-      // Count by format
-      reports.forEach(report => {
-        stats.byFormat[report.format] = (stats.byFormat[report.format] || 0) + 1;
-      });
+      const data = await response.json();
+      console.log('✅ Report stats API response:', data);
       
-      setTimeout(() => resolve(stats), 100);
-    });
+      return data.stats || data;
+    } catch (error) {
+      console.error('❌ Error fetching report stats:', error);
+      throw error;
+    }
   },
 
   async getReportSummary() {
@@ -258,57 +340,93 @@ export const reportService = {
     });
   },
 
-  // UTILITY Operations
+  // Get report download information via API
   async downloadReport(id) {
-    return new Promise((resolve, reject) => {
-      const report = reports.find(r => r.id === id);
-      if (!report) {
-        setTimeout(() => reject(new Error('Report not found')), 100);
-        return;
+    try {
+      console.log(`📊 Getting download info for report ${id}...`);
+      const response = await fetch(`${API_BASE_URL}/reports/download/${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
       
-      // In a real app, this would handle file download
-      const downloadInfo = {
-        reportId: report.id,
-        fileName: report.filePath.split('/').pop(),
-        filePath: report.filePath,
-        format: report.format,
-        size: '2.5 MB' // Simulated file size
-      };
+      const data = await response.json();
+      console.log('✅ Download info retrieved');
       
-      setTimeout(() => resolve(downloadInfo), 200);
-    });
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error getting download info:', error);
+      throw error;
+    }
   },
 
+  // Schedule report via API
   async scheduleReport(reportConfig) {
-    return new Promise((resolve) => {
-      const scheduledReport = {
-        ...reportConfig,
-        id: `RPT${String(reports.length + 1).padStart(3, '0')}`,
-        isScheduled: true,
-        generatedAt: new Date().toISOString(),
-        status: 'scheduled'
-      };
+    try {
+      console.log('📊 Scheduling report via API...');
+      const response = await fetch(`${API_BASE_URL}/reports/schedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportConfig),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Report scheduled successfully');
       
-      reports.push(scheduledReport);
-      
-      console.log(`📅 Report scheduled: ${scheduledReport.name}`);
-      
-      setTimeout(() => resolve(scheduledReport), 100);
-    });
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error scheduling report:', error);
+      throw error;
+    }
   },
 
+  // Get available report types from API
   async getReportTypes() {
-    return new Promise((resolve) => {
-      const types = [
-        { value: 'financial', label: 'Financial Reports', description: 'Revenue, expenses, and payment analysis' },
-        { value: 'occupancy', label: 'Occupancy Reports', description: 'Room utilization and availability' },
-        { value: 'student', label: 'Student Reports', description: 'Student demographics and statistics' },
-        { value: 'maintenance', label: 'Maintenance Reports', description: 'Maintenance requests and completion' },
-        { value: 'system', label: 'System Reports', description: 'System performance and usage' }
-      ];
+    try {
+      console.log('📊 Fetching report types from API...');
+      const response = await fetch(`${API_BASE_URL}/reports/types`);
       
-      setTimeout(() => resolve(types), 100);
-    });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Report types fetched');
+      
+      return data.data || data;
+    } catch (error) {
+      console.error('❌ Error fetching report types:', error);
+      throw error;
+    }
+  },
+
+  // Search reports
+  async searchReports(searchTerm, filters = {}) {
+    try {
+      console.log(`🔍 Searching reports: ${searchTerm}`);
+      return await this.getAllReports({ search: searchTerm, ...filters });
+    } catch (error) {
+      console.error('❌ Error searching reports:', error);
+      throw error;
+    }
+  },
+
+  // Filter reports by various criteria
+  async filterReports(filters) {
+    try {
+      console.log('🔍 Filtering reports:', filters);
+      return await this.getAllReports(filters);
+    } catch (error) {
+      console.error('❌ Error filtering reports:', error);
+      throw error;
+    }
   }
 };

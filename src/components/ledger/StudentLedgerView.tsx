@@ -39,83 +39,43 @@ export const StudentLedgerView = () => {
   // Get real ledger data for selected student
   const selectedStudentData = selectedStudent ? state.students.find(s => s.id === selectedStudent) : null;
   
-  // Generate dynamic ledger entries based on student data
-  const generateLedgerEntries = (student: any): LedgerEntry[] => {
-    if (!student) return [];
-    
-    const entries: LedgerEntry[] = [];
-    let runningBalance = 0;
-    
-    // Enrollment entry
-    entries.push({
-      id: `${student.id}-enrollment`,
-      date: student.enrollmentDate,
-      type: "advance",
-      description: "Student enrollment - Welcome to hostel",
-      debit: 0,
-      credit: 0,
-      balance: 0,
-      reference: `ENR-${student.id}`
-    });
-    
-    // Generate monthly invoices (last 3 months)
-    const monthlyFee = student.baseMonthlyFee + student.laundryFee + student.foodFee;
-    const months = ['January', 'February', 'March'];
-    
-    months.forEach((month, index) => {
-      const invoiceAmount = monthlyFee;
-      runningBalance += invoiceAmount;
+  // Fetch real ledger entries from API
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchStudentLedger = async (studentId: string) => {
+    try {
+      setLoading(true);
+      const { ledgerService } = await import('@/services/ledgerService.js');
+      const entries = await ledgerService.getLedgerByStudentId(studentId);
       
-      entries.push({
-        id: `${student.id}-invoice-${index}`,
-        date: `2024-0${index + 1}-01`,
-        type: "invoice",
-        description: `${month} 2024 - Monthly charges (Base: ₨${student.baseMonthlyFee}, Laundry: ₨${student.laundryFee}, Food: ₨${student.foodFee})`,
-        debit: invoiceAmount,
-        credit: 0,
-        balance: runningBalance,
-        reference: `INV-2024-${String(index + 1).padStart(3, '0')}`
-      });
-    });
-    
-    // Add payments to match current balance
-    const totalCharges = runningBalance;
-    const currentDue = student.currentBalance || 0;
-    const totalPaid = totalCharges - currentDue;
-    
-    if (totalPaid > 0) {
-      runningBalance -= totalPaid;
-      entries.push({
-        id: `${student.id}-payment`,
-        date: "2024-03-15",
-        type: "payment",
-        description: "Payment received - Multiple transactions",
-        debit: 0,
-        credit: totalPaid,
-        balance: runningBalance,
-        reference: `PAY-${student.id}`
-      });
+      // Transform API data to match component interface
+      const transformedEntries = entries.map((entry: any) => ({
+        id: entry.id,
+        date: entry.date,
+        type: entry.type.toLowerCase(),
+        description: entry.description,
+        debit: entry.debit || 0,
+        credit: entry.credit || 0,
+        balance: entry.balance,
+        reference: entry.referenceId || ''
+      }));
+      
+      setLedgerEntries(transformedEntries);
+    } catch (error) {
+      console.error('Error fetching student ledger:', error);
+      setLedgerEntries([]);
+    } finally {
+      setLoading(false);
     }
-    
-    // Add advance if student has advance balance
-    if (student.advanceBalance > 0) {
-      runningBalance -= student.advanceBalance;
-      entries.push({
-        id: `${student.id}-advance`,
-        date: "2024-01-10",
-        type: "advance",
-        description: "Advance payment received",
-        debit: 0,
-        credit: student.advanceBalance,
-        balance: runningBalance,
-        reference: `ADV-${student.id}`
-      });
-    }
-    
-    return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
-  
-  const ledgerEntries = generateLedgerEntries(selectedStudentData);
+
+  // Fetch ledger when student is selected
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchStudentLedger(selectedStudent);
+    }
+  }, [selectedStudent]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -277,7 +237,13 @@ export const StudentLedgerView = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Loading ledger entries...</span>
+                </div>
+              ) : (
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -329,6 +295,7 @@ export const StudentLedgerView = () => {
                   ))}
                 </TableBody>
               </Table>
+              )}
 
               {/* Running Balance Info */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">

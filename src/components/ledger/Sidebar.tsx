@@ -35,6 +35,11 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
       description: "Individual Ledger View"
     },
     {
+      id: "ledgers",
+      label: "📊 Ledger Management",
+      description: "All Entries & Analytics"
+    },
+    {
       id: "billing",
       label: "⚡ Automated Billing",
       description: "Prorated & Monthly Billing"

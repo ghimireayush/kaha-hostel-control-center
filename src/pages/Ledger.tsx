@@ -7,6 +7,7 @@ import { InvoiceManagement } from "@/components/ledger/InvoiceManagement";
 import { PaymentRecording } from "@/components/ledger/PaymentRecording";
 import { PaymentManagement } from "@/components/ledger/PaymentManagement";
 import { StudentLedgerView } from "@/components/ledger/StudentLedgerView";
+import { LedgerManagement } from "@/components/ledger/LedgerManagement";
 import { DiscountManagement } from "@/components/ledger/DiscountManagement";
 import { BillingManagement } from "@/components/ledger/BillingManagement";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -30,7 +31,7 @@ const Ledger = () => {
         'invoices': 'invoices',
         'payments': 'payments',
         'ledger': 'ledger',
-        'ledgers': 'ledger',
+        'ledgers': 'ledgers',
         'discounts': 'discounts',
         'billing': 'billing'
       };
@@ -52,6 +53,8 @@ const Ledger = () => {
         return <PaymentManagement />;
       case "ledger":
         return <StudentLedgerView />;
+      case "ledgers":
+        return <LedgerManagement />;
       case "discounts":
         return <DiscountManagement />;
       case "billing":

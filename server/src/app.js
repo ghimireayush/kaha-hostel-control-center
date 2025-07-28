@@ -10,6 +10,8 @@ const studentRoutes = require('./routes/studentRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const ledgerRoutes = require('./routes/ledgerRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 
 // Swagger setup
@@ -64,6 +66,10 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 // Mount the payment routes under the /api/v1/payments path
 app.use('/api/v1/payments', paymentRoutes);
+// Mount the ledger routes under the /api/v1/ledgers path
+app.use('/api/v1/ledgers', ledgerRoutes);
+// Mount the report routes under the /api/v1/reports path
+app.use('/api/v1/reports', reportRoutes);
 // Mount the room routes under the /api/v1/rooms path
 app.use('/api/v1/rooms', roomRoutes);
 
