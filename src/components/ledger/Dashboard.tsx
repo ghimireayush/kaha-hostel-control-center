@@ -2,31 +2,162 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { studentService } from "@/services/studentService.js";
+import { invoiceService } from "@/services/invoiceService.js";
+import { paymentService } from "@/services/paymentService.js";
+import { ledgerService } from "@/services/ledgerService.js";
 
 export const Dashboard = () => {
-  // Mock data - in real app, this would come from API with real-time updates
-  const stats = {
-    totalStudents: 156,
-    totalCollected: 450000,
-    totalDues: 85000,
-    thisMonthCollection: 120000,
-    advanceBalances: 25000,
-    overdueInvoices: 12
+  const [selectedTimeframe, setSelectedTimeframe] = useState("month");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    totalCollected: 0,
+    totalDues: 0,
+    thisMonthCollection: 0,
+    advanceBalances: 0,
+    collectionRate: 0,
+    overdueInvoices: 0
+  });
+  const [highestDueStudents, setHighestDueStudents] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+
+  // Fetch real data from APIs
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch data from all services
+      const [studentStats, invoiceStats, paymentStats, ledgerStats] = await Promise.all([
+        studentService.getStudentStats(),
+        invoiceService.getInvoiceStats(),
+        paymentService.getPaymentStats(),
+        ledgerService.getLedgerStats()
+      ]);
+
+      // Calculate dashboard metrics from real data
+      const dashboardStats = {
+        totalStudents: studentStats.total || 0,
+        activeStudents: studentStats.active || 0,
+        totalCollected: paymentStats.totalAmount || 0,
+        totalDues: invoiceStats.outstandingAmount || 0,
+        thisMonthCollection: paymentStats.monthlyAmount || 0,
+        advanceBalances: ledgerStats.advanceAmount || (ledgerStats.totalCredits - ledgerStats.totalDebits) || 0,
+        collectionRate: invoiceStats.collectionRate || 0,
+        overdueInvoices: invoiceStats.overdueInvoices || 0
+      };
+
+      setStats(dashboardStats);
+
+      // Get students with highest dues (from ledger stats)
+      const studentsWithDues = await getStudentsWithHighestDues();
+      setHighestDueStudents(studentsWithDues);
+
+      // Get recent activities (from ledger recent entries)
+      const activities = transformLedgerToActivities(ledgerStats.recentEntries || []);
+      setRecentActivities(activities);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Keep default values on error
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const highestDueStudents = [
-    { name: "Ram Sharma", room: "A-101", due: 15000, months: 2 },
-    { name: "Sita Poudel", room: "B-205", due: 12500, months: 1 },
-    { name: "Hari Thapa", room: "C-301", due: 10000, months: 3 }
-  ];
+  // Get students with highest outstanding balances
+  const getStudentsWithHighestDues = async () => {
+    try {
+      const students = await studentService.getAllStudents();
+      const studentsWithDues = [];
+      
+      for (const student of students.slice(0, 3)) { // Get top 3
+        try {
+          const balance = await ledgerService.getStudentBalance(student.id);
+          if (balance.rawBalance > 0) { // Only students with outstanding dues
+            studentsWithDues.push({
+              id: student.id,
+              name: student.name,
+              room: student.roomNumber,
+              overdue: calculateOverduePeriod(balance.lastEntryDate),
+              due: balance.currentBalance,
+              months: calculateOverdueMonths(balance.lastEntryDate)
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching balance for student ${student.id}:`, error);
+        }
+      }
+      
+      return studentsWithDues.sort((a, b) => b.due - a.due).slice(0, 3);
+    } catch (error) {
+      console.error('Error fetching students with dues:', error);
+      return [];
+    }
+  };
 
-  const recentActivities = [
-    { type: "payment", student: "Ram Sharma", amount: 8000, time: "2 hours ago", status: "completed" },
-    { type: "invoice", student: "Sita Poudel", amount: 12000, time: "4 hours ago", status: "generated" },
-    { type: "discount", student: "Hari Thapa", amount: 2000, time: "1 day ago", status: "applied" },
-    { type: "advance", student: "Maya Gurung", amount: 15000, time: "2 days ago", status: "received" }
-  ];
+  // Transform ledger entries to activity format
+  const transformLedgerToActivities = (ledgerEntries) => {
+    return ledgerEntries.slice(0, 4).map((entry, index) => ({
+      id: index + 1,
+      student: entry.studentName || 'Unknown Student',
+      type: entry.type.toLowerCase(),
+      amount: entry.debit || entry.credit || 0,
+      time: calculateTimeAgo(entry.createdAt),
+      status: getActivityStatus(entry.type)
+    }));
+  };
+
+  // Helper functions
+  const calculateOverduePeriod = (lastEntryDate) => {
+    if (!lastEntryDate) return 'Unknown';
+    const daysDiff = Math.floor((new Date() - new Date(lastEntryDate)) / (1000 * 60 * 60 * 24));
+    const months = Math.floor(daysDiff / 30);
+    return months > 0 ? `${months} month${months > 1 ? 's' : ''}` : `${daysDiff} days`;
+  };
+
+  const calculateOverdueMonths = (lastEntryDate) => {
+    if (!lastEntryDate) return 0;
+    const daysDiff = Math.floor((new Date() - new Date(lastEntryDate)) / (1000 * 60 * 60 * 24));
+    return Math.floor(daysDiff / 30);
+  };
+
+  const calculateTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown';
+    const daysDiff = Math.floor((new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));
+    if (daysDiff === 0) return 'Today';
+    if (daysDiff === 1) return '1 day ago';
+    return `${daysDiff} days ago`;
+  };
+
+  const getActivityStatus = (type) => {
+    const statusMap = {
+      'Payment': 'completed',
+      'Invoice': 'generated',
+      'Discount': 'applied',
+      'Adjustment': 'received'
+    };
+    return statusMap[type] || 'completed';
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#1295D0]" />
+          <p className="text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,7 +255,7 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">84%</div>
+            <div className="text-3xl font-bold">{stats.collectionRate}%</div>
             <p className="text-white/80 text-sm">Monthly avg collection</p>
           </CardContent>
         </Card>

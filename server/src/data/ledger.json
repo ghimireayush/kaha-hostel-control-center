@@ -148,5 +148,20 @@
     "createdBy": "admin",
     "createdAt": "2025-07-28T10:39:20.450Z",
     "updatedAt": "2025-07-28T10:39:20.450Z"
+  },
+  {
+    "id": "LED1753771896988",
+    "studentId": "S001",
+    "studentName": "SUNITA Thapa",
+    "type": "Discount",
+    "description": "Discount: Academic Excellence",
+    "debit": 0,
+    "credit": 300,
+    "balance": 0,
+    "date": "2025-07-29",
+    "referenceId": "DISC1753771896986",
+    "notes": "Top performer this semester",
+    "createdAt": "2025-07-29T06:51:36.988Z",
+    "updatedAt": "2025-07-29T06:51:36.988Z"
   }
 ]

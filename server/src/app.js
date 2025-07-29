@@ -13,6 +13,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const ledgerRoutes = require('./routes/ledgerRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const discountRoutes = require('./routes/discountRoutes');
 
 // Swagger setup
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -80,6 +81,10 @@ const options = {
       {
         name: 'Analytics & Reports',
         description: 'Business analytics and reporting - statistics, trends, and performance metrics'
+      },
+      {
+        name: 'Discounts',
+        description: 'Discount management - apply, track, and manage student discounts'
       }
     ]
   },
@@ -107,6 +112,8 @@ app.use('/api/v1/ledgers', ledgerRoutes);
 app.use('/api/v1/reports', reportRoutes);
 // Mount the room routes under the /api/v1/rooms path
 app.use('/api/v1/rooms', roomRoutes);
+// Mount the discount routes under the /api/v1/discounts path
+app.use('/api/v1/discounts', discountRoutes);
 
 
 // --- Error Handling Middleware (Basic) ---

@@ -14,5 +14,7 @@ app.listen(PORT, () => {
   console.log(`  Payments: GET http://localhost:${PORT}/api/v1/payments`);
   console.log(`  Rooms: GET http://localhost:${PORT}/api/v1/rooms`);
   console.log(`  Room Stats: GET http://localhost:${PORT}/api/v1/rooms/stats`);
+  console.log(`  Discounts: GET http://localhost:${PORT}/api/v1/discounts`);
+  console.log(`  Discount Stats: GET http://localhost:${PORT}/api/v1/discounts/stats`);
   console.log(`  API Docs: http://localhost:${PORT}/api-docs`);
 });

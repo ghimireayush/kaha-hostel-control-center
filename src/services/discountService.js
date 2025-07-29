@@ -1,150 +1,286 @@
-import discountsData from '../data/discounts.json' with { type: 'json' };
-import { ledgerService } from './ledgerService.js';
-import { studentService } from './studentService.js';
-import { notificationService } from './notificationService.js';
+const API_BASE_URL = "http://localhost:3001/api/v1";
+
+// Helper function to handle API requests
+async function apiRequest(endpoint, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    // Handle the specific API response format: { status, result: { items, pagination } }
+    if (data.result && data.result.items) {
+      return data.result.items;
+    }
+    // For single item responses, return the result directly
+    if (data.result && !data.result.items) {
+      return data.result;
+    }
+    // Fallback for other formats
+    return data.data || data;
+  } catch (error) {
+    console.error("Discount API Request Error:", error);
+    throw error;
+  }
+}
 
 export const discountService = {
-  // Get all discounts
-  async getDiscounts() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(discountsData), 100);
-    });
+  // Get all discounts with filtering
+  async getDiscounts(filters = {}) {
+    try {
+      console.log("🏷️ Fetching discounts from API...");
+      const queryParams = new URLSearchParams();
+
+      // Add filters as query parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/discounts${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
+      const response = await apiRequest(endpoint);
+      console.log("✅ Discounts API response:", response);
+
+      return response.result?.items || response || []; // Handle different response formats
+    } catch (error) {
+      console.error("❌ Error fetching discounts:", error);
+      throw error;
+    }
   },
 
-  // Get discount history
+  // Get discount history (alias for getDiscounts)
   async getDiscountHistory() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(discountsData), 100);
-    });
+    try {
+      console.log("🏷️ Fetching discount history from API...");
+      return await this.getDiscounts();
+    } catch (error) {
+      console.error("❌ Error fetching discount history:", error);
+      throw error;
+    }
   },
 
   // Get discount by ID
   async getDiscountById(id) {
-    return new Promise((resolve) => {
-      const discount = discountsData.find(d => d.id === id);
-      setTimeout(() => resolve(discount), 100);
-    });
+    try {
+      console.log(`🏷️ Fetching discount ${id} from API...`);
+      const response = await fetch(`${API_BASE_URL}/discounts/${id}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Discount details fetched");
+
+      return data.data || data;
+    } catch (error) {
+      console.error("❌ Error fetching discount by ID:", error);
+      throw error;
+    }
   },
 
   // Apply discount directly to ledger
   async applyDiscount(discountData) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const { studentId, amount, reason, notes, appliedBy } = discountData;
-        
-        // Get student details
-        const student = await studentService.getStudentById(studentId);
-        if (!student) {
-          throw new Error('Student not found');
-        }
+    try {
+      console.log("🏷️ Applying new discount via API...");
+      const response = await fetch(`${API_BASE_URL}/discounts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(discountData),
+      });
 
-        // Check if student already has this discount type
-        const existingDiscount = discountsData.find(d => 
-          d.studentId === studentId && 
-          d.reason === reason && 
-          d.status === 'active'
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
         );
-
-        if (existingDiscount) {
-          throw new Error('This discount has already been applied to this student');
-        }
-
-        // Create new discount record
-        const newDiscount = {
-          id: `DISC-${Date.now()}`,
-          studentId,
-          studentName: student.name,
-          room: student.roomNumber,
-          amount,
-          reason,
-          notes,
-          appliedBy,
-          date: new Date().toISOString().split('T')[0],
-          status: 'active'
-        };
-        
-        // Add to discount history
-        discountsData.push(newDiscount);
-
-        // Create ledger entry for discount
-        await ledgerService.addLedgerEntry({
-          studentId,
-          type: 'Discount',
-          description: `Discount: ${reason}`,
-          debit: 0,
-          credit: amount, // Credit reduces the amount owed
-          referenceId: newDiscount.id,
-          notes
-        });
-
-        // Update student balance
-        const currentBalance = student.currentBalance || 0;
-        await studentService.updateStudent(studentId, {
-          currentBalance: Math.max(0, currentBalance - amount)
-        });
-
-        // Send notification via Kaha App
-        await notificationService.notifyDiscountApplied(
-          studentId,
-          amount,
-          reason
-        );
-
-        console.log(`Discount applied: NPR ${amount} to ${student.name} (${reason})`);
-        
-        setTimeout(() => resolve({
-          success: true,
-          discount: newDiscount,
-          studentName: student.name
-        }), 500);
-      } catch (error) {
-        console.error('Error applying discount:', error);
-        setTimeout(() => reject({
-          success: false,
-          error: error.message
-        }), 500);
       }
-    });
+
+      const data = await response.json();
+      console.log("✅ Discount applied successfully");
+
+      return data.data || data;
+    } catch (error) {
+      console.error("❌ Error applying discount:", error);
+      throw error;
+    }
   },
 
   // Update discount
   async updateDiscount(id, updateData) {
-    return new Promise((resolve) => {
-      const index = discountsData.findIndex(d => d.id === id);
-      if (index !== -1) {
-        discountsData[index] = { ...discountsData[index], ...updateData };
-        setTimeout(() => resolve(discountsData[index]), 100);
-      } else {
-        setTimeout(() => resolve(null), 100);
+    try {
+      console.log(`🏷️ Updating discount ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
-    });
+
+      const data = await response.json();
+      console.log("✅ Discount updated successfully");
+
+      return data.data || data;
+    } catch (error) {
+      console.error("❌ Error updating discount:", error);
+      throw error;
+    }
   },
 
   // Expire discount
   async expireDiscount(id) {
-    return new Promise((resolve) => {
-      const index = discountsData.findIndex(d => d.id === id);
-      if (index !== -1) {
-        discountsData[index].status = 'expired';
-        setTimeout(() => resolve(discountsData[index]), 100);
-      } else {
-        setTimeout(() => resolve(null), 100);
+    try {
+      console.log(`🏷️ Expiring discount ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/discounts/${id}/expire`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
-    });
+
+      const data = await response.json();
+      console.log("✅ Discount expired successfully");
+
+      return data.data || data;
+    } catch (error) {
+      console.error("❌ Error expiring discount:", error);
+      throw error;
+    }
   },
 
-  // Get discount statistics
+  // Delete discount
+  async deleteDiscount(id) {
+    try {
+      console.log(`🏷️ Deleting discount ${id} via API...`);
+      const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("✅ Discount deleted successfully");
+
+      return data.data || data;
+    } catch (error) {
+      console.error("❌ Error deleting discount:", error);
+      throw error;
+    }
+  },
+
+  // Get discount statistics from API
   async getDiscountStats() {
-    return new Promise((resolve) => {
-      const activeDiscounts = discountsData.filter(d => d.status === 'active');
-      const stats = {
-        totalDiscounts: discountsData.length,
-        activeDiscounts: activeDiscounts.length,
-        totalDiscountAmount: activeDiscounts.reduce((sum, d) => sum + d.amount, 0),
-        averageDiscount: activeDiscounts.length > 0 ? 
-          Math.round(activeDiscounts.reduce((sum, d) => sum + d.amount, 0) / activeDiscounts.length) : 0
-      };
-      setTimeout(() => resolve(stats), 100);
-    });
-  }
+    try {
+      console.log("📊 Fetching discount statistics from API...");
+      const response = await fetch(`${API_BASE_URL}/discounts/stats`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Discount stats API response:", data);
+
+      return data.stats || data;
+    } catch (error) {
+      console.error("❌ Error fetching discount stats:", error);
+      throw error;
+    }
+  },
+
+  // Get discounts by student ID
+  async getDiscountsByStudentId(studentId) {
+    try {
+      console.log(`🏷️ Fetching discounts for student ${studentId}...`);
+      const response = await fetch(
+        `${API_BASE_URL}/discounts/student/${studentId}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Student discounts fetched");
+
+      return data.data || [];
+    } catch (error) {
+      console.error("❌ Error fetching discounts by student ID:", error);
+      throw error;
+    }
+  },
+
+  // Search discounts
+  async searchDiscounts(searchTerm, filters = {}) {
+    try {
+      console.log(`🔍 Searching discounts: ${searchTerm}`);
+      return await this.getDiscounts({ search: searchTerm, ...filters });
+    } catch (error) {
+      console.error("❌ Error searching discounts:", error);
+      throw error;
+    }
+  },
+
+  // Filter discounts by status
+  async filterDiscountsByStatus(status) {
+    try {
+      console.log(`🔍 Filtering discounts by status: ${status}`);
+      return await this.getDiscounts({ status });
+    } catch (error) {
+      console.error("❌ Error filtering discounts by status:", error);
+      throw error;
+    }
+  },
+
+  // Filter discounts by date range
+  async filterDiscountsByDateRange(dateFrom, dateTo) {
+    try {
+      console.log(
+        `🔍 Filtering discounts by date range: ${dateFrom} to ${dateTo}`
+      );
+      return await this.getDiscounts({ dateFrom, dateTo });
+    } catch (error) {
+      console.error("❌ Error filtering discounts by date range:", error);
+      throw error;
+    }
+  },
 };

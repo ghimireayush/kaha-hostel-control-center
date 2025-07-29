@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DISC1753699160001",
+    "studentId": "STU001",
+    "studentName": "Ram Sharma",
+    "room": "A-101",
+    "amount": 500,
+    "reason": "Good Behavior",
+    "notes": "Excellent behavior throughout the month",
+    "appliedBy": "Admin",
+    "date": "2024-01-15",
+    "status": "active",
+    "appliedTo": "ledger",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  },
+  {
+    "id": "DISC1753699160002",
+    "studentId": "STU002",
+    "studentName": "Sita Poudel",
+    "room": "B-205",
+    "amount": 200,
+    "reason": "Early Payment",
+    "notes": "Paid rent 5 days early",
+    "appliedBy": "Admin",
+    "date": "2024-01-20",
+    "status": "active",
+    "appliedTo": "ledger",
+    "createdAt": "2024-01-20T14:15:00.000Z",
+    "updatedAt": "2024-01-20T14:15:00.000Z"
+  },
+  {
+    "id": "DISC1753699160003",
+    "studentId": "STU003",
+    "studentName": "Hari Thapa",
+    "room": "C-301",
+    "amount": 1000,
+    "reason": "Financial Hardship",
+    "notes": "Special consideration for financial difficulties",
+    "appliedBy": "Admin",
+    "date": "2024-01-10",
+    "status": "expired",
+    "appliedTo": "ledger",
+    "createdAt": "2024-01-10T09:00:00.000Z",
+    "updatedAt": "2024-01-25T16:00:00.000Z"
+  },
+  {
+    "id": "DISC1753771896986",
+    "studentId": "S001",
+    "studentName": "SUNITA Thapa",
+    "room": "A-101",
+    "amount": 300,
+    "reason": "Academic Excellence",
+    "notes": "Top performer this semester",
+    "appliedBy": "Admin",
+    "date": "2025-07-29",
+    "status": "active",
+    "appliedTo": "ledger",
+    "createdAt": "2025-07-29T06:51:36.986Z",
+    "updatedAt": "2025-07-29T06:51:36.986Z"
+  }
+]

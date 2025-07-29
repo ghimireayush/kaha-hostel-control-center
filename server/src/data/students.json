@@ -13,14 +13,15 @@
     "foodFee": 0,
     "enrollmentDate": "2024-01-15",
     "status": "Active",
-    "currentBalance": 15500,
+    "currentBalance": 15200,
     "advanceBalance": 0,
     "emergencyContact": "+977-9861234569",
     "course": "Medicine",
     "institution": "BPKIHS",
     "idProofType": "Citizenship",
     "idProofNumber": "34-56-78-90123",
-    "bookingRequestId": "BR001"
+    "bookingRequestId": "BR001",
+    "updatedAt": "2025-07-29T06:51:36.989Z"
   },
   {
     "id": "S002",
