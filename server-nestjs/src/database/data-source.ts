@@ -1,0 +1,83 @@
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { config } from 'dotenv';
+
+// Import all entities
+import { Student } from '../students/entities/student.entity';
+import { StudentContact } from '../students/entities/student-contact.entity';
+import { StudentAcademicInfo } from '../students/entities/student-academic-info.entity';
+import { StudentFinancialInfo } from '../students/entities/student-financial-info.entity';
+
+import { Room } from '../rooms/entities/room.entity';
+import { Building } from '../rooms/entities/building.entity';
+import { RoomType } from '../rooms/entities/room-type.entity';
+import { Amenity } from '../rooms/entities/amenity.entity';
+import { RoomAmenity } from '../rooms/entities/room-amenity.entity';
+import { RoomLayout } from '../rooms/entities/room-layout.entity';
+
+import { Invoice } from '../invoices/entities/invoice.entity';
+import { InvoiceItem } from '../invoices/entities/invoice-item.entity';
+
+import { Payment } from '../payments/entities/payment.entity';
+import { PaymentInvoiceAllocation } from '../payments/entities/payment-invoice-allocation.entity';
+
+import { LedgerEntry } from '../ledger/entities/ledger-entry.entity';
+
+import { Discount } from '../discounts/entities/discount.entity';
+import { DiscountType } from '../discounts/entities/discount-type.entity';
+
+import { BookingRequest } from '../bookings/entities/booking-request.entity';
+
+import { Report } from '../reports/entities/report.entity';
+
+// Load environment variables
+config();
+
+export const dataSourceOptions: DataSourceOptions = {
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT) || 5432,
+  username: process.env.DB_USERNAME || 'kaha_user',
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_NAME || 'kaha_hostel_db',
+  entities: [
+    // Student entities
+    Student,
+    StudentContact,
+    StudentAcademicInfo,
+    StudentFinancialInfo,
+    
+    // Room entities
+    Room,
+    Building,
+    RoomType,
+    Amenity,
+    RoomAmenity,
+    RoomLayout,
+    
+    // Financial entities
+    Invoice,
+    InvoiceItem,
+    Payment,
+    PaymentInvoiceAllocation,
+    LedgerEntry,
+    
+    // Discount entities
+    Discount,
+    DiscountType,
+    
+    // Booking entities
+    BookingRequest,
+    
+    // Report entities
+    Report,
+  ],
+  migrations: ['src/database/migrations/*{.ts,.js}'],
+  synchronize: false, // Always false in production
+  logging: process.env.NODE_ENV === 'development',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  migrationsRun: false, // Don't auto-run migrations
+  migrationsTableName: 'typeorm_migrations',
+};
+
+const dataSource = new DataSource(dataSourceOptions);
+export default dataSource;
