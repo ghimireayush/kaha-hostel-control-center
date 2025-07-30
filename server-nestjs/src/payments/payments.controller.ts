@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 
 @ApiTags('payments')
 @Controller('api/v1/payments')
@@ -63,7 +65,7 @@ export class PaymentsController {
   @Post()
   @ApiOperation({ summary: 'Record new payment' })
   @ApiResponse({ status: 201, description: 'Payment recorded successfully' })
-  async recordPayment(@Body() createPaymentDto: any) {
+  async recordPayment(@Body() createPaymentDto: CreatePaymentDto) {
     const payment = await this.paymentsService.create(createPaymentDto);
     
     // Return EXACT same format as current Express API
@@ -76,7 +78,7 @@ export class PaymentsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update payment' })
   @ApiResponse({ status: 200, description: 'Payment updated successfully' })
-  async updatePayment(@Param('id') id: string, @Body() updatePaymentDto: any) {
+  async updatePayment(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
     const payment = await this.paymentsService.update(id, updatePaymentDto);
     
     // Return EXACT same format as current Express API

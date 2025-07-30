@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DiscountsService } from './discounts.service';
+import { CreateDiscountDto, ApplyDiscountDto } from './dto/create-discount.dto';
+import { UpdateDiscountDto } from './dto/update-discount.dto';
 
 @ApiTags('discounts')
 @Controller('api/v1/discounts')
@@ -76,7 +78,7 @@ export class DiscountsController {
   @Post()
   @ApiOperation({ summary: 'Create new discount' })
   @ApiResponse({ status: 201, description: 'Discount created successfully' })
-  async createDiscount(@Body() createDiscountDto: any) {
+  async createDiscount(@Body() createDiscountDto: CreateDiscountDto) {
     const discount = await this.discountsService.create(createDiscountDto);
     
     // Return EXACT same format as current Express API
@@ -89,7 +91,7 @@ export class DiscountsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update discount' })
   @ApiResponse({ status: 200, description: 'Discount updated successfully' })
-  async updateDiscount(@Param('id') id: string, @Body() updateDiscountDto: any) {
+  async updateDiscount(@Param('id') id: string, @Body() updateDiscountDto: UpdateDiscountDto) {
     const discount = await this.discountsService.update(id, updateDiscountDto);
     
     // Return EXACT same format as current Express API
@@ -102,7 +104,7 @@ export class DiscountsController {
   @Post('apply')
   @ApiOperation({ summary: 'Apply discount to student' })
   @ApiResponse({ status: 200, description: 'Discount applied successfully' })
-  async applyDiscount(@Body() applyDiscountDto: any) {
+  async applyDiscount(@Body() applyDiscountDto: ApplyDiscountDto) {
     const result = await this.discountsService.applyDiscount(
       applyDiscountDto.studentId,
       applyDiscountDto

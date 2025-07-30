@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RoomsService } from './rooms.service';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 @ApiTags('rooms')
 @Controller('api/v1/rooms')
@@ -66,7 +68,7 @@ export class RoomsController {
   @Post()
   @ApiOperation({ summary: 'Create new room' })
   @ApiResponse({ status: 201, description: 'Room created successfully' })
-  async createRoom(@Body() createRoomDto: any) {
+  async createRoom(@Body() createRoomDto: CreateRoomDto) {
     const room = await this.roomsService.create(createRoomDto);
     
     // Return EXACT same format as current Express API
@@ -79,7 +81,7 @@ export class RoomsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update room' })
   @ApiResponse({ status: 200, description: 'Room updated successfully' })
-  async updateRoom(@Param('id') id: string, @Body() updateRoomDto: any) {
+  async updateRoom(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
     const room = await this.roomsService.update(id, updateRoomDto);
     
     // Return EXACT same format as current Express API

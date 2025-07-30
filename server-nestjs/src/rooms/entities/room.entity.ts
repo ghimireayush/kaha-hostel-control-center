@@ -1,7 +1,8 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, OneToMany, OneToOne, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntityWithCustomId } from '../../common/entities/base.entity';
 import { Student } from '../../students/entities/student.entity';
 import { RoomAmenity } from './room-amenity.entity';
+import { RoomOccupant } from './room-occupant.entity';
 import { RoomLayout } from './room-layout.entity';
 import { Building } from './building.entity';
 import { RoomType } from './room-type.entity';
@@ -44,8 +45,14 @@ export class Room extends BaseEntityWithCustomId {
   @Column({ name: 'bed_count', type: 'int', default: 1 })
   bedCount: number;
 
+  @Column({ type: 'int', default: 1 })
+  capacity: number;
+
   @Column({ type: 'int', default: 0 })
   occupancy: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  rent: number;
 
   @Column({
     type: 'enum',
@@ -112,6 +119,9 @@ export class Room extends BaseEntityWithCustomId {
   @OneToMany(() => RoomAmenity, amenity => amenity.room, { cascade: true })
   amenities: RoomAmenity[];
 
-  @OneToMany(() => RoomLayout, layout => layout.room, { cascade: true })
-  layouts: RoomLayout[];
+  @OneToMany(() => RoomOccupant, occupant => occupant.room, { cascade: true })
+  occupants: RoomOccupant[];
+
+  @OneToOne(() => RoomLayout, layout => layout.room, { cascade: true })
+  layout: RoomLayout;
 }

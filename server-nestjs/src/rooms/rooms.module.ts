@@ -7,6 +7,7 @@ import { Building } from './entities/building.entity';
 import { RoomType } from './entities/room-type.entity';
 import { Amenity } from './entities/amenity.entity';
 import { RoomAmenity } from './entities/room-amenity.entity';
+import { RoomOccupant } from './entities/room-occupant.entity';
 import { RoomLayout } from './entities/room-layout.entity';
 
 @Module({
@@ -16,6 +17,7 @@ import { RoomLayout } from './entities/room-layout.entity';
     RoomType,
     Amenity,
     RoomAmenity,
+    RoomOccupant,
     RoomLayout
   ])],
   controllers: [RoomsController],

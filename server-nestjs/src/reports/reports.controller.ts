@@ -1,6 +1,14 @@
 import { Controller, Get, Post, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
+import { 
+  GenerateReportDto, 
+  GenerateOccupancyReportDto, 
+  GenerateFinancialReportDto, 
+  GenerateStudentReportDto, 
+  GeneratePaymentReportDto, 
+  GenerateLedgerReportDto 
+} from './dto/generate-report.dto';
 
 @ApiTags('reports')
 @Controller('api/v1/reports')
@@ -51,7 +59,7 @@ export class ReportsController {
   @Post()
   @ApiOperation({ summary: 'Generate new report' })
   @ApiResponse({ status: 201, description: 'Report generated successfully' })
-  async generateReport(@Body() generateReportDto: any) {
+  async generateReport(@Body() generateReportDto: GenerateReportDto) {
     const report = await this.reportsService.generateReport(
       generateReportDto.type,
       generateReportDto.parameters || {}
@@ -67,7 +75,7 @@ export class ReportsController {
   @Post('generate/occupancy')
   @ApiOperation({ summary: 'Generate occupancy report' })
   @ApiResponse({ status: 200, description: 'Occupancy report generated successfully' })
-  async generateOccupancyReport(@Body() parameters: any = {}) {
+  async generateOccupancyReport(@Body() parameters: GenerateOccupancyReportDto = {}) {
     const report = await this.reportsService.generateReport('occupancy', parameters);
     
     // Return EXACT same format as current Express API
@@ -80,7 +88,7 @@ export class ReportsController {
   @Post('generate/financial')
   @ApiOperation({ summary: 'Generate financial report' })
   @ApiResponse({ status: 200, description: 'Financial report generated successfully' })
-  async generateFinancialReport(@Body() parameters: any = {}) {
+  async generateFinancialReport(@Body() parameters: GenerateFinancialReportDto = {}) {
     const report = await this.reportsService.generateReport('financial', parameters);
     
     // Return EXACT same format as current Express API
@@ -93,7 +101,7 @@ export class ReportsController {
   @Post('generate/student')
   @ApiOperation({ summary: 'Generate student report' })
   @ApiResponse({ status: 200, description: 'Student report generated successfully' })
-  async generateStudentReport(@Body() parameters: any = {}) {
+  async generateStudentReport(@Body() parameters: GenerateStudentReportDto = {}) {
     const report = await this.reportsService.generateReport('student', parameters);
     
     // Return EXACT same format as current Express API
@@ -106,7 +114,7 @@ export class ReportsController {
   @Post('generate/payment')
   @ApiOperation({ summary: 'Generate payment report' })
   @ApiResponse({ status: 200, description: 'Payment report generated successfully' })
-  async generatePaymentReport(@Body() parameters: any = {}) {
+  async generatePaymentReport(@Body() parameters: GeneratePaymentReportDto = {}) {
     const report = await this.reportsService.generateReport('payment', parameters);
     
     // Return EXACT same format as current Express API
@@ -119,7 +127,7 @@ export class ReportsController {
   @Post('generate/ledger')
   @ApiOperation({ summary: 'Generate ledger report' })
   @ApiResponse({ status: 200, description: 'Ledger report generated successfully' })
-  async generateLedgerReport(@Body() parameters: any = {}) {
+  async generateLedgerReport(@Body() parameters: GenerateLedgerReportDto = {}) {
     const report = await this.reportsService.generateReport('ledger', parameters);
     
     // Return EXACT same format as current Express API

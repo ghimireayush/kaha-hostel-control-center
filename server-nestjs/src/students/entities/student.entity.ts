@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntityWithCustomId } from '../../common/entities/base.entity';
 import { Room } from '../../rooms/entities/room.entity';
+import { RoomOccupant } from '../../rooms/entities/room-occupant.entity';
 import { BookingRequest } from '../../bookings/entities/booking-request.entity';
 import { Invoice } from '../../invoices/entities/invoice.entity';
 import { Payment } from '../../payments/entities/payment.entity';
@@ -81,4 +82,7 @@ export class Student extends BaseEntityWithCustomId {
 
   @OneToMany(() => Discount, discount => discount.student)
   discounts: Discount[];
+
+  @OneToMany(() => RoomOccupant, occupant => occupant.student)
+  roomOccupancy: RoomOccupant[];
 }

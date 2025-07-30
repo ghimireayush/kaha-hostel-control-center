@@ -1,29 +1,30 @@
-import { PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsDateString, IsEnum, Min } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsString, IsNumber, IsOptional, IsDateString, IsBoolean, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CreateDiscountDto } from './create-discount.dto';
-import { DiscountStatus } from '../entities/discount.entity';
 
 export class UpdateDiscountDto extends PartialType(CreateDiscountDto) {
   @IsOptional()
+  @IsString()
+  studentId?: string;
+
+  @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   @Transform(({ value }) => parseFloat(value))
   amount?: number;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   reason?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   notes?: string;
 
   @IsOptional()
-  @IsEnum(DiscountStatus)
-  status?: DiscountStatus;
+  @IsString()
+  status?: string;
 
   @IsOptional()
   @IsDateString()
@@ -32,4 +33,24 @@ export class UpdateDiscountDto extends PartialType(CreateDiscountDto) {
   @IsOptional()
   @IsDateString()
   validTo?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPercentage?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  percentageValue?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  maxAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  updatedBy?: string;
 }

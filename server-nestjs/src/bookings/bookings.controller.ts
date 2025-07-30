@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
+import { CreateBookingDto, ApproveBookingDto, RejectBookingDto } from './dto/create-booking.dto';
+import { UpdateBookingDto } from './dto/update-booking.dto';
 
 @ApiTags('bookings')
 @Controller('api/v1/booking-requests')
@@ -63,7 +65,7 @@ export class BookingsController {
   @Post()
   @ApiOperation({ summary: 'Create new booking request' })
   @ApiResponse({ status: 201, description: 'Booking request created successfully' })
-  async createBookingRequest(@Body() createBookingDto: any) {
+  async createBookingRequest(@Body() createBookingDto: CreateBookingDto) {
     const booking = await this.bookingsService.create(createBookingDto);
     
     // Return EXACT same format as current Express API
@@ -76,7 +78,7 @@ export class BookingsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update booking request' })
   @ApiResponse({ status: 200, description: 'Booking updated successfully' })
-  async updateBookingRequest(@Param('id') id: string, @Body() updateBookingDto: any) {
+  async updateBookingRequest(@Param('id') id: string, @Body() updateBookingDto: UpdateBookingDto) {
     const booking = await this.bookingsService.update(id, updateBookingDto);
     
     // Return EXACT same format as current Express API
@@ -89,7 +91,7 @@ export class BookingsController {
   @Post(':id/approve')
   @ApiOperation({ summary: 'Approve booking request' })
   @ApiResponse({ status: 200, description: 'Booking approved successfully' })
-  async approveBookingRequest(@Param('id') id: string, @Body() approvalDto: any) {
+  async approveBookingRequest(@Param('id') id: string, @Body() approvalDto: ApproveBookingDto) {
     const result = await this.bookingsService.approveBooking(id, approvalDto);
     
     // Return EXACT same format as current Express API
@@ -102,7 +104,7 @@ export class BookingsController {
   @Post(':id/reject')
   @ApiOperation({ summary: 'Reject booking request' })
   @ApiResponse({ status: 200, description: 'Booking rejected successfully' })
-  async rejectBookingRequest(@Param('id') id: string, @Body() rejectionDto: any) {
+  async rejectBookingRequest(@Param('id') id: string, @Body() rejectionDto: RejectBookingDto) {
     const result = await this.bookingsService.rejectBooking(id, rejectionDto);
     
     // Return EXACT same format as current Express API

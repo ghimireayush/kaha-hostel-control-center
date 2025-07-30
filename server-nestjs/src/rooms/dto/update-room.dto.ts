@@ -1,23 +1,15 @@
-import { PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, IsArray, IsObject, Min, Max } from 'class-validator';
-import { Transform } from 'class-transformer';
-import { CreateRoomDto } from './create-room.dto';
-import { RoomStatus } from '../entities/room.entity';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsString, IsNumber, IsOptional, IsArray, IsBoolean, ValidateNested, Min, Max } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { CreateRoomDto, CreateRoomAmenityDto, CreateRoomLayoutDto } from './create-room.dto';
 
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
   roomNumber?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   type?: string;
 
   @IsOptional()
@@ -25,62 +17,45 @@ export class UpdateRoomDto extends PartialType(CreateRoomDto) {
   @Min(1)
   @Max(10)
   @Transform(({ value }) => parseInt(value))
-  bedCount?: number;
+  capacity?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  rent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(20)
   @Transform(({ value }) => parseInt(value))
-  occupancy?: number;
+  floor?: number;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  gender?: string;
+  status?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Transform(({ value }) => parseFloat(value))
-  monthlyRate?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Transform(({ value }) => parseFloat(value))
-  dailyRate?: number;
+  @IsString()
+  description?: string;
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => Array.isArray(value) ? value.map(v => v?.trim()) : [])
-  amenities?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => CreateRoomAmenityDto)
+  amenities?: CreateRoomAmenityDto[];
 
   @IsOptional()
-  @IsEnum(RoomStatus)
-  status?: RoomStatus;
+  @ValidateNested()
+  @Type(() => CreateRoomLayoutDto)
+  layout?: CreateRoomLayoutDto;
 
   @IsOptional()
-  @IsObject()
-  layout?: any;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  floor?: string;
+  @IsBoolean()
+  isActive?: boolean;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  lastCleaned?: string;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  maintenanceStatus?: string;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  description?: string;
+  notes?: string;
 }

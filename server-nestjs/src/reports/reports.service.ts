@@ -150,10 +150,10 @@ export class ReportsService {
       type: reportType as ReportType,
       description: description,
       parameters: parameters,
+      data: reportData,
       status: ReportStatus.COMPLETED,
       generatedBy: parameters.generatedBy || 'system',
-      createdAt: new Date(),
-      dataSize: JSON.stringify(reportData).length
+      generatedAt: new Date()
     });
 
     const savedReport = await this.reportRepository.save(report);
@@ -163,7 +163,7 @@ export class ReportsService {
       name: reportName,
       type: reportType,
       status: ReportStatus.COMPLETED,
-      generatedAt: savedReport.createdAt,
+      generatedAt: savedReport.generatedAt,
       data: reportData
     };
   }
@@ -301,7 +301,7 @@ export class ReportsService {
 
   private async generateStudentReport(parameters: any) {
     const students = await this.studentRepository.find({
-      relations: ['room']
+      relations: ['room', 'academicInfo']
     });
 
     const statusBreakdown = {};
@@ -312,14 +312,15 @@ export class ReportsService {
       // Status breakdown
       statusBreakdown[student.status] = (statusBreakdown[student.status] || 0) + 1;
       
-      // Course breakdown
-      if (student.course) {
-        courseBreakdown[student.course] = (courseBreakdown[student.course] || 0) + 1;
+      // Course breakdown - get from academic info
+      const currentAcademic = student.academicInfo?.find(a => a.isActive);
+      if (currentAcademic?.course) {
+        courseBreakdown[currentAcademic.course] = (courseBreakdown[currentAcademic.course] || 0) + 1;
       }
       
-      // Institution breakdown
-      if (student.institution) {
-        institutionBreakdown[student.institution] = (institutionBreakdown[student.institution] || 0) + 1;
+      // Institution breakdown - get from academic info
+      if (currentAcademic?.institution) {
+        institutionBreakdown[currentAcademic.institution] = (institutionBreakdown[currentAcademic.institution] || 0) + 1;
       }
     });
 
@@ -457,8 +458,7 @@ export class ReportsService {
       status: report.status,
       parameters: report.parameters,
       generatedBy: report.generatedBy,
-      createdAt: report.createdAt,
-      dataSize: report.dataSize
+      createdAt: report.createdAt
     };
   }
 

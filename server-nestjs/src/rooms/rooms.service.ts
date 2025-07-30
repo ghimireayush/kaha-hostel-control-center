@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Room, RoomStatus } from './entities/room.entity';
+import { Room, RoomStatus, MaintenanceStatus } from './entities/room.entity';
 import { Building } from './entities/building.entity';
 import { RoomType } from './entities/room-type.entity';
-import { Amenity } from './entities/amenity.entity';
+import { Amenity, AmenityCategory } from './entities/amenity.entity';
 import { RoomAmenity } from './entities/room-amenity.entity';
 import { RoomLayout } from './entities/room-layout.entity';
 
@@ -34,8 +34,7 @@ export class RoomsService {
       .leftJoinAndSelect('room.students', 'students')
       .leftJoinAndSelect('room.amenities', 'roomAmenities')
       .leftJoinAndSelect('roomAmenities.amenity', 'amenity')
-      .leftJoinAndSelect('room.layouts', 'layouts')
-      .where('layouts.isActive = :isActive OR layouts.id IS NULL', { isActive: true });
+      .leftJoinAndSelect('room.layout', 'layout');
     
     // Apply status filter
     if (status !== 'all') {
@@ -87,7 +86,7 @@ export class RoomsService {
         'students', 
         'amenities', 
         'amenities.amenity',
-        'layouts'
+        'layout'
       ]
     });
     
@@ -239,7 +238,7 @@ export class RoomsService {
   // Transform normalized data back to exact API format
   private transformToApiResponse(room: Room): any {
     // Get active layout
-    const activeLayout = room.layouts?.find(l => l.isActive);
+    const activeLayout = room.layout;
     
     // Get amenities list
     const amenities = room.amenities?.map(ra => ra.amenity.name) || [];
@@ -288,7 +287,7 @@ export class RoomsService {
       if (!amenity) {
         amenity = await this.amenityRepository.save({
           name: amenityName,
-          category: 'UTILITIES', // Default category
+          category: AmenityCategory.UTILITIES, // Default category
           isActive: true
         });
       }
@@ -372,7 +371,7 @@ export class RoomsService {
   async scheduleRoomMaintenance(roomId: string, maintenanceData: any) {
     await this.roomRepository.update(roomId, {
       status: RoomStatus.MAINTENANCE,
-      maintenanceStatus: 'Under Repair',
+      maintenanceStatus: MaintenanceStatus.UNDER_REPAIR,
       lastMaintenance: new Date()
     });
 

@@ -1,26 +1,29 @@
-import { IsString, IsOptional, IsNumber, IsDateString, IsArray, ValidateNested, Min } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsString, IsNumber, IsOptional, IsArray, IsDateString, ValidateNested, Min } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
-export class InvoiceItemDto {
+export class CreateInvoiceItemDto {
   @IsString()
-  @Transform(({ value }) => value?.trim())
   description: string;
+
+  @IsNumber()
+  @Min(1)
+  @Transform(({ value }) => parseInt(value))
+  quantity: number;
 
   @IsNumber()
   @Min(0)
   @Transform(({ value }) => parseFloat(value))
-  amount: number;
+  unitPrice: number;
 
   @IsOptional()
   @IsNumber()
-  @Min(1)
-  @Transform(({ value }) => parseInt(value))
-  quantity?: number = 1;
+  @Min(0)
+  @Transform(({ value }) => parseFloat(value))
+  discount?: number;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  category?: string;
+  notes?: string;
 }
 
 export class CreateInvoiceDto {
@@ -29,11 +32,9 @@ export class CreateInvoiceDto {
   id?: string;
 
   @IsString()
-  @Transform(({ value }) => value?.trim())
   studentId: string;
 
   @IsString()
-  @Transform(({ value }) => value?.trim())
   month: string;
 
   @IsOptional()
@@ -47,8 +48,8 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceItemDto)
-  items?: InvoiceItemDto[];
+  @Type(() => CreateInvoiceItemDto)
+  items?: CreateInvoiceItemDto[];
 
   @IsOptional()
   @IsNumber()
@@ -60,20 +61,17 @@ export class CreateInvoiceDto {
   @IsNumber()
   @Min(0)
   @Transform(({ value }) => parseFloat(value))
-  paidAmount?: number = 0;
+  paidAmount?: number;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  status?: string = 'pending';
+  status?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   notes?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   createdBy?: string;
 }

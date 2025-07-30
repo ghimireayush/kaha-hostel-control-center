@@ -23,7 +23,11 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "schema:sync": "npm run typeorm -- schema:sync -d src/database/data-source.ts",
-    "schema:drop": "npm run typeorm -- schema:drop -d src/database/data-source.ts"
+    "schema:drop": "npm run typeorm -- schema:drop -d src/database/data-source.ts",
+    "seed:run": "ts-node src/database/seeds/seed-data.ts",
+    "migrate": "node run-migrations.js",
+    "test:api": "node test-api.js",
+    "test:api:full": "node test-api-comprehensive.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -61,7 +65,7 @@
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.1",
+    "tsconfig-paths": "^4.1.0",
     "typescript": "^5.1.3"
   },
   "jest": {

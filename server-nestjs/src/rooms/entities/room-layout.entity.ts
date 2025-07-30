@@ -1,45 +1,49 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Room } from './room.entity';
 
 @Entity('room_layouts')
-@Index(['roomId'])
-@Index(['isActive'])
-export class RoomLayout extends BaseEntity {
-  @Column({ name: 'room_id', length: 50 })
+export class RoomLayout {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'room_id', unique: true })
   roomId: string;
 
-  @Column({ length: 100 })
-  name: string; // Layout name/version
+  @Column({ name: 'layout_type', length: 50, default: 'standard' })
+  layoutType: string;
 
-  @Column({ type: 'jsonb' })
-  layoutData: Record<string, any>; // Complex layout information
+  @Column({ type: 'jsonb', nullable: true })
+  layoutData: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  bedPositions: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  furnitureLayout: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  dimensions: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  floorPlan: any;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ name: 'version', type: 'int', default: 1 })
-  version: number;
+  @Column({ name: 'created_by', length: 100, nullable: true })
+  createdBy: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column({ name: 'updated_by', length: 100, nullable: true })
+  updatedBy: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
-  };
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @Column({ type: 'jsonb', nullable: true })
-  theme: {
-    name: string;
-    wallColor: string;
-    floorColor: string;
-  };
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
-  // Relations
-  @ManyToOne(() => Room, room => room.layouts, { onDelete: 'CASCADE' })
+  // Relationships
+  @OneToOne(() => Room, room => room.layout, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'room_id' })
   room: Room;
 }

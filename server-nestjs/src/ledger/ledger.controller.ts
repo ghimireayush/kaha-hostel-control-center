@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LedgerService } from './ledger.service';
+import { CreateAdjustmentDto } from './dto/create-ledger-entry.dto';
 
 @ApiTags('ledger')
 @Controller('api/v1/ledgers')
@@ -62,7 +63,7 @@ export class LedgerController {
   @Post('adjustment')
   @ApiOperation({ summary: 'Create balance adjustment entry' })
   @ApiResponse({ status: 201, description: 'Adjustment entry created successfully' })
-  async createAdjustment(@Body() adjustmentDto: any) {
+  async createAdjustment(@Body() adjustmentDto: CreateAdjustmentDto) {
     const entry = await this.ledgerService.createAdjustmentEntry(
       adjustmentDto.studentId,
       adjustmentDto.amount,

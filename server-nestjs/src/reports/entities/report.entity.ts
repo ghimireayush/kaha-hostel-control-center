@@ -8,6 +8,7 @@ export enum ReportType {
   INVOICE = 'invoice',
   STUDENT = 'student',
   ROOM = 'room',
+  OCCUPANCY = 'occupancy',
   BOOKING = 'booking'
 }
 

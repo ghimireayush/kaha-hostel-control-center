@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
+import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 
 @ApiTags('invoices')
 @Controller('api/v1/invoices')
@@ -50,7 +52,7 @@ export class InvoicesController {
   @Post()
   @ApiOperation({ summary: 'Create new invoice' })
   @ApiResponse({ status: 201, description: 'Invoice created successfully' })
-  async createInvoice(@Body() createInvoiceDto: any) {
+  async createInvoice(@Body() createInvoiceDto: CreateInvoiceDto) {
     const invoice = await this.invoicesService.create(createInvoiceDto);
     
     // Return EXACT same format as current Express API
@@ -63,7 +65,7 @@ export class InvoicesController {
   @Put(':id')
   @ApiOperation({ summary: 'Update invoice' })
   @ApiResponse({ status: 200, description: 'Invoice updated successfully' })
-  async updateInvoice(@Param('id') id: string, @Body() updateInvoiceDto: any) {
+  async updateInvoice(@Param('id') id: string, @Body() updateInvoiceDto: UpdateInvoiceDto) {
     const invoice = await this.invoicesService.update(id, updateInvoiceDto);
     
     // Return EXACT same format as current Express API

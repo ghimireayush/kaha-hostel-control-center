@@ -1,51 +1,53 @@
-import { PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsDateString, IsEnum, Min } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { CreatePaymentDto } from './create-payment.dto';
-import { PaymentMethod, PaymentStatus } from '../entities/payment.entity';
+import { CreatePaymentDto, PaymentMethod } from './create-payment.dto';
 
 export class UpdatePaymentDto extends PartialType(CreatePaymentDto) {
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Transform(({ value }) => parseFloat(value))
-  amount?: number;
+  @IsString()
+  studentId?: string;
 
   @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod;
+  @IsNumber()
+  @Min(0.01)
+  @Transform(({ value }) => parseFloat(value))
+  amount?: number;
 
   @IsOptional()
   @IsDateString()
   paymentDate?: string;
 
   @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  reference?: string;
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  notes?: string;
-
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
   transactionId?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  referenceNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  processedBy?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
   bankName?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   chequeNumber?: string;
 
   @IsOptional()

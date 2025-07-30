@@ -12,6 +12,7 @@ import { Building } from '../rooms/entities/building.entity';
 import { RoomType } from '../rooms/entities/room-type.entity';
 import { Amenity } from '../rooms/entities/amenity.entity';
 import { RoomAmenity } from '../rooms/entities/room-amenity.entity';
+import { RoomOccupant } from '../rooms/entities/room-occupant.entity';
 import { RoomLayout } from '../rooms/entities/room-layout.entity';
 
 import { Invoice } from '../invoices/entities/invoice.entity';
@@ -52,6 +53,7 @@ export const dataSourceOptions: DataSourceOptions = {
     RoomType,
     Amenity,
     RoomAmenity,
+    RoomOccupant,
     RoomLayout,
     
     // Financial entities

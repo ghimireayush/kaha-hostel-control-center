@@ -1,21 +1,13 @@
-import { IsString, IsOptional, IsNumber, IsDateString, IsEnum, IsArray, ValidateNested, Min } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { PaymentMethod, PaymentStatus } from '../entities/payment.entity';
+import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-export class InvoiceAllocationDto {
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  invoiceId: string;
-
-  @IsNumber()
-  @Min(0)
-  @Transform(({ value }) => parseFloat(value))
-  amount: number;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  notes?: string;
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  BANK_TRANSFER = 'bank_transfer',
+  UPI = 'upi',
+  CHEQUE = 'cheque',
+  ONLINE = 'online'
 }
 
 export class CreatePaymentDto {
@@ -24,72 +16,64 @@ export class CreatePaymentDto {
   id?: string;
 
   @IsString()
-  @Transform(({ value }) => value?.trim())
   studentId: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   @Transform(({ value }) => parseFloat(value))
   amount: number;
-
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
 
   @IsOptional()
   @IsDateString()
   paymentDate?: string;
 
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
-  reference?: string;
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  notes?: string;
-
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value?.trim())
   transactionId?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
-  receiptNumber?: string;
+  referenceNumber?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
   processedBy?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  status?: string;
+
+  // For bank transfer/cheque specific fields
+  @IsOptional()
+  @IsString()
   bankName?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   chequeNumber?: string;
 
   @IsOptional()
   @IsDateString()
   chequeDate?: string;
+}
+
+export class InvoiceAllocationDto {
+  @IsString()
+  invoiceId: string;
+
+  @IsNumber()
+  @Min(0.01)
+  @Transform(({ value }) => parseFloat(value))
+  amount: number;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  invoiceIds?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => InvoiceAllocationDto)
-  invoiceAllocations?: InvoiceAllocationDto[];
+  @IsString()
+  notes?: string;
 }

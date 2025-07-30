@@ -1,12 +1,15 @@
-import { PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsDateString, IsArray, ValidateNested, Min } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { CreateInvoiceDto, InvoiceItemDto } from './create-invoice.dto';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsString, IsNumber, IsOptional, IsArray, IsDateString, ValidateNested, Min } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { CreateInvoiceDto, CreateInvoiceItemDto } from './create-invoice.dto';
 
 export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
+  studentId?: string;
+
+  @IsOptional()
+  @IsString()
   month?: string;
 
   @IsOptional()
@@ -20,8 +23,8 @@ export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceItemDto)
-  items?: InvoiceItemDto[];
+  @Type(() => CreateInvoiceItemDto)
+  items?: CreateInvoiceItemDto[];
 
   @IsOptional()
   @IsNumber()
@@ -37,11 +40,13 @@ export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   status?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value?.trim())
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  updatedBy?: string;
 }

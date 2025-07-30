@@ -328,8 +328,7 @@ export class StudentsService {
     
     // Update student status to inactive
     await this.studentRepository.update(studentId, {
-      status: StudentStatus.INACTIVE,
-      checkoutDate: checkoutDetails.checkoutDate || new Date()
+      status: StudentStatus.INACTIVE
     });
 
     // Clear room assignment if needed
@@ -474,8 +473,7 @@ export class StudentsService {
     
     // Soft delete - just mark as inactive
     await this.studentRepository.update(id, {
-      status: StudentStatus.INACTIVE,
-      deletedAt: new Date()
+      status: StudentStatus.INACTIVE
     });
 
     return {
