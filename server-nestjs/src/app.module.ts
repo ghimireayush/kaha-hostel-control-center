@@ -12,6 +12,7 @@ import { LedgerModule } from './ledger/ledger.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { ReportsModule } from './reports/reports.module';
+import { SeedModule } from './database/seeds/seed.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ReportsModule } from './reports/reports.module';
     BookingsModule,
     DiscountsModule,
     ReportsModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -26,8 +26,13 @@
     "schema:drop": "npm run typeorm -- schema:drop -d src/database/data-source.ts",
     "seed:run": "ts-node src/database/seeds/seed-data.ts",
     "migrate": "node run-migrations.js",
+    "db:setup": "node setup-database.js",
+    "db:migrate": "npm run migration:run && npm run seed:run",
+    "db:sync": "npm run schema:sync && npm run seed:run",
+    "db:reset": "npm run schema:drop && npm run schema:sync && npm run seed:run",
     "test:api": "node test-api.js",
-    "test:api:full": "node test-api-comprehensive.js"
+    "test:api:full": "node test-api-comprehensive.js",
+    "test:seed": "node test-seed-api.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
