@@ -43,6 +43,11 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
       id: "discounts",
       label: "🏷️ Discount Management",
       description: "Manage Discounts & Offers"
+    },
+    {
+      id: "admin-charging",
+      label: "⚡ Admin Charging",
+      description: "Manual Charge Management"
     }
   ];
 

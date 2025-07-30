@@ -8,6 +8,7 @@ import { PaymentRecording } from "@/components/ledger/PaymentRecording";
 import { StudentLedgerView } from "@/components/ledger/StudentLedgerView";
 import { DiscountManagement } from "@/components/ledger/DiscountManagement";
 import { BillingManagement } from "@/components/ledger/BillingManagement";
+import { AdminCharging } from "@/components/ledger/AdminCharging";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -31,7 +32,8 @@ const Ledger = () => {
         'ledger': 'ledger',
         'ledgers': 'ledger',
         'discounts': 'discounts',
-        'billing': 'billing'
+        'billing': 'billing',
+        'admin-charging': 'admin-charging'
       };
       if (sectionMap[section]) {
         setActiveTab(sectionMap[section]);
@@ -55,6 +57,8 @@ const Ledger = () => {
         return <DiscountManagement />;
       case "billing":
         return <BillingManagement />;
+      case "admin-charging":
+        return <AdminCharging />;
       default:
         return <Dashboard />;
     }
@@ -117,7 +121,7 @@ const Ledger = () => {
               
               {/* Back to Admin Panel */}
               <Button 
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/admin')}
                 variant="outline"
                 className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10 hover:border-[#1295D0]/50"
               >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,13 +15,11 @@ import {
   DollarSign, 
   AlertCircle, 
   CheckCircle, 
-  Search,
   Plus,
-  Clock,
-  TrendingUp
+  Clock
 } from 'lucide-react';
 
-const AdminCharging = () => {
+export const AdminCharging = () => {
   const { state, refreshAllData } = useAppContext();
   const { toast } = useToast();
   
@@ -192,7 +190,7 @@ const AdminCharging = () => {
     }
   };
 
-  const handleQuickCharge = async (studentId, type, suggestedAmount) => {
+  const handleQuickCharge = async (studentId: string, type: string, suggestedAmount: number) => {
     setIsProcessing(true);
 
     try {
@@ -503,5 +501,3 @@ const AdminCharging = () => {
     </div>
   );
 };
-
-export default AdminCharging;

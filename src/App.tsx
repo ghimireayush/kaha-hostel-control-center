@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Ledger from "./pages/Ledger";
 import HostelProfile from "./pages/HostelProfile";
@@ -12,7 +13,7 @@ import BookingRequests from "./pages/BookingRequests";
 import RoomManagement from "./pages/RoomManagement";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
-import AdminCharging from "./pages/AdminCharging";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,14 +26,15 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/admin" element={<Index />} />
             <Route path="/hostel" element={<HostelProfile />} />
             <Route path="/bookings" element={<BookingRequests />} />
             <Route path="/rooms" element={<RoomManagement />} />
             <Route path="/ledger" element={<Ledger />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/admin/charging" element={<AdminCharging />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

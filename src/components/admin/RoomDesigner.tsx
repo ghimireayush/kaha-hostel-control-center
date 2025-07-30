@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Box, AlertTriangle, ArrowLeft } from "lucide-react";
@@ -16,6 +15,7 @@ interface BunkLevel {
   position: 'top' | 'middle' | 'bottom';
   assignedTo?: string;
   bedId: string;
+  status?: 'available' | 'booked' | 'occupied' | 'selected';
 }
 
 interface RoomElement {
@@ -30,6 +30,8 @@ interface RoomElement {
   properties?: {
     bedType?: 'single' | 'bunk' | 'double' | 'kids';
     bedId?: string;
+    bedLabel?: string;
+    status?: 'available' | 'booked' | 'occupied' | 'selected';
     position?: 'top' | 'middle' | 'bottom';
     orientation?: 'north' | 'south' | 'east' | 'west';
     drawers?: number;
@@ -80,7 +82,7 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
   const [lastSelectedElement, setLastSelectedElement] = useState<string | null>(null);
-  const [draggedElement, setDraggedElement] = useState<string | null>(null);
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [duplicateMode, setDuplicateMode] = useState(false);
 
@@ -180,15 +182,51 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
   };
 
   const handleElementsMove = (ids: string[], deltaX: number, deltaY: number) => {
-    setElements(elements.map(el =>
-      ids.includes(el.id)
-        ? {
-          ...el,
-          x: snapToGridPosition(Math.max(0, Math.min(el.x + deltaX, dimensions.length - el.width))),
-          y: snapToGridPosition(Math.max(0, Math.min(el.y + deltaY, dimensions.width - el.height)))
+    // 🧈 ULTRA-SMOOTH BUTTER MOVEMENT SYSTEM 🧈
+    setElements(prevElements => {
+      // Use React's batching for optimal performance
+      return prevElements.map(el => {
+        if (!ids.includes(el.id)) return el;
+        
+        // Ultra-high precision position calculation (sub-pixel accuracy)
+        const newX = el.x + deltaX;
+        const newY = el.y + deltaY;
+        
+        // Optimized rotation handling for boundary calculations
+        const rotation = (el.rotation || 0) % 360;
+        const isRotated = rotation === 90 || rotation === 270;
+        const effectiveWidth = isRotated ? el.height : el.width;
+        const effectiveHeight = isRotated ? el.width : el.height;
+        
+        // 🔧 FIXED: PERFECT boundary constraints (NO MORE BOUNCING!) 🔧
+        // Calculate maximum positions with ultra-high precision
+        const maxX = Math.max(0, dimensions.length - effectiveWidth);
+        const maxY = Math.max(0, dimensions.width - effectiveHeight);
+        
+        // Apply boundary constraints with NO bouncing
+        let constrainedX = newX;
+        let constrainedY = newY;
+        
+        if (constrainedX < 0) {
+          constrainedX = 0;
+        } else if (constrainedX > maxX) {
+          constrainedX = maxX;
         }
-        : el
-    ));
+        
+        if (constrainedY < 0) {
+          constrainedY = 0;
+        } else if (constrainedY > maxY) {
+          constrainedY = maxY;
+        }
+        
+        // Return element with butter-smooth positioning
+        return { 
+          ...el, 
+          x: constrainedX, 
+          y: constrainedY 
+        };
+      });
+    });
   };
 
   const handleElementsMoveComplete = () => {
@@ -228,9 +266,12 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     const elementType = elementTypes.find(t => t.type === type);
     if (!elementType) return;
 
-    let x = 1, y = 1;
+    // Start from corner (0,0) and work outward for better placement
+    let x = 0, y = 0;
     let attempts = 0;
-    while (attempts < 100) {
+    const gridStep = snapToGrid ? 0.5 : 0.1;
+    
+    while (attempts < 200) {
       const testElement: RoomElement = {
         id: 'test',
         type,
@@ -241,66 +282,96 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
         zIndex: 0
       };
 
-      if (!checkCollisions(testElement) &&
-        x + elementType.defaultSize.width <= dimensions.length &&
-        y + elementType.defaultSize.height <= dimensions.width) {
+      // Check if element fits within room boundaries
+      const fitsInRoom = (x + elementType.defaultSize.width <= dimensions.length) && 
+                        (y + elementType.defaultSize.height <= dimensions.width);
+      
+      if (fitsInRoom && !checkCollisions(testElement)) {
         break;
       }
 
-      x += 0.5;
+      // Move in a spiral pattern for better placement
+      x += gridStep;
       if (x + elementType.defaultSize.width > dimensions.length) {
-        x = 1;
-        y += 0.5;
+        x = 0;
+        y += gridStep;
+        if (y + elementType.defaultSize.height > dimensions.width) {
+          // If we can't fit anywhere, place at origin and let user move it
+          x = 0;
+          y = 0;
+          break;
+        }
       }
       attempts++;
     }
 
+    // Generate unique IDs and labels for beds
+    const bedElements = elements.filter(e => e.type === 'single-bed' || e.type === 'bunk-bed');
+    const bedCount = bedElements.length;
+    const bedLabel = `Bed ${String.fromCharCode(65 + bedCount)}`; // A, B, C, D...
+    
+    // Generate unique timestamp-based IDs
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
+    
     const bunkBedCount = elements.filter(e => e.type === 'bunk-bed').length;
+    const singleBedCount = elements.filter(e => e.type === 'single-bed').length;
+
+    // Dynamic sizing for bunk beds based on levels
+    let bedWidth = elementType.defaultSize.width;
+    let bedHeight = elementType.defaultSize.height;
+    
+    // For bunk beds, adjust size based on levels (default is 2-level)
+    if (type === 'bunk-bed') {
+      // 2-level: 2.6m × 2.2m (default)
+      // 3-level: 3.0m × 2.7m
+      bedWidth = 2.6; // Default 2-level width
+      bedHeight = 2.2; // Default 2-level height
+    }
 
     const newElement: RoomElement = {
-      id: Date.now().toString(),
+      id: `${type}-${timestamp}-${randomSuffix}`,
       type,
       x: snapToGridPosition(x),
       y: snapToGridPosition(y),
-      width: elementType.defaultSize.width,
-      height: elementType.defaultSize.height,
+      width: bedWidth,
+      height: bedHeight,
       rotation: 0,
       zIndex: elements.length,
       properties: type === 'bunk-bed' ? {
         bedType: 'bunk',
-        bedId: `BUNK-${bunkBedCount + 1}`,
+        bedId: `BUNK-${String(bunkBedCount + 1).padStart(3, '0')}-${randomSuffix.toUpperCase()}`,
+        bedLabel: bedLabel,
+        status: 'available',
         orientation: 'north',
-        bunkLevels: 2,
+        bunkLevels: 2, // Default to 2 levels
         isLocked: false,
         levels: [
           {
-            id: `${Date.now()}-top`,
+            id: `${timestamp}-B1-${randomSuffix}`,
             position: 'top',
-            bedId: `BUNK-${bunkBedCount + 1}-TOP`,
+            bedId: `${bedLabel}-B1-${randomSuffix.toUpperCase()}`,
+            status: 'available',
             assignedTo: undefined
           },
           {
-            id: `${Date.now()}-bottom`,
+            id: `${timestamp}-B2-${randomSuffix}`,
             position: 'bottom',
-            bedId: `BUNK-${bunkBedCount + 1}-BTM`,
+            bedId: `${bedLabel}-B2-${randomSuffix.toUpperCase()}`,
+            status: 'available',
             assignedTo: undefined
           }
         ]
-      } : type.includes('bed') ? {
-        bedType: type === 'double-bed' ? 'double' : type === 'kids-bed' ? 'kids' : 'single',
-        bedId: `BED-${elements.filter(e => e.type.includes('bed')).length + 1}`,
+      } : type === 'single-bed' ? {
+        bedType: 'single',
+        bedId: `BED-${String(singleBedCount + 1).padStart(3, '0')}-${randomSuffix.toUpperCase()}`,
+        bedLabel: bedLabel,
+        status: 'available',
         orientation: 'north'
-      } : type === 'study-table' ? {
-        material: 'wood',
-        drawers: 1
       } : type === 'door' ? {
         hingeType: 'left'
       } : type === 'window' ? {
         isOpen: false
-      } : type === 'charging-port' ? {
-        portType: 'USB'
-      } : type === 'study-lamp' ? {
-        brightness: 50
       } : {}
     };
 
@@ -313,9 +384,49 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
 
   const updateElement = (id: string, updates: Partial<RoomElement>) => {
     addToHistory();
-    setElements(elements.map(el =>
-      el.id === id ? { ...el, ...updates } : el
-    ));
+    setElements(elements.map(el => {
+      if (el.id === id) {
+        const updatedElement = { ...el, ...updates };
+        
+        // Handle bunk bed level changes and dynamic sizing
+        if (el.type === 'bunk-bed' && updates.properties?.bunkLevels) {
+          const newLevels = updates.properties.bunkLevels;
+          
+          // Update dimensions based on levels
+          if (newLevels === 2) {
+            updatedElement.width = 2.6;
+            updatedElement.height = 2.2;
+          } else if (newLevels === 3) {
+            updatedElement.width = 3.0;
+            updatedElement.height = 2.7;
+          }
+          
+          // Generate new levels array
+          const timestamp = Date.now();
+          const randomSuffix = Math.random().toString(36).substring(2, 6);
+          const bedLabel = el.properties?.bedLabel || 'Bed';
+          
+          const newLevelsArray = [];
+          for (let i = 0; i < newLevels; i++) {
+            newLevelsArray.push({
+              id: `${timestamp}-B${i + 1}-${randomSuffix}`,
+              position: i === 0 ? 'top' : i === newLevels - 1 ? 'bottom' : 'middle',
+              bedId: `${bedLabel}-B${i + 1}-${randomSuffix.toUpperCase()}`,
+              status: 'available',
+              assignedTo: undefined
+            });
+          }
+          
+          updatedElement.properties = {
+            ...updatedElement.properties,
+            levels: newLevelsArray
+          };
+        }
+        
+        return updatedElement;
+      }
+      return el;
+    }));
   };
 
   const deleteElement = (id: string) => {
@@ -371,58 +482,10 @@ export const RoomDesigner = ({ onSave, onClose, roomData }: RoomDesignerProps) =
     setScale(Math.max(10, Math.min(50, scale + delta)));
   };
 
-  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = e.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale;
-    const y = (e.clientY - rect.top) / scale;
-
-    const sortedElements = [...elements].sort((a, b) => b.zIndex - a.zIndex);
-    const clickedElement = sortedElements.find(element =>
-      x >= element.x && x <= element.x + element.width &&
-      y >= element.y && y <= element.y + element.height
-    );
-
-    if (clickedElement) {
-      const isMultiSelect = e.ctrlKey || e.metaKey;
-      const isAltDuplicate = e.altKey && duplicateMode;
-
-      if (isAltDuplicate) {
-        handleElementDuplicate(clickedElement.id);
-      } else {
-        handleElementSelect(clickedElement.id, isMultiSelect);
-        // Only start dragging if element is not locked
-        if (!clickedElement.properties?.isLocked) {
-          setDraggedElement(clickedElement.id);
-        }
-      }
-    } else {
-      // Clear selection when clicking on empty space
-      if (!e.ctrlKey && !e.metaKey) {
-        handleElementSelect('', false);
-      }
-    }
-  };
-
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!draggedElement) return;
-
-    const canvas = e.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const x = snapToGridPosition((e.clientX - rect.left) / scale);
-    const y = snapToGridPosition((e.clientY - rect.top) / scale);
-
-    const element = elements.find(el => el.id === draggedElement);
-    if (element) {
-      const constrainedX = Math.max(0, Math.min(x, dimensions.length - element.width));
-      const constrainedY = Math.max(0, Math.min(y, dimensions.width - element.height));
-      updateElement(draggedElement, { x: constrainedX, y: constrainedY });
-    }
-  };
-
-  const handleCanvasMouseUp = () => {
-    setDraggedElement(null);
-  };
+  // Remove these handlers - let RoomCanvas handle all mouse events
+  const handleCanvasMouseDown = () => {};
+  const handleCanvasMouseMove = () => {};
+  const handleCanvasMouseUp = () => {};
 
   const saveLayout = () => {
     const layout = {

@@ -61,6 +61,7 @@ export const RoomConfiguration = () => {
   ]);
 
   const [showAddRoom, setShowAddRoom] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [showRoomDesigner, setShowRoomDesigner] = useState(false);
   const [selectedRoomForDesign, setSelectedRoomForDesign] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState({
@@ -80,14 +81,28 @@ export const RoomConfiguration = () => {
   ];
 
   const handleAddRoom = () => {
-    const room = {
-      id: `room-${Date.now()}`,
-      ...newRoom,
-      occupancy: 0,
-      status: "Active",
-      layout: null
-    };
-    setRooms([...rooms, room]);
+    if (editingRoomId) {
+      // Update existing room
+      setRooms(rooms.map(room => 
+        room.id === editingRoomId 
+          ? { ...room, ...newRoom }
+          : room
+      ));
+      toast.success("Room updated successfully!");
+      setEditingRoomId(null);
+    } else {
+      // Add new room
+      const room = {
+        id: `room-${Date.now()}`,
+        ...newRoom,
+        occupancy: 0,
+        status: "Active",
+        layout: null
+      };
+      setRooms([...rooms, room]);
+      toast.success("Room added successfully!");
+    }
+    
     setNewRoom({
       name: "",
       type: "Dormitory",
@@ -97,7 +112,6 @@ export const RoomConfiguration = () => {
       amenities: []
     });
     setShowAddRoom(false);
-    toast.success("Room added successfully!");
   };
 
   const openRoomDesigner = (roomId: string) => {
@@ -121,6 +135,39 @@ export const RoomConfiguration = () => {
   const closeRoomDesigner = () => {
     setShowRoomDesigner(false);
     setSelectedRoomForDesign(null);
+  };
+
+  const handleEditRoom = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      // Set the room data for editing
+      setNewRoom({
+        name: room.name,
+        type: room.type,
+        bedCount: room.bedCount,
+        gender: room.gender,
+        baseRate: room.baseRate,
+        amenities: room.amenities
+      });
+      setEditingRoomId(roomId);
+      setShowAddRoom(true);
+      toast.info("Edit room details and save changes");
+    }
+  };
+
+  const handleDeleteRoom = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      if (room.occupancy > 0) {
+        toast.error("Cannot delete room with current occupants. Please move students first.");
+        return;
+      }
+      
+      if (confirm(`Are you sure you want to delete "${room.name}"? This action cannot be undone.`)) {
+        setRooms(rooms.filter(r => r.id !== roomId));
+        toast.success("Room deleted successfully!");
+      }
+    }
   };
 
   if (showRoomDesigner && selectedRoomForDesign) {
@@ -147,7 +194,7 @@ export const RoomConfiguration = () => {
       {showAddRoom && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Room</CardTitle>
+            <CardTitle>{editingRoomId ? 'Edit Room' : 'Add New Room'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,8 +253,21 @@ export const RoomConfiguration = () => {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button onClick={handleAddRoom}>Add Room</Button>
-              <Button variant="outline" onClick={() => setShowAddRoom(false)}>Cancel</Button>
+              <Button onClick={handleAddRoom}>
+                {editingRoomId ? 'Update Room' : 'Add Room'}
+              </Button>
+              <Button variant="outline" onClick={() => {
+                setShowAddRoom(false);
+                setEditingRoomId(null);
+                setNewRoom({
+                  name: "",
+                  type: "Dormitory",
+                  bedCount: 1,
+                  gender: "Mixed",
+                  baseRate: 12000,
+                  amenities: []
+                });
+              }}>Cancel</Button>
             </div>
           </CardContent>
         </Card>
@@ -245,10 +305,20 @@ export const RoomConfiguration = () => {
                   >
                     <Layout className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEditRoom(room.id)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => handleDeleteRoom(room.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

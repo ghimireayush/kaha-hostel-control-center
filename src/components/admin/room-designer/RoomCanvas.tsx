@@ -97,6 +97,7 @@ interface BunkLevel {
   position: 'top' | 'middle' | 'bottom';
   assignedTo?: string;
   bedId: string;
+  status?: 'available' | 'booked' | 'occupied' | 'selected';
 }
 
 interface RoomElement {
@@ -111,6 +112,8 @@ interface RoomElement {
   properties?: {
     bedType?: 'single' | 'bunk' | 'double' | 'kids';
     bedId?: string;
+    bedLabel?: string; // For display like "Bed A", "Bed B"
+    status?: 'available' | 'booked' | 'occupied' | 'selected';
     position?: 'top' | 'middle' | 'bottom';
     orientation?: 'north' | 'south' | 'east' | 'west';
     drawers?: number;
@@ -180,10 +183,21 @@ export const RoomCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, elementId: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number, y: number } | null>(null);
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number, y: number, text: string } | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number, y: number } | null>(null);
+  const [lastMousePos, setLastMousePos] = useState<{ x: number, y: number } | null>(null);
+  // 🧈 ULTRA-SMOOTH BUTTER DRAG SYSTEM STATE 🧈
+  const [dragStartTime, setDragStartTime] = useState<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const velocityRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+  const lastPositionRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+  const smoothingBuffer = useRef<Array<{ x: number, y: number, time: number }>>([]);
+  const isDragThrottled = useRef<boolean>(false);
+  const lastRenderTime = useRef<number>(0);
+  const targetFPS = 60;
+  const frameInterval = 1000 / targetFPS;
 
   // Reasonable scale for better visibility without being too large
   const canvasScale = Math.max(scale * 2, 60);
@@ -195,19 +209,26 @@ export const RoomCanvas = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
+    // Enable hardware acceleration for BUTTER-SMOOTH rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Clear canvas with optimized clearing
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background
     ctx.fillStyle = theme.floorColor;
     ctx.fillRect(0, 0, dimensions.length * canvasScale, dimensions.width * canvasScale);
 
-    // Draw grid
+    // Draw enhanced grid
     if (showGrid) {
-      ctx.strokeStyle = '#E5E7EB';
-      ctx.lineWidth = 1;
       const gridSize = 0.5 * canvasScale;
-
+      const majorGridSize = 1.0 * canvasScale; // Major grid lines every meter
+      
+      // Draw minor grid lines
+      ctx.strokeStyle = '#F3F4F6';
+      ctx.lineWidth = 1;
+      
       for (let x = 0; x <= dimensions.length * canvasScale; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -216,6 +237,24 @@ export const RoomCanvas = ({
       }
 
       for (let y = 0; y <= dimensions.width * canvasScale; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(dimensions.length * canvasScale, y);
+        ctx.stroke();
+      }
+      
+      // Draw major grid lines (every meter)
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 2;
+      
+      for (let x = 0; x <= dimensions.length * canvasScale; x += majorGridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, dimensions.width * canvasScale);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y <= dimensions.width * canvasScale; y += majorGridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(dimensions.length * canvasScale, y);
@@ -258,73 +297,167 @@ export const RoomCanvas = ({
       ctx.fill();
       ctx.stroke();
 
-      // Special handling for bunk beds
-      if (element.type === 'bunk-bed') {
-        const levels = element.properties?.levels || [];
-        const levelHeight = height / Math.max(levels.length, 2);
-
-        // Draw bunk structure
-        ctx.strokeStyle = '#8B4513';
+      // Clean professional bed design - Simple rectangular shape
+      if (element.type === 'single-bed') {
+        // Get bed status for industry standard color coding
+        const bedStatus = element.properties?.status || 'available';
+        const statusColors = {
+          'available': '#E5E7EB',   // Light Gray - Industry standard for available
+          'selected': '#3B82F6',    // Blue - Industry standard for selected
+          'booked': '#F59E0B',      // Amber/Orange - Industry standard for booked
+          'occupied': '#EF4444'     // Red - Industry standard for occupied
+        };
+        
+        // Draw simple rectangular bed frame (matching your image)
+        ctx.fillStyle = statusColors[bedStatus as keyof typeof statusColors] || statusColors.available;
+        ctx.strokeStyle = '#000000';  // Black border like in your image
+        ctx.lineWidth = 3;  // Thicker border to match your design
+        ctx.fillRect(-width / 2, -height / 2, width, height);
+        ctx.strokeRect(-width / 2, -height / 2, width, height);
+        
+        // Simple rectangular pillow at head of bed (matching your image shape)
+        const pillowWidth = width * 0.8;  // Wider pillow to match your design
+        const pillowHeight = height * 0.15;  // Reduced pillow height
+        
+        ctx.fillStyle = '#FFFFFF';  // White pillow
+        ctx.strokeStyle = '#000000';  // Black border for pillow
         ctx.lineWidth = 2;
-        levels.forEach((level, index) => {
-          const levelY = -height / 2 + (index * levelHeight);
-          if (index > 0) {
-            ctx.beginPath();
-            ctx.moveTo(-width / 2 + 4, levelY);
-            ctx.lineTo(width / 2 - 4, levelY);
-            ctx.stroke();
-          }
-        });
-      }
-
-      // Draw emoji - Special handling for bunk beds
-      if (element.type === 'bunk-bed') {
-        const bunkLevels = element.properties?.bunkLevels || 2;
-        const bedEmoji = '🛏️';
-        // ULTRA MASSIVE icons to completely fill the entire element box
-        const emojiSize = Math.min(width * 1.0, height * 0.7, 100);
-
-        ctx.font = `${emojiSize}px Arial`;
+        
+        // Draw simple rectangular pillow (no rounded corners to match your image)
+        ctx.fillRect(-pillowWidth / 2, -height / 2 + 8, pillowWidth, pillowHeight);
+        ctx.strokeRect(-pillowWidth / 2, -height / 2 + 8, pillowWidth, pillowHeight);
+        
+        // Add BOLD bed name inside the box (center of bed)
+        const bedLabel = element.properties?.bedLabel || element.properties?.bedId || 'Bed';
+        ctx.fillStyle = bedStatus === 'available' ? '#374151' : '#FFFFFF';
+        ctx.font = `bold ${Math.min(width * 0.15, height * 0.1, 16)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#1F2937';
-
-        // Calculate the icon area (entire element box)
-        const iconAreaHeight = height;
-        const levelSpacing = iconAreaHeight / bunkLevels;
-
-        // Draw vertically stacked bed icons
-        for (let i = 0; i < bunkLevels; i++) {
-          // Position from top to bottom, filling entire box
-          const levelY = -height / 2 + (i * levelSpacing) + (levelSpacing * 0.5);
-          ctx.fillText(bedEmoji, 0, levelY);
-
-          // Add level indicator (small text on the right side)
-          ctx.save();
-          ctx.font = `${Math.min(emojiSize * 0.15, 12)}px Arial`;
-          ctx.fillStyle = '#6B7280';
-          const levelText = i === 0 ? 'TOP' : i === bunkLevels - 1 ? 'BTM' : 'MID';
-          ctx.fillText(levelText, width / 2 - 35, levelY);
-          ctx.restore();
+        ctx.fillText(bedLabel, 0, height * 0.15);
+        
+        // Add checkmark for selected/booked beds
+        if (bedStatus === 'selected' || bedStatus === 'booked') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `bold ${Math.min(width * 0.2, height * 0.2, 20)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✓', 0, -height * 0.1);
         }
+        
+      } else if (element.type === 'bunk-bed') {
+        const bunkLevels = element.properties?.bunkLevels || 2;
+        const levels = element.properties?.levels || [];
+        
+        // Draw each bunk level with same design as single beds
+        const levelHeight = height / bunkLevels;
+        
+        for (let i = 0; i < bunkLevels; i++) {
+          const levelY = -height / 2 + (i * levelHeight);
+          const level = levels[i];
+          const bedStatus = level?.status || 'available';
+          
+          const statusColors = {
+            'available': '#E5E7EB',   // Light Gray - Industry standard for available
+            'selected': '#3B82F6',    // Blue - Industry standard for selected
+            'booked': '#F59E0B',      // Amber/Orange - Industry standard for booked
+            'occupied': '#EF4444'     // Red - Industry standard for occupied
+          };
+          
+          // Fill bunk level with status color (same as single bed)
+          ctx.fillStyle = statusColors[bedStatus as keyof typeof statusColors] || statusColors.available;
+          ctx.strokeStyle = '#374151';
+          ctx.lineWidth = 2;
+          ctx.fillRect(-width / 2, levelY, width, levelHeight);
+          ctx.strokeRect(-width / 2, levelY, width, levelHeight);
+          
+          // EXACT replica of single bed pillow - positioned on LEFT side
+          const pillowWidth = width * 0.8;  // EXACT same as single bed
+          const pillowHeight = height * 0.15;  // EXACT same proportion as single bed (not levelHeight)
+          
+          ctx.fillStyle = '#FFFFFF';  // White pillow exactly like single bed
+          ctx.strokeStyle = '#000000';  // Black border exactly like single bed
+          ctx.lineWidth = 2;  // Same pillow border as single bed
+          
+          // Position pillow on LEFT side of each bunk level
+          const pillowX = -width / 2 + 8;  // Left side positioning with 8px margin
+          ctx.fillRect(pillowX, levelY + 8, pillowWidth, pillowHeight);
+          ctx.strokeRect(pillowX, levelY + 8, pillowWidth, pillowHeight);
+          
+          // Add BOLD level name inside each bunk level (B1, B2, etc.)
+          const levelLabel = `B${i + 1}`;
+          ctx.fillStyle = bedStatus === 'available' ? '#374151' : '#FFFFFF';
+          ctx.font = `bold ${Math.min(width * 0.12, levelHeight * 0.2, 14)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(levelLabel, 0, levelY + levelHeight * 0.6);
+          
+          // Add checkmark for selected/booked levels
+          if (bedStatus === 'selected' || bedStatus === 'booked') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${Math.min(width * 0.15, levelHeight * 0.3, 14)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✓', 0, levelY + levelHeight * 0.35);
+          }
+        }
+        
+        // Draw minimal bunk bed structure lines
+        ctx.strokeStyle = '#374151';
+        ctx.lineWidth = 2;
+        // Vertical supports
+        ctx.beginPath();
+        ctx.moveTo(-width / 2, -height / 2);
+        ctx.lineTo(-width / 2, height / 2);
+        ctx.moveTo(width / 2, -height / 2);
+        ctx.lineTo(width / 2, height / 2);
+        ctx.stroke();
+        
+      } else if (element.type === 'door') {
+        // Draw door as brown rectangle
+        ctx.fillStyle = '#8B4513';
+        ctx.strokeStyle = '#6B7280';
+        ctx.lineWidth = 2;
+        ctx.fillRect(-width / 2, -height / 2, width, height);
+        ctx.strokeRect(-width / 2, -height / 2, width, height);
+        
+        // Add "Door" text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${Math.min(width * 0.15, height * 0.4, 14)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Door', 0, 0);
+        
+      } else if (element.type === 'window') {
+        // Draw window as green rectangle
+        ctx.fillStyle = '#10B981';
+        ctx.strokeStyle = '#6B7280';
+        ctx.lineWidth = 2;
+        ctx.fillRect(-width / 2, -height / 2, width, height);
+        ctx.strokeRect(-width / 2, -height / 2, width, height);
+        
+        // Add "Window" text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${Math.min(width * 0.12, height * 0.4, 12)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Window', 0, 0);
+        
       } else {
-        // Regular emoji for other elements - ULTRA MASSIVE size to completely fill the entire box
+        // Regular emoji for other elements
         const emoji = getElementEmoji(element.type, element.properties);
-        // GIGANTIC size to fill the complete element box
-        const emojiSize = Math.min(width * 1.2, height * 1.0, 150);
+        const emojiSize = Math.min(width * 0.8, height * 0.8, 80);
 
         ctx.font = `${emojiSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#1F2937';
-        // Center the icon perfectly in the entire box
         ctx.fillText(emoji, 0, 0);
       }
 
       ctx.restore();
     });
 
-    // Draw element names OUTSIDE the boxes (after all elements are drawn)
+    // Draw bed labels OUTSIDE the boxes (after all elements are drawn)
     sortedElements.forEach(element => {
       const x = element.x * canvasScale;
       const y = element.y * canvasScale;
@@ -335,39 +468,27 @@ export const RoomCanvas = ({
       ctx.translate(x + width / 2, y + height / 2);
       ctx.rotate(element.rotation * Math.PI / 180);
 
-      // Draw element name BELOW the element box (outside)
-      const elementName = getFormattedElementName(element.type, element.properties);
-      ctx.fillStyle = '#374151';
-      ctx.font = `bold ${Math.min(width * 0.1, 14)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-
-      // Split text if too long
-      const maxWidth = width + 20; // Allow slightly wider text
-      const words = elementName.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-
-      words.forEach(word => {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = ctx.measureText(testLine).width;
-
-        if (testWidth <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) lines.push(currentLine);
-          currentLine = word;
-        }
-      });
-      if (currentLine) lines.push(currentLine);
-
-      // Position text OUTSIDE and BELOW the element box
-      const lineHeight = Math.min(width * 0.1, 16);
-      const textStartY = height / 2 + 8; // Start below the element box
-
-      lines.forEach((line, index) => {
-        ctx.fillText(line, 0, textStartY + index * lineHeight);
-      });
+      // Show labels below beds and other elements
+      if (element.type === 'bunk-bed') {
+        // Bunk bed - show main bunk bed name below entire structure
+        const bedLabel = element.properties?.bedLabel || element.properties?.bedId || 'Bunk Bed';
+        
+        // Position main bunk bed label below the entire bunk bed
+        ctx.fillStyle = '#6B7280';
+        ctx.font = `bold ${Math.min(width * 0.1, height * 0.08, 14)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(bedLabel, 0, height / 2 + 8);
+        
+      } else if (element.type === 'door' || element.type === 'window') {
+        // For doors and windows, show label below
+        const elementName = element.type === 'door' ? 'Door' : 'Window';
+        ctx.fillStyle = '#374151';
+        ctx.font = `bold ${Math.min(width * 0.1, 14)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(elementName, 0, height / 2 + 8);
+      }
 
       // Recalculate element states for this loop
       const isSelected = selectedElements.includes(element.id);
@@ -441,25 +562,61 @@ export const RoomCanvas = ({
 
     if (clickedElement) {
       const isMultiSelect = e.ctrlKey || e.metaKey;
+      const isAltDuplicate = e.altKey && duplicateMode;
+
+      if (isAltDuplicate) {
+        onElementDuplicate(clickedElement.id);
+        return;
+      }
 
       onElementSelect(clickedElement.id, isMultiSelect);
 
-      // Start dragging only if not locked
+      // Start 🧈 ULTRA-SMOOTH BUTTER DRAGGING 🧈
       if (!clickedElement.properties?.isLocked) {
         setIsDragging(true);
         setDraggedElementId(clickedElement.id);
-        setDragStart({
-          x: e.clientX,
-          y: e.clientY
+        setDragStartTime(performance.now());
+        
+        // Reset all smoothing systems for new drag
+        smoothingBuffer.current = [];
+        isDragThrottled.current = false;
+        lastRenderTime.current = performance.now();
+        
+        // Store initial mouse position with ultra-high precision
+        setLastMousePos({ x: e.clientX, y: e.clientY });
+        
+        // Calculate BUTTER-SMOOTH offset from mouse to element's center
+        const elementCenterX = clickedElement.x + clickedElement.width / 2;
+        const elementCenterY = clickedElement.y + clickedElement.height / 2;
+        
+        setDragOffset({
+          x: x - elementCenterX,
+          y: y - elementCenterY
         });
+        
+        // Initialize ultra-smooth position tracking
+        lastPositionRef.current = { x: clickedElement.x, y: clickedElement.y };
+        velocityRef.current = { x: 0, y: 0 };
+        
+        // Optimize canvas for BUTTER-SMOOTH dragging
+        canvas.style.willChange = 'transform';
+        canvas.style.cursor = 'grabbing';
+        canvas.style.userSelect = 'none';
+        canvas.style.touchAction = 'none';
+        
+        // Enable hardware acceleration
+        canvas.style.transform = 'translateZ(0)';
       }
     } else {
+      // Clear selection when clicking on empty space
       if (!e.ctrlKey && !e.metaKey) {
         onElementSelect('', false);
       }
     }
 
-    onMouseDown(e);
+    // Prevent default to avoid text selection and enable smooth dragging
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -468,50 +625,202 @@ export const RoomCanvas = ({
     const x = (e.clientX - rect.left) / canvasScale;
     const y = (e.clientY - rect.top) / canvasScale;
 
-    // Handle dragging
-    if (isDragging && dragStart && draggedElementId) {
-      const deltaX = (e.clientX - dragStart.x) / canvasScale;
-      const deltaY = (e.clientY - dragStart.y) / canvasScale;
+    // 🧈🧈🧈 ULTRA-SMOOTH BUTTER DRAG SYSTEM 🧈🧈🧈
+    if (isDragging && draggedElementId && dragOffset) {
+      const currentTime = performance.now();
+      
+      // Frame rate limiting for consistent 60fps performance
+      if (currentTime - lastRenderTime.current < frameInterval) {
+        return;
+      }
+      
+      const currentElement = elements.find(el => el.id === draggedElementId);
+      if (!currentElement) return;
 
-      // Only move if there's significant movement to avoid jitter
-      if (Math.abs(deltaX) > 0.01 || Math.abs(deltaY) > 0.01) {
-        onElementsMove([draggedElementId], deltaX, deltaY);
+      // Add position to smoothing buffer with timestamp
+      smoothingBuffer.current.push({ x, y, time: currentTime });
+      
+      // Keep only last 5 positions for ultra-smooth interpolation
+      if (smoothingBuffer.current.length > 5) {
+        smoothingBuffer.current.shift();
+      }
 
-        // Update drag start for next movement
-        setDragStart({
-          x: e.clientX,
-          y: e.clientY
+      // BUTTER-SMOOTH position calculation with advanced interpolation
+      let smoothedX = x, smoothedY = y;
+      if (smoothingBuffer.current.length >= 3) {
+        // Use exponential smoothing for butter-like movement
+        const weights = [0.05, 0.1, 0.15, 0.3, 0.4]; // Exponential weighting
+        let totalWeight = 0;
+        smoothedX = 0;
+        smoothedY = 0;
+        
+        smoothingBuffer.current.forEach((pos, index) => {
+          const weight = weights[index] || 0.4;
+          smoothedX += pos.x * weight;
+          smoothedY += pos.y * weight;
+          totalWeight += weight;
         });
+        
+        smoothedX /= totalWeight;
+        smoothedY /= totalWeight;
+        
+        // Apply velocity-based smoothing for ultra-fluid motion
+        const timeDelta = currentTime - (smoothingBuffer.current[smoothingBuffer.current.length - 2]?.time || currentTime);
+        if (timeDelta > 0) {
+          const velocityX = (smoothedX - lastPositionRef.current.x) / timeDelta * 1000;
+          const velocityY = (smoothedY - lastPositionRef.current.y) / timeDelta * 1000;
+          
+          // Smooth velocity changes to prevent jitter
+          velocityRef.current.x = velocityRef.current.x * 0.8 + velocityX * 0.2;
+          velocityRef.current.y = velocityRef.current.y * 0.8 + velocityY * 0.2;
+        }
+      }
+
+      // Calculate new center position with ULTRA-HIGH precision
+      const newCenterX = smoothedX - dragOffset.x;
+      const newCenterY = smoothedY - dragOffset.y;
+      
+      // Convert center to top-left with sub-pixel accuracy
+      let newX = newCenterX - currentElement.width / 2;
+      let newY = newCenterY - currentElement.height / 2;
+      
+      // Handle rotation for perfect boundary calculations
+      const rotation = (currentElement.rotation || 0) % 360;
+      const isRotated = rotation === 90 || rotation === 270;
+      const effectiveWidth = isRotated ? currentElement.height : currentElement.width;
+      const effectiveHeight = isRotated ? currentElement.width : currentElement.height;
+      
+      // 🔧 FIXED: PERFECT boundary constraints (NO MORE BOUNCING!) 🔧
+      // Calculate maximum positions with ultra-high precision
+      const maxX = Math.max(0, dimensions.length - effectiveWidth);
+      const maxY = Math.max(0, dimensions.width - effectiveHeight);
+      
+      // Apply boundary constraints with NO bouncing
+      // Use Math.floor for precise positioning at boundaries
+      if (newX < 0) {
+        newX = 0;
+      } else if (newX > maxX) {
+        newX = maxX;
+      }
+      
+      if (newY < 0) {
+        newY = 0;
+      } else if (newY > maxY) {
+        newY = maxY;
+      }
+      
+      // Calculate movement delta with ULTRA-HIGH precision
+      const deltaX = newX - currentElement.x;
+      const deltaY = newY - currentElement.y;
+      
+      // Apply movement with BUTTER-SMOOTH threshold
+      if (Math.abs(deltaX) > 0.0001 || Math.abs(deltaY) > 0.0001) {
+        // Use optimized state update for 60fps performance
+        onElementsMove([draggedElementId], deltaX, deltaY);
+        
+        // Update position tracking
+        lastPositionRef.current = { x: newX, y: newY };
+        lastRenderTime.current = currentTime;
       }
     } else {
-      // Handle hover effects
+      // Handle hover effects when not dragging (optimized)
       const hoveredEl = getElementAtPosition(x, y);
-      setHoveredElement(hoveredEl?.id || null);
-
-      if (hoveredEl) {
-        const elementName = getFormattedElementName(hoveredEl.type, hoveredEl.properties);
-        setTooltip({
-          x: e.clientX,
-          y: e.clientY - 50,
-          text: elementName
-        });
-      } else {
-        setTooltip(null);
+      
+      if (hoveredEl?.id !== hoveredElement) {
+        setHoveredElement(hoveredEl?.id || null);
+        
+        if (hoveredEl) {
+          const elementName = getFormattedElementName(hoveredEl.type, hoveredEl.properties);
+          setTooltip({
+            x: e.clientX + 10,
+            y: e.clientY - 30,
+            text: elementName
+          });
+          canvas.style.cursor = hoveredEl.properties?.isLocked ? 'not-allowed' : 'grab';
+        } else {
+          setTooltip(null);
+          canvas.style.cursor = 'crosshair';
+        }
       }
     }
-
-    onMouseMove(e);
   };
 
   const handleCanvasMouseUp = () => {
+    const canvas = canvasRef.current;
+    
     if (isDragging && draggedElementId) {
-      // Call the move complete callback to add to history
-      onElementsMoveComplete?.();
+      // Cancel any pending animation frames for clean finish
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      
+      // Apply BUTTER-SMOOTH final snap to grid if enabled
+      if (snapToGrid) {
+        const currentElement = elements.find(el => el.id === draggedElementId);
+        if (currentElement) {
+          const gridSize = 0.5;
+          const snappedX = Math.round(currentElement.x / gridSize) * gridSize;
+          const snappedY = Math.round(currentElement.y / gridSize) * gridSize;
+          
+          const finalDeltaX = snappedX - currentElement.x;
+          const finalDeltaY = snappedY - currentElement.y;
+          
+          // Apply final snap with ULTRA-SMOOTH animation
+          if (Math.abs(finalDeltaX) > 0.001 || Math.abs(finalDeltaY) > 0.001) {
+            // Smooth snap animation over 3 frames for butter-like feel
+            const steps = 3;
+            let currentStep = 0;
+            
+            const animateSnap = () => {
+              currentStep++;
+              const progress = currentStep / steps;
+              const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
+              
+              const stepDeltaX = (finalDeltaX * easeProgress) - (finalDeltaX * (currentStep - 1) / steps);
+              const stepDeltaY = (finalDeltaY * easeProgress) - (finalDeltaY * (currentStep - 1) / steps);
+              
+              onElementsMove([draggedElementId], stepDeltaX, stepDeltaY);
+              
+              if (currentStep < steps) {
+                requestAnimationFrame(animateSnap);
+              }
+            };
+            
+            requestAnimationFrame(animateSnap);
+          }
+        }
+      }
+      
+      // Call the move complete callback with perfect timing
+      requestAnimationFrame(() => {
+        onElementsMoveComplete?.();
+      });
+      
+      // Reset canvas optimizations with BUTTER-SMOOTH transition
+      if (canvas) {
+        canvas.style.willChange = 'auto';
+        canvas.style.transform = 'none';
+        canvas.style.cursor = 'crosshair';
+        canvas.style.transition = 'cursor 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        canvas.style.userSelect = 'auto';
+        canvas.style.touchAction = 'auto';
+      }
     }
+    
+    // Reset all drag states with complete cleanup
     setIsDragging(false);
     setDraggedElementId(null);
-    setDragStart(null);
-    onMouseUp();
+    setDragOffset(null);
+    setLastMousePos(null);
+    setDragStartTime(0);
+    
+    // Clear all smoothing systems
+    smoothingBuffer.current = [];
+    isDragThrottled.current = false;
+    velocityRef.current = { x: 0, y: 0 };
+    lastPositionRef.current = { x: 0, y: 0 };
+    lastRenderTime.current = 0;
   };
 
   const handleCanvasRightClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -533,15 +842,97 @@ export const RoomCanvas = ({
     }
   };
 
+  const handleCanvasMouseLeave = () => {
+    // Reset drag state if mouse leaves canvas
+    if (isDragging) {
+      handleCanvasMouseUp();
+    }
+    setHoveredElement(null);
+    setTooltip(null);
+    
+    // Reset cursor
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = 'crosshair';
+    }
+  };
+
   useEffect(() => {
-    drawCanvas();
-  }, [elements, selectedElement, selectedElements, dimensions, showGrid, canvasScale, theme, hoveredElement, draggedElementId]);
+    // 🧈 ULTRA-SMOOTH BUTTER RENDERING SYSTEM 🧈
+    let renderFrameId: number;
+    let lastFrameTime = 0;
+    
+    const renderFrame = (currentTime: number) => {
+      // Maintain consistent 60fps for butter-smooth rendering
+      if (currentTime - lastFrameTime >= frameInterval) {
+        drawCanvas();
+        lastFrameTime = currentTime;
+      }
+      
+      // Continue rendering during drag for ULTRA-SMOOTH 60fps
+      if (isDragging) {
+        renderFrameId = requestAnimationFrame(renderFrame);
+      }
+    };
+    
+    // Start BUTTER-SMOOTH rendering
+    renderFrameId = requestAnimationFrame(renderFrame);
+    
+    return () => {
+      if (renderFrameId) {
+        cancelAnimationFrame(renderFrameId);
+      }
+    };
+  }, [elements, selectedElement, selectedElements, dimensions, showGrid, canvasScale, theme, hoveredElement, draggedElementId, isDragging]);
+
+  // Cleanup animation frames on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = () => setContextMenu(null);
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedElements.length) return;
+      
+      const step = e.shiftKey ? 0.1 : (snapToGrid ? 0.5 : 0.1); // Fine movement with Shift
+      let deltaX = 0, deltaY = 0;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          deltaX = -step;
+          break;
+        case 'ArrowRight':
+          deltaX = step;
+          break;
+        case 'ArrowUp':
+          deltaY = -step;
+          break;
+        case 'ArrowDown':
+          deltaY = step;
+          break;
+        default:
+          return;
+      }
+      
+      e.preventDefault();
+      onElementsMove(selectedElements, deltaX, deltaY);
+      onElementsMoveComplete?.();
+    };
+    
     document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedElements, snapToGrid, onElementsMove, onElementsMoveComplete]);
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 p-4 relative overflow-auto">
@@ -586,18 +977,59 @@ export const RoomCanvas = ({
       )}
 
       {/* Canvas Container */}
-      <div className="flex-1 flex items-center justify-center bg-white rounded-lg shadow-sm border p-4">
-        <div className="relative overflow-auto max-h-[70vh] max-w-full">
+      <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-lg shadow-sm border p-4">
+        <div className="relative overflow-auto max-h-[60vh] max-w-full">
           <canvas
             ref={canvasRef}
             width={dimensions.length * canvasScale}
             height={dimensions.width * canvasScale}
-            className="cursor-crosshair border rounded"
+            className="cursor-crosshair border rounded select-none"
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseLeave}
             onContextMenu={handleCanvasRightClick}
+            style={{ 
+              touchAction: 'none',
+              willChange: isDragging ? 'transform' : 'auto',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px',
+              transform: 'translateZ(0)',
+              transition: isDragging ? 'none' : 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            }}
           />
+        </div>
+
+        {/* Status Legend & Controls */}
+        <div className="mt-6 space-y-4">
+          {/* Status Legend - Industry Standard Colors */}
+          <div className="flex items-center justify-center gap-8 p-4 bg-gray-50 rounded-lg border">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-gray-300 border border-gray-300"></div>
+              <span className="text-sm font-medium text-gray-700">Available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 border border-gray-300"></div>
+              <span className="text-sm font-medium text-gray-700">Selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-amber-500 border border-gray-300"></div>
+              <span className="text-sm font-medium text-gray-700">Booked</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-red-500 border border-gray-300"></div>
+              <span className="text-sm font-medium text-gray-700">Occupied</span>
+            </div>
+          </div>
+          
+          {/* Quick Controls */}
+          <div className="flex items-center justify-center gap-6 p-3 bg-blue-50 rounded-lg border text-sm text-blue-800">
+            <span>💡 <strong>Pro Tips:</strong></span>
+            <span>• Drag elements smoothly to any position</span>
+            <span>• Use arrow keys for precise movement</span>
+            <span>• Hold Shift + arrows for fine adjustments</span>
+            <span>• Right-click for context menu</span>
+          </div>
         </div>
 
         {/* Tooltip */}

@@ -640,25 +640,7 @@ export const PropertiesPanel = ({
           </>
         )}
 
-        {selectedElement.type === 'window' && (
-          <>
-            <Separator />
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm text-gray-900 flex items-center gap-2">
-                <Icon className="h-4 w-4" />
-                🪟 Window Properties
-              </h4>
-              
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-gray-600">Window Open</Label>
-                <Switch
-                  checked={selectedElement.properties?.isOpen || false}
-                  onCheckedChange={(checked) => updateProperty('isOpen', checked)}
-                />
-              </div>
-            </div>
-          </>
-        )}
+
 
         {selectedElement.type === 'charging-port' && (
           <>
