@@ -1,60 +1,135 @@
-
 [
   {
-    "id": "INV001",
-    "studentId": "STU001",
-    "month": "January 2024",
-    "issueDate": "2024-01-01",
-    "dueDate": "2024-01-05",
-    "baseFee": 8000,
-    "laundryFee": 500,
-    "foodFee": 3000,
-    "extraServices": 200,
-    "discount": 0,
+    "id": "INV-2024-001",
+    "studentId": "student_001",
+    "studentName": "Ram Sharma",
+    "room": "A-101",
+    "baseFee": 12000,
+    "extraServices": 1500,
     "previousDue": 0,
-    "total": 11700,
-    "amountPaid": 11700,
-    "status": "Paid",
-    "paidDate": "2024-01-03",
-    "paymentMode": "Cash",
-    "description": "Monthly hostel fees for January 2024"
+    "discount": 0,
+    "totalAmount": 13500,
+    "paidAmount": 13500,
+    "balanceAmount": 0,
+    "status": "paid",
+    "dueDate": "2024-02-01T00:00:00Z",
+    "issueDate": "2024-01-01T00:00:00Z",
+    "paidDate": "2024-01-10T10:30:00Z",
+    "month": "January",
+    "year": 2024,
+    "items": [
+      {
+        "description": "Base Monthly Fee",
+        "amount": 12000,
+        "category": "accommodation"
+      },
+      {
+        "description": "Laundry Service",
+        "amount": 1500,
+        "category": "laundry"
+      }
+    ],
+    "paymentHistory": [
+      {
+        "paymentId": "payment_001",
+        "amount": 13500,
+        "date": "2024-01-10T10:30:00Z",
+        "method": "Cash"
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-10T10:30:00Z"
   },
   {
-    "id": "INV002",
-    "studentId": "STU002",
-    "month": "February 2024",
-    "issueDate": "2024-02-01",
-    "dueDate": "2024-02-05",
-    "baseFee": 7500,
-    "laundryFee": 500,
-    "foodFee": 2800,
-    "extraServices": 0,
-    "discount": 500,
+    "id": "INV-2024-002",
+    "studentId": "student_002",
+    "studentName": "Sita Poudel",
+    "room": "B-205",
+    "baseFee": 15000,
+    "extraServices": 12000,
     "previousDue": 0,
-    "total": 10300,
-    "amountPaid": 5000,
-    "status": "Partially Paid",
-    "paidDate": "2024-02-03",
-    "paymentMode": "eSewa",
-    "description": "Monthly hostel fees for February 2024"
+    "discount": 0,
+    "totalAmount": 27000,
+    "paidAmount": 27000,
+    "balanceAmount": 0,
+    "status": "paid",
+    "dueDate": "2024-02-05T00:00:00Z",
+    "issueDate": "2024-01-05T00:00:00Z",
+    "paidDate": "2024-01-15T14:20:00Z",
+    "month": "January",
+    "year": 2024,
+    "items": [
+      {
+        "description": "Base Monthly Fee",
+        "amount": 15000,
+        "category": "accommodation"
+      },
+      {
+        "description": "Food Package",
+        "amount": 10000,
+        "category": "food"
+      },
+      {
+        "description": "Laundry Service",
+        "amount": 2000,
+        "category": "laundry"
+      }
+    ],
+    "paymentHistory": [
+      {
+        "paymentId": "payment_002",
+        "amount": 27000,
+        "date": "2024-01-15T14:20:00Z",
+        "method": "Bank Transfer"
+      }
+    ],
+    "createdAt": "2024-01-05T00:00:00Z",
+    "updatedAt": "2024-01-15T14:20:00Z"
   },
   {
-    "id": "INV003",
-    "studentId": "STU003",
-    "month": "January 2024",
-    "issueDate": "2024-01-01",
-    "dueDate": "2024-01-05",
-    "baseFee": 9000,
-    "laundryFee": 600,
-    "foodFee": 3500,
-    "extraServices": 500,
+    "id": "INV-2024-003",
+    "studentId": "student_003",
+    "studentName": "Hari Thapa",
+    "room": "C-301",
+    "baseFee": 18000,
+    "extraServices": 14500,
+    "previousDue": 0,
     "discount": 0,
-    "previousDue": 2100,
-    "total": 15700,
-    "amountPaid": 0,
-    "status": "Unpaid",
+    "totalAmount": 32500,
+    "paidAmount": 20000,
+    "balanceAmount": 12500,
+    "status": "partial",
+    "dueDate": "2024-01-15T00:00:00Z",
+    "issueDate": "2023-12-15T00:00:00Z",
     "paidDate": null,
-    "paymentMode": null,
-    "description": "Monthly hostel fees for January 2024"
+    "month": "January",
+    "year": 2024,
+    "items": [
+      {
+        "description": "Base Monthly Fee",
+        "amount": 18000,
+        "category": "accommodation"
+      },
+      {
+        "description": "Food Package",
+        "amount": 12000,
+        "category": "food"
+      },
+      {
+        "description": "Laundry Service",
+        "amount": 2500,
+        "category": "laundry"
+      }
+    ],
+    "paymentHistory": [
+      {
+        "paymentId": "payment_003",
+        "amount": 20000,
+        "date": "2024-01-01T09:15:00Z",
+        "method": "Digital Wallet"
+      }
+    ],
+    "createdAt": "2023-12-15T00:00:00Z",
+    "updatedAt": "2024-01-10T09:15:00Z"
   }
 ]
