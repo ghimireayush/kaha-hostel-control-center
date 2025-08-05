@@ -14,6 +14,11 @@ export const studentService = {
     }
   },
 
+  // Alias for getStudents (used by dashboard)
+  async getAllStudents() {
+    return await this.getStudents();
+  },
+
   // Get student by ID
   async getStudentById(id) {
     try {
