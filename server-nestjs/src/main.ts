@@ -21,9 +21,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("hostel/api/v1/docs", app, document);
 
-  await app.listen(process.env.PORT, () => {
-    console.log(`Hostel Server: http://localhost:${process.env.PORT}`);
-    console.log(`Docs: http://localhost:${process.env.PORT}/hostel/api/v1/docs`);
+  await app.listen(process.env.APP_PORT, () => {
+    console.log(`Hostel Server: http://localhost:${process.env.APP_PORT}`);
+    console.log(`Docs: http://localhost:${process.env.APP_PORT}/hostel/api/v1/docs`);
   });
 }
 
