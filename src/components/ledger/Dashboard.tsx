@@ -2,31 +2,85 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ledgerService } from "../../services/ledgerService.js";
 
 export const Dashboard = () => {
-  // Mock data - in real app, this would come from API with real-time updates
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load dashboard data from API
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await ledgerService.getLedgerSummary();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error loading ledger dashboard:', error);
+        setError('Failed to load dashboard data');
+        // Fallback to mock data if API fails
+        setDashboardData({
+          totalStudents: 156,
+          totalCollected: 450000,
+          outstandingDues: 85000,
+          thisMonthCollection: 120000,
+          advanceBalances: 25000,
+          collectionRate: 84,
+          highestDueStudents: [
+            { name: "Ram Sharma", room: "A-101", amount: 15000, monthsOverdue: 2 },
+            { name: "Sita Poudel", room: "B-205", amount: 12500, monthsOverdue: 1 },
+            { name: "Hari Thapa", room: "C-301", amount: 10000, monthsOverdue: 3 }
+          ],
+          recentActivities: [
+            { student: "Ram Sharma", type: "payment", amount: 8000, timeAgo: "2 hours ago" },
+            { student: "Sita Poudel", type: "invoice", amount: 12000, timeAgo: "4 hours ago" },
+            { student: "Hari Thapa", type: "discount", amount: 2000, timeAgo: "1 day ago" },
+            { student: "Maya Gurung", type: "advance", amount: 15000, timeAgo: "2 days ago" }
+          ]
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1295D0]"></div>
+          <span className="ml-3 text-lg text-gray-600">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg text-gray-600">No dashboard data available</p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = {
-    totalStudents: 156,
-    totalCollected: 450000,
-    totalDues: 85000,
-    thisMonthCollection: 120000,
-    advanceBalances: 25000,
-    overdueInvoices: 12
+    totalStudents: dashboardData.totalStudents || 0,
+    totalCollected: dashboardData.totalCollected || 0,
+    totalDues: dashboardData.outstandingDues || 0,
+    thisMonthCollection: dashboardData.thisMonthCollection || 0,
+    advanceBalances: dashboardData.advanceBalances || 0,
+    overdueInvoices: dashboardData.highestDueStudents?.length || 0
   };
 
-  const highestDueStudents = [
-    { name: "Ram Sharma", room: "A-101", due: 15000, months: 2 },
-    { name: "Sita Poudel", room: "B-205", due: 12500, months: 1 },
-    { name: "Hari Thapa", room: "C-301", due: 10000, months: 3 }
-  ];
-
-  const recentActivities = [
-    { type: "payment", student: "Ram Sharma", amount: 8000, time: "2 hours ago", status: "completed" },
-    { type: "invoice", student: "Sita Poudel", amount: 12000, time: "4 hours ago", status: "generated" },
-    { type: "discount", student: "Hari Thapa", amount: 2000, time: "1 day ago", status: "applied" },
-    { type: "advance", student: "Maya Gurung", amount: 15000, time: "2 days ago", status: "received" }
-  ];
+  const highestDueStudents = dashboardData.highestDueStudents || [];
+  const recentActivities = dashboardData.recentActivities || [];
 
   return (
     <div className="space-y-6">
@@ -124,7 +178,7 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">84%</div>
+            <div className="text-3xl font-bold">{dashboardData.collectionRate || 0}%</div>
             <p className="text-white/80 text-sm">Monthly avg collection</p>
           </CardContent>
         </Card>
@@ -151,12 +205,12 @@ export const Dashboard = () => {
                     <div className="font-medium text-gray-900">{student.name}</div>
                     <div className="text-sm text-gray-500">Room: {student.room}</div>
                     <div className="text-xs text-red-600 mt-1">
-                      {student.months} month{student.months > 1 ? 's' : ''} overdue
+                      {student.monthsOverdue} month{student.monthsOverdue > 1 ? 's' : ''} overdue
                     </div>
                   </div>
                   <div className="text-right">
                     <Badge variant="destructive" className="mb-2">
-                      ₨{student.due.toLocaleString()}
+                      ₨{student.amount.toLocaleString()}
                     </Badge>
                     <div className="flex space-x-1">
                       <Button size="sm" variant="outline" className="text-xs px-2 py-1">
@@ -199,13 +253,13 @@ export const Dashboard = () => {
                       </span>
                       <span className="font-medium text-gray-900">{activity.student}</span>
                       <Badge 
-                        variant={activity.status === 'completed' ? 'default' : 'secondary'}
+                        variant="default"
                         className="text-xs"
                       >
-                        {activity.status}
+                        {activity.type}
                       </Badge>
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">{activity.time}</div>
+                    <div className="text-sm text-gray-500 mt-1">{activity.timeAgo}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-medium text-gray-900">₨{activity.amount.toLocaleString()}</div>

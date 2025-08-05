@@ -1,37 +1,12 @@
 
-// Removed unused import: notificationService
-
-const API_BASE_URL = 'http://localhost:3001/api/v1';
-
-// Helper function to handle API requests
-async function apiRequest(endpoint, options = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.data; // API returns data in { status, data } format
-  } catch (error) {
-    console.error('Student API Request Error:', error);
-    throw error;
-  }
-}
+import { apiService } from './apiService.ts';
+import { API_ENDPOINTS } from '../config/api.ts';
 
 export const studentService = {
   // Get all students
   async getStudents() {
     try {
-      const result = await apiRequest('/students');
+      const result = await apiService.get(API_ENDPOINTS.STUDENTS.BASE);
       return result.items || []; // API returns { items, pagination }
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -42,7 +17,7 @@ export const studentService = {
   // Get student by ID
   async getStudentById(id) {
     try {
-      return await apiRequest(`/students/${id}`);
+      return await apiService.get(API_ENDPOINTS.STUDENTS.BY_ID(id));
     } catch (error) {
       console.error('Error fetching student by ID:', error);
       throw error;
@@ -52,10 +27,7 @@ export const studentService = {
   // Create new student (triggered by booking approval)
   async createStudent(studentData) {
     try {
-      const newStudent = await apiRequest('/students', {
-        method: 'POST',
-        body: JSON.stringify(studentData),
-      });
+      const newStudent = await apiService.post(API_ENDPOINTS.STUDENTS.BASE, studentData);
       
       // Send welcome notification via Kaha App
       const message = `Welcome to Kaha Hostel! Your profile has been created. Room ${newStudent.roomNumber} has been assigned to you.`;
@@ -72,10 +44,7 @@ export const studentService = {
   // Update student information
   async updateStudent(id, updates) {
     try {
-      return await apiRequest(`/students/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
+      return await apiService.put(API_ENDPOINTS.STUDENTS.BY_ID(id), updates);
     } catch (error) {
       console.error('Error updating student:', error);
       throw error;
@@ -85,7 +54,7 @@ export const studentService = {
   // Get students with outstanding dues
   async getStudentsWithDues() {
     try {
-      const result = await apiRequest('/students');
+      const result = await apiService.get(API_ENDPOINTS.STUDENTS.BASE);
       const allStudents = result.items || [];
       return allStudents.filter(s => s.currentBalance > 0);
     } catch (error) {
@@ -97,7 +66,7 @@ export const studentService = {
   // Get student statistics
   async getStudentStats() {
     try {
-      return await apiRequest('/students/stats');
+      return await apiService.get(API_ENDPOINTS.STUDENTS.STATS);
     } catch (error) {
       console.error('Error fetching student stats:', error);
       throw error;
@@ -107,7 +76,7 @@ export const studentService = {
   // Search students
   async searchStudents(searchTerm) {
     try {
-      const result = await apiRequest(`/students?search=${encodeURIComponent(searchTerm)}`);
+      const result = await apiService.get(API_ENDPOINTS.STUDENTS.BASE, { search: searchTerm });
       return result.items || [];
     } catch (error) {
       console.error('Error searching students:', error);
@@ -118,10 +87,7 @@ export const studentService = {
   // Process student checkout
   async processCheckout(studentId, checkoutDetails) {
     try {
-      return await apiRequest(`/students/${studentId}/checkout`, {
-        method: 'POST',
-        body: JSON.stringify(checkoutDetails),
-      });
+      return await apiService.post(API_ENDPOINTS.STUDENTS.CHECKOUT(studentId), checkoutDetails);
     } catch (error) {
       console.error('Error processing student checkout:', error);
       throw error;

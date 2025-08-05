@@ -352,8 +352,10 @@ export const PaymentManagement = () => {
                   <SelectItem value="all">All Methods</SelectItem>
                   <SelectItem value="Cash">💵 Cash</SelectItem>
                   <SelectItem value="Bank Transfer">🏦 Bank Transfer</SelectItem>
-                  <SelectItem value="Online">💻 Online</SelectItem>
                   <SelectItem value="Card">💳 Card</SelectItem>
+                  <SelectItem value="UPI">📱 UPI</SelectItem>
+                  <SelectItem value="Online">💻 Online</SelectItem>
+                  <SelectItem value="Cheque">📝 Cheque</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -487,8 +489,10 @@ export const PaymentManagement = () => {
                 <SelectContent>
                   <SelectItem value="Cash">💵 Cash</SelectItem>
                   <SelectItem value="Bank Transfer">🏦 Bank Transfer</SelectItem>
-                  <SelectItem value="Online">💻 Online</SelectItem>
                   <SelectItem value="Card">💳 Card</SelectItem>
+                  <SelectItem value="UPI">📱 UPI</SelectItem>
+                  <SelectItem value="Online">💻 Online</SelectItem>
+                  <SelectItem value="Cheque">📝 Cheque</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -608,8 +612,10 @@ export const PaymentManagement = () => {
                   <SelectContent>
                     <SelectItem value="Cash">💵 Cash</SelectItem>
                     <SelectItem value="Bank Transfer">🏦 Bank Transfer</SelectItem>
-                    <SelectItem value="Online">💻 Online</SelectItem>
                     <SelectItem value="Card">💳 Card</SelectItem>
+                    <SelectItem value="UPI">📱 UPI</SelectItem>
+                    <SelectItem value="Online">💻 Online</SelectItem>
+                    <SelectItem value="Cheque">📝 Cheque</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -712,8 +718,10 @@ export const PaymentManagement = () => {
                           <SelectContent>
                             <SelectItem value="Cash">Cash</SelectItem>
                             <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="Online">Online</SelectItem>
                             <SelectItem value="Card">Card</SelectItem>
+                            <SelectItem value="UPI">UPI</SelectItem>
+                            <SelectItem value="Online">Online</SelectItem>
+                            <SelectItem value="Cheque">Cheque</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

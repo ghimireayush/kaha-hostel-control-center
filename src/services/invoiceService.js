@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = 'http://localhost:3012/api/v1';
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
@@ -52,7 +52,25 @@ export const invoiceService = {
       const response = await apiRequest(endpoint);
       console.log('✅ Invoices API response:', response);
       
-      return response.result?.items || response || []; // Handle different response formats
+      const invoices = response.result?.items || response || [];
+      
+      // Convert string numbers to actual numbers for frontend compatibility
+      return invoices.map(invoice => ({
+        ...invoice,
+        total: parseFloat(invoice.total) || 0,
+        subtotal: parseFloat(invoice.subtotal) || 0,
+        discountTotal: parseFloat(invoice.discountTotal) || 0,
+        paymentTotal: parseFloat(invoice.paymentTotal) || 0,
+        balanceDue: parseFloat(invoice.balanceDue) || 0,
+        items: invoice.items?.map(item => ({
+          ...item,
+          amount: parseFloat(item.amount) || 0
+        })) || [],
+        payments: invoice.payments?.map(payment => ({
+          ...payment,
+          amount: parseFloat(payment.amount) || 0
+        })) || []
+      }));
     } catch (error) {
       console.error('❌ Error fetching invoices:', error);
       throw error;
@@ -72,7 +90,15 @@ export const invoiceService = {
       const data = await response.json();
       console.log('✅ Invoice stats API response:', data);
       
-      return data.stats || data;
+      const stats = data.stats || data;
+      
+      // Map NestJS response fields to frontend expected fields
+      return {
+        ...stats,
+        paidAmount: stats.totalPaid || 0,
+        outstandingAmount: stats.totalOutstanding || 0,
+        totalAmount: stats.totalAmount || 0
+      };
     } catch (error) {
       console.error('❌ Error fetching invoice stats:', error);
       throw error;
@@ -92,7 +118,25 @@ export const invoiceService = {
       const data = await response.json();
       console.log('✅ Invoice details fetched');
       
-      return data.data || data;
+      const invoice = data.data || data;
+      
+      // Convert string numbers to actual numbers for frontend compatibility
+      return {
+        ...invoice,
+        total: parseFloat(invoice.total) || 0,
+        subtotal: parseFloat(invoice.subtotal) || 0,
+        discountTotal: parseFloat(invoice.discountTotal) || 0,
+        paymentTotal: parseFloat(invoice.paymentTotal) || 0,
+        balanceDue: parseFloat(invoice.balanceDue) || 0,
+        items: invoice.items?.map(item => ({
+          ...item,
+          amount: parseFloat(item.amount) || 0
+        })) || [],
+        payments: invoice.payments?.map(payment => ({
+          ...payment,
+          amount: parseFloat(payment.amount) || 0
+        })) || []
+      };
     } catch (error) {
       console.error('❌ Error fetching invoice by ID:', error);
       throw error;

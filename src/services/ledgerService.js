@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3001/api/v1";
+const API_BASE_URL = "http://localhost:3012/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
@@ -55,7 +55,15 @@ export const ledgerService = {
       const response = await apiRequest(endpoint);
       console.log("✅ Ledger entries API response:", response);
 
-      return response.result?.items || response || []; // Handle different response formats
+      const entries = response.result?.items || response || [];
+      
+      // Convert string numbers to actual numbers for frontend compatibility
+      return entries.map(entry => ({
+        ...entry,
+        debit: parseFloat(entry.debit) || 0,
+        credit: parseFloat(entry.credit) || 0,
+        balance: parseFloat(entry.balance) || 0
+      }));
     } catch (error) {
       console.error("❌ Error fetching ledger entries:", error);
       throw error;
@@ -75,7 +83,18 @@ export const ledgerService = {
       const data = await response.json();
       console.log("✅ Ledger stats API response:", data);
 
-      return data.stats || data;
+      const stats = data.stats || data;
+      
+      // Map NestJS response fields to frontend expected fields
+      return {
+        ...stats,
+        outstandingAmount: Math.max(stats.netBalance || 0, 0), // Only positive balances are outstanding
+        advanceAmount: Math.abs(Math.min(stats.netBalance || 0, 0)), // Only negative balances are advances
+        studentsWithDebit: stats.activeStudents || 0,
+        studentsWithCredit: 0, // We don't have this data from NestJS, so default to 0
+        totalDebits: stats.totalDebits || 0,
+        totalCredits: stats.totalCredits || 0
+      };
     } catch (error) {
       console.error("❌ Error fetching ledger stats:", error);
       throw error;
@@ -97,7 +116,15 @@ export const ledgerService = {
       const data = await response.json();
       console.log("✅ Student ledger fetched");
 
-      return data.data || [];
+      const entries = data.data || [];
+      
+      // Convert string numbers to actual numbers for frontend compatibility
+      return entries.map(entry => ({
+        ...entry,
+        debit: parseFloat(entry.debit) || 0,
+        credit: parseFloat(entry.credit) || 0,
+        balance: parseFloat(entry.balance) || 0
+      }));
     } catch (error) {
       console.error("❌ Error fetching student ledger:", error);
       throw error;
@@ -228,27 +255,48 @@ export const ledgerService = {
     }
   },
 
-  // Get ledger summary for all students
+  // Get ledger summary (dashboard data)
   async getLedgerSummary() {
     try {
-      console.log("📊 Fetching ledger summary...");
-      const stats = await this.getLedgerStats();
+      console.log("📊 Fetching ledger dashboard data from API...");
+      const response = await fetch(`${API_BASE_URL}/ledgers/dashboard`);
 
-      // Transform stats into summary format
-      const summary = {
-        totalEntries: stats.totalEntries,
-        totalDebits: stats.totalDebits,
-        totalCredits: stats.totalCredits,
-        outstandingAmount: stats.outstandingAmount,
-        advanceAmount: stats.advanceAmount,
-        studentsWithBalance: stats.studentsWithBalance,
-        studentsWithCredit: stats.studentsWithCredit,
-        studentsWithDebit: stats.studentsWithDebit,
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Ledger dashboard data fetched");
+
+      const dashboardData = data.data || data;
+      
+      // Flatten the structure for frontend compatibility
+      return {
+        // Summary data
+        totalStudents: dashboardData.summary?.totalStudents || 0,
+        totalCollected: dashboardData.summary?.totalCollected || 0,
+        outstandingDues: dashboardData.summary?.outstandingDues || 0,
+        thisMonthCollection: dashboardData.summary?.thisMonthCollection || 0,
+        advanceBalances: dashboardData.summary?.advanceBalances || 0,
+        collectionRate: dashboardData.summary?.collectionRate || 0,
+        
+        // Detailed data
+        highestDueStudents: dashboardData.highestDueStudents?.map(student => ({
+          name: student.name,
+          room: student.roomNumber,
+          amount: student.outstandingAmount,
+          monthsOverdue: student.monthsOverdue
+        })) || [],
+        
+        recentActivities: dashboardData.recentActivities?.map(activity => ({
+          student: activity.studentName,
+          type: activity.type,
+          amount: parseFloat(activity.amount) || 0,
+          timeAgo: activity.timeAgo
+        })) || []
       };
-
-      return summary;
     } catch (error) {
-      console.error("❌ Error fetching ledger summary:", error);
+      console.error("❌ Error fetching ledger dashboard:", error);
       throw error;
     }
   },

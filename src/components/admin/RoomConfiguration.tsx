@@ -45,6 +45,7 @@ export const RoomConfiguration = () => {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
+    roomNumber: "",
     type: "Dormitory",
     bedCount: 1,
     gender: "Mixed",
@@ -60,6 +61,17 @@ export const RoomConfiguration = () => {
   ];
 
   const handleAddRoom = async () => {
+    // Validate required fields
+    if (!newRoom.roomNumber.trim()) {
+      toast.error("Room number is required!");
+      return;
+    }
+    
+    if (!newRoom.name.trim()) {
+      toast.error("Room name is required!");
+      return;
+    }
+
     try {
       console.log('🏠 Creating new room via API...');
       const roomData = {
@@ -79,6 +91,7 @@ export const RoomConfiguration = () => {
       // Reset form
       setNewRoom({
         name: "",
+        roomNumber: "",
         type: "Dormitory",
         bedCount: 1,
         gender: "Mixed",
@@ -89,7 +102,8 @@ export const RoomConfiguration = () => {
       toast.success("Room added successfully!");
     } catch (error) {
       console.error('❌ Error creating room:', error);
-      toast.error("Failed to add room. Please try again.");
+      const errorMessage = error.message || "Failed to add room. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -127,6 +141,7 @@ export const RoomConfiguration = () => {
     setEditingRoom(room);
     setNewRoom({
       name: room.name,
+      roomNumber: room.roomNumber || "",
       type: room.type,
       bedCount: room.bedCount,
       gender: room.gender,
@@ -138,6 +153,17 @@ export const RoomConfiguration = () => {
 
   const handleUpdateRoom = async () => {
     if (!editingRoom) return;
+    
+    // Validate required fields
+    if (!newRoom.roomNumber.trim()) {
+      toast.error("Room number is required!");
+      return;
+    }
+    
+    if (!newRoom.name.trim()) {
+      toast.error("Room name is required!");
+      return;
+    }
     
     try {
       console.log('🏠 Updating room via API...');
@@ -157,6 +183,7 @@ export const RoomConfiguration = () => {
       // Reset form and editing state
       setNewRoom({
         name: "",
+        roomNumber: "",
         type: "Dormitory",
         bedCount: 1,
         gender: "Mixed",
@@ -168,7 +195,8 @@ export const RoomConfiguration = () => {
       toast.success("Room updated successfully!");
     } catch (error) {
       console.error('❌ Error updating room:', error);
-      toast.error("Failed to update room. Please try again.");
+      const errorMessage = error.message || "Failed to update room. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -196,6 +224,7 @@ export const RoomConfiguration = () => {
     setEditingRoom(null);
     setNewRoom({
       name: "",
+      roomNumber: "",
       type: "Dormitory",
       bedCount: 1,
       gender: "Mixed",
@@ -271,6 +300,15 @@ export const RoomConfiguration = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Room Number <span className="text-red-500">*</span></Label>
+                <Input
+                  value={newRoom.roomNumber}
+                  onChange={(e) => setNewRoom({...newRoom, roomNumber: e.target.value})}
+                  placeholder="e.g., A-101, B-205, C-301"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Room Type</Label>
                 <Select value={newRoom.type} onValueChange={(value) => setNewRoom({...newRoom, type: value})}>
                   <SelectTrigger>
@@ -338,6 +376,9 @@ export const RoomConfiguration = () => {
                     <Bed className="h-5 w-5" />
                     {room.name}
                   </CardTitle>
+                  {room.roomNumber && (
+                    <p className="text-sm text-gray-600 mt-1">Room #{room.roomNumber}</p>
+                  )}
                   <div className="flex gap-2 mt-2">
                     <Badge variant="outline">{room.type}</Badge>
                     <Badge variant="outline">{room.gender}</Badge>
