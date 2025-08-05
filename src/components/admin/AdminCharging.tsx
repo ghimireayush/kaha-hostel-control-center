@@ -37,9 +37,18 @@ const AdminCharging = () => {
   const [showBulkCharge, setShowBulkCharge] = useState(false);
 
   useEffect(() => {
+    loadChargeTypes();
     loadOverdueStudents();
     loadChargeSummary();
   }, []);
+
+  const loadChargeTypes = async () => {
+    try {
+      await adminChargingService.loadChargeTypes();
+    } catch (error) {
+      console.error('Error loading charge types:', error);
+    }
+  };
 
   const loadOverdueStudents = async () => {
     try {

@@ -1,21 +1,31 @@
 // User Service - Staff and admin user management
-import usersData from '../data/users.json' with { type: 'json' };
-
-let users = [...usersData];
+import { apiService } from './apiService.ts';
+import { API_ENDPOINTS } from '../config/api.ts';
 
 export const userService = {
   // READ Operations
   async getAllUsers() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...users]), 100);
-    });
+    try {
+      console.log('👥 Fetching users from API...');
+      const result = await apiService.get(API_ENDPOINTS.USERS.BASE);
+      console.log('✅ Users API response:', result);
+      return result.items || result || [];
+    } catch (error) {
+      console.error('❌ Error fetching users:', error);
+      throw error;
+    }
   },
 
   async getUserById(id) {
-    return new Promise((resolve) => {
-      const user = users.find(u => u.id === id);
-      setTimeout(() => resolve(user), 100);
-    });
+    try {
+      console.log(`👥 Fetching user ${id} from API...`);
+      const user = await apiService.get(API_ENDPOINTS.USERS.BY_ID(id));
+      console.log('✅ User details fetched');
+      return user;
+    } catch (error) {
+      console.error('❌ Error fetching user by ID:', error);
+      throw error;
+    }
   },
 
   async getUserByUsername(username) {
@@ -33,17 +43,27 @@ export const userService = {
   },
 
   async getUsersByRole(role) {
-    return new Promise((resolve) => {
-      const roleUsers = users.filter(u => u.role === role);
-      setTimeout(() => resolve(roleUsers), 100);
-    });
+    try {
+      console.log(`👥 Fetching users by role: ${role}`);
+      const users = await apiService.get(API_ENDPOINTS.USERS.BY_ROLE(role));
+      console.log('✅ Users by role fetched');
+      return users;
+    } catch (error) {
+      console.error('❌ Error fetching users by role:', error);
+      throw error;
+    }
   },
 
   async getUsersByDepartment(department) {
-    return new Promise((resolve) => {
-      const deptUsers = users.filter(u => u.department === department);
-      setTimeout(() => resolve(deptUsers), 100);
-    });
+    try {
+      console.log(`👥 Fetching users by department: ${department}`);
+      const users = await apiService.get(API_ENDPOINTS.USERS.BY_DEPARTMENT(department));
+      console.log('✅ Users by department fetched');
+      return users;
+    } catch (error) {
+      console.error('❌ Error fetching users by department:', error);
+      throw error;
+    }
   },
 
   async getActiveUsers() {
@@ -55,96 +75,42 @@ export const userService = {
 
   // CREATE Operations
   async createUser(userData) {
-    return new Promise((resolve, reject) => {
-      // Check if username or email already exists
-      const existingUser = users.find(u => 
-        u.username === userData.username || u.email === userData.email
-      );
-      
-      if (existingUser) {
-        setTimeout(() => reject(new Error('Username or email already exists')), 100);
-        return;
-      }
-
-      const newUser = {
-        id: `USR${String(users.length + 1).padStart(3, '0')}`,
-        ...userData,
-        isActive: userData.isActive !== undefined ? userData.isActive : true,
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        profileImage: userData.profileImage || '/images/profiles/default.jpg'
-      };
-      
-      users.push(newUser);
-      setTimeout(() => resolve(newUser), 100);
-    });
+    try {
+      console.log('👥 Creating new user via API...');
+      const newUser = await apiService.post(API_ENDPOINTS.USERS.BASE, userData);
+      console.log('✅ User created successfully');
+      return newUser;
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
   },
 
   async bulkCreateUsers(usersArray) {
-    return new Promise((resolve, reject) => {
-      try {
-        const newUsers = [];
-        
-        for (let i = 0; i < usersArray.length; i++) {
-          const userData = usersArray[i];
-          
-          // Check for duplicates
-          const existingUser = users.find(u => 
-            u.username === userData.username || u.email === userData.email
-          );
-          
-          if (existingUser) {
-            setTimeout(() => reject(new Error(`Duplicate user: ${userData.username}`)), 100);
-            return;
-          }
-          
-          const newUser = {
-            id: `USR${String(users.length + newUsers.length + 1).padStart(3, '0')}`,
-            ...userData,
-            isActive: userData.isActive !== undefined ? userData.isActive : true,
-            createdAt: new Date().toISOString(),
-            lastLogin: null,
-            profileImage: userData.profileImage || '/images/profiles/default.jpg'
-          };
-          
-          newUsers.push(newUser);
-        }
-        
-        users.push(...newUsers);
-        setTimeout(() => resolve(newUsers), 100);
-      } catch (error) {
-        setTimeout(() => reject(error), 100);
-      }
-    });
+    try {
+      console.log(`👥 Creating ${usersArray.length} users via API...`);
+      const result = await apiService.post(API_ENDPOINTS.USERS.BULK, {
+        users: usersArray
+      });
+      console.log('✅ Bulk users created successfully');
+      return result;
+    } catch (error) {
+      console.error('❌ Error creating bulk users:', error);
+      throw error;
+    }
   },
 
   // UPDATE Operations
   async updateUser(id, updateData) {
-    return new Promise((resolve, reject) => {
-      const index = users.findIndex(u => u.id === id);
-      if (index === -1) {
-        setTimeout(() => reject(new Error('User not found')), 100);
-        return;
-      }
-
-      // Check for username/email conflicts if being updated
-      if (updateData.username || updateData.email) {
-        const conflictUser = users.find(u => 
-          u.id !== id && (
-            (updateData.username && u.username === updateData.username) ||
-            (updateData.email && u.email === updateData.email)
-          )
-        );
-        
-        if (conflictUser) {
-          setTimeout(() => reject(new Error('Username or email already exists')), 100);
-          return;
-        }
-      }
-
-      users[index] = { ...users[index], ...updateData };
-      setTimeout(() => resolve(users[index]), 100);
-    });
+    try {
+      console.log(`👥 Updating user ${id} via API...`);
+      const updatedUser = await apiService.put(API_ENDPOINTS.USERS.BY_ID(id), updateData);
+      console.log('✅ User updated successfully');
+      return updatedUser;
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      throw error;
+    }
   },
 
   async updateUserLastLogin(id) {
@@ -182,16 +148,15 @@ export const userService = {
 
   // DELETE Operations
   async deleteUser(id) {
-    return new Promise((resolve, reject) => {
-      const index = users.findIndex(u => u.id === id);
-      if (index === -1) {
-        setTimeout(() => reject(new Error('User not found')), 100);
-        return;
-      }
-
-      const deletedUser = users.splice(index, 1)[0];
-      setTimeout(() => resolve(deletedUser), 100);
-    });
+    try {
+      console.log(`👥 Deleting user ${id} via API...`);
+      await apiService.delete(API_ENDPOINTS.USERS.BY_ID(id));
+      console.log('✅ User deleted successfully');
+      return { success: true, message: 'User deleted successfully' };
+    } catch (error) {
+      console.error('❌ Error deleting user:', error);
+      throw error;
+    }
   },
 
   async deactivateUser(id) {
@@ -278,33 +243,15 @@ export const userService = {
 
   // STATISTICS Operations
   async getUserStats() {
-    return new Promise((resolve) => {
-      const stats = {
-        total: users.length,
-        active: users.filter(u => u.isActive).length,
-        inactive: users.filter(u => !u.isActive).length,
-        byRole: {},
-        byDepartment: {},
-        recentLogins: users.filter(u => {
-          if (!u.lastLogin) return false;
-          const loginDate = new Date(u.lastLogin);
-          const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          return loginDate > dayAgo;
-        }).length
-      };
-      
-      // Count by role
-      users.forEach(user => {
-        stats.byRole[user.role] = (stats.byRole[user.role] || 0) + 1;
-      });
-      
-      // Count by department
-      users.forEach(user => {
-        stats.byDepartment[user.department] = (stats.byDepartment[user.department] || 0) + 1;
-      });
-      
-      setTimeout(() => resolve(stats), 100);
-    });
+    try {
+      console.log('📊 Fetching user statistics from API...');
+      const stats = await apiService.get(API_ENDPOINTS.USERS.STATS);
+      console.log('✅ User stats fetched');
+      return stats;
+    } catch (error) {
+      console.error('❌ Error fetching user stats:', error);
+      throw error;
+    }
   },
 
   async getUserSummary() {
@@ -331,26 +278,23 @@ export const userService = {
 
   // AUTHENTICATION Operations
   async authenticateUser(username, password) {
-    return new Promise((resolve, reject) => {
-      const user = users.find(u => 
-        (u.username === username || u.email === username) && u.isActive
-      );
+    try {
+      console.log('🔐 Authenticating user via API...');
+      const result = await apiService.post(API_ENDPOINTS.USERS.VALIDATE, {
+        username,
+        password
+      });
       
-      if (!user) {
-        setTimeout(() => reject(new Error('User not found or inactive')), 100);
-        return;
+      if (result.data) {
+        console.log('✅ User authenticated successfully');
+        return result.data;
+      } else {
+        throw new Error('Invalid credentials');
       }
-      
-      // In a real app, you would verify the password hash
-      // For demo purposes, we'll assume authentication is successful
-      
-      // Update last login
-      user.lastLogin = new Date().toISOString();
-      
-      // Return user without sensitive data
-      const { password: _, ...userWithoutPassword } = user;
-      setTimeout(() => resolve(userWithoutPassword), 100);
-    });
+    } catch (error) {
+      console.error('❌ Authentication failed:', error);
+      throw error;
+    }
   },
 
   async checkUserPermission(userId, permission) {

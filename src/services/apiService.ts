@@ -1,4 +1,4 @@
-import { API_CONFIG, buildApiUrl } from '../config/api';
+import { API_CONFIG, buildApiUrl } from '../config/api.ts';
 
 /**
  * Centralized API Service

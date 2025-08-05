@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3001/api/v1";
+const API_BASE_URL = "http://localhost:3012/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {
@@ -152,14 +152,18 @@ export const discountService = {
   },
 
   // Expire discount
-  async expireDiscount(id) {
+  async expireDiscount(id, expiredBy = 'Admin', reason = 'Expired by admin') {
     try {
       console.log(`🏷️ Expiring discount ${id} via API...`);
-      const response = await fetch(`${API_BASE_URL}/discounts/${id}/expire`, {
-        method: "POST",
+      const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          expiredBy: expiredBy,
+          reason: reason
+        }),
       });
 
       if (!response.ok) {
@@ -179,32 +183,9 @@ export const discountService = {
     }
   },
 
-  // Delete discount
+  // Delete discount (alias for expire)
   async deleteDiscount(id) {
-    try {
-      console.log(`🏷️ Deleting discount ${id} via API...`);
-      const response = await fetch(`${API_BASE_URL}/discounts/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `HTTP ${response.status}: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      console.log("✅ Discount deleted successfully");
-
-      return data.data || data;
-    } catch (error) {
-      console.error("❌ Error deleting discount:", error);
-      throw error;
-    }
+    return this.expireDiscount(id, 'Admin', 'Deleted by admin');
   },
 
   // Get discount statistics from API

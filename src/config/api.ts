@@ -1,126 +1,119 @@
-/**
- * API Configuration
- * Centralized configuration for API endpoints and settings
- */
-
-// Get API base URL from environment variables with fallback
+// API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3012/api/v1',
-  TIMEOUT: 10000, // 10 seconds
+  BASE_URL: 'http://localhost:3012/api/v1',
+  TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000, // 1 second
-} as const;
+  RETRY_DELAY: 1000,
+};
 
-// API endpoints configuration
+// API Endpoints
 export const API_ENDPOINTS = {
-  // Analytics
-  ANALYTICS: {
-    DASHBOARD: '/analytics/dashboard',
-  },
-  
   // Students
   STUDENTS: {
     BASE: '/students',
-    STATS: '/students/stats',
-    ACTIVE: '/students/active',
     BY_ID: (id: string) => `/students/${id}`,
+    STATS: '/students/stats',
     CHECKOUT: (id: string) => `/students/${id}/checkout`,
-    LEDGER: (id: string) => `/students/${id}/ledger`,
   },
   
-  // Rooms
-  ROOMS: {
-    BASE: '/rooms',
-    STATS: '/rooms/stats',
-    AVAILABLE: '/rooms/available',
-    BY_ID: (id: string) => `/rooms/${id}`,
-    ASSIGN: (id: string) => `/rooms/${id}/assign`,
-    VACATE: (id: string) => `/rooms/${id}/vacate`,
-    MAINTENANCE: (id: string) => `/rooms/${id}/maintenance`,
+  // Ledger
+  LEDGER: {
+    BASE: '/ledger',
+    BY_STUDENT: (studentId: string) => `/ledger/student/${studentId}`,
   },
   
   // Payments
   PAYMENTS: {
     BASE: '/payments',
-    STATS: '/payments/stats',
-    RECENT: '/payments/recent',
     BY_ID: (id: string) => `/payments/${id}`,
-    BY_STUDENT: (studentId: string) => `/payments/student/${studentId}`,
-    BULK: '/payments/bulk',
-    ALLOCATE: (id: string) => `/payments/${id}/allocate`,
   },
   
-  // Invoices
-  INVOICES: {
-    BASE: '/invoices',
-    STATS: '/invoices/stats',
-    PENDING: '/invoices/pending',
-    BY_ID: (id: string) => `/invoices/${id}`,
-    GENERATE_MONTHLY: '/invoices/generate-monthly',
-    SEND: (id: string) => `/invoices/${id}/send`,
+  // Billing
+  BILLING: {
+    BASE: '/billing',
+    MONTHLY: '/billing/monthly',
   },
   
-  // Ledgers
-  LEDGERS: {
-    BASE: '/ledgers',
-    STATS: '/ledgers/stats',
-    BY_ID: (id: string) => `/ledgers/${id}`,
-    BY_STUDENT: (studentId: string) => `/ledgers/student/${studentId}`,
-    BALANCE: (studentId: string) => `/ledgers/balance/${studentId}`,
-    GENERATE: '/ledgers/generate',
-    ADJUSTMENT: '/ledgers/adjustment',
-    REVERSE: (entryId: string) => `/ledgers/${entryId}/reverse`,
+  // Rooms
+  ROOMS: {
+    BASE: '/rooms',
+    AVAILABLE: '/rooms/available',
   },
   
-  // Reports
-  REPORTS: {
-    BASE: '/reports',
-    STATS: '/reports/stats',
-    TYPES: '/reports/types',
-    BY_ID: (id: string) => `/reports/${id}`,
-    DOWNLOAD: (id: string) => `/reports/download/${id}`,
-    GENERATE: '/reports/generate',
-    SCHEDULE: '/reports/schedule',
+  // Admin Charges
+  ADMIN_CHARGES: {
+    BASE: '/admin/charges',
+    TYPES: '/admin/charge-types',
+    BULK: '/admin/charges/bulk',
+    OVERDUE_STUDENTS: '/admin/charges/overdue-students',
+    HISTORY: (studentId: string) => `/admin/charges/history/${studentId}`,
+    SUMMARY_TODAY: '/admin/charges/summary/today',
   },
   
-  // Booking Requests
-  BOOKING_REQUESTS: {
-    BASE: '/booking-requests',
-    STATS: '/booking-requests/stats',
-    PENDING: '/booking-requests/pending',
-    BY_ID: (id: string) => `/booking-requests/${id}`,
+  // Discounts
+  DISCOUNTS: {
+    BASE: '/discounts',
+    BY_ID: (id: string) => `/discounts/${id}`,
+    STATS: '/discounts/stats',
+    BY_STUDENT: (studentId: string) => `/discounts/student/${studentId}`,
   },
-} as const;
+  
+  // Users
+  USERS: {
+    BASE: '/users',
+    BY_ID: (id: string) => `/users/${id}`,
+    STATS: '/users/stats',
+    BY_ROLE: (role: string) => `/users/role/${role}`,
+    BY_DEPARTMENT: (department: string) => `/users/department/${department}`,
+    VALIDATE: '/users/validate',
+    BULK: '/users/bulk',
+  },
+  
+  // Settings
+  SETTINGS: {
+    BASE: '/settings',
+    BY_KEY: (key: string) => `/settings/${key}`,
+    BY_CATEGORY: (category: string) => `/settings/category/${category}`,
+  },
+};
 
-// Helper function to build full URL
+// Helper function to build full API URLs
 export const buildApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 
-// Helper function to get API config
-export const getApiConfig = () => {
-  return {
-    baseURL: API_CONFIG.BASE_URL,
-    timeout: API_CONFIG.TIMEOUT,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-};
-
-// Environment info
-export const ENV_INFO = {
-  isDevelopment: import.meta.env.DEV,
-  isProduction: import.meta.env.PROD,
-  apiBaseUrl: API_CONFIG.BASE_URL,
-  nodeEnv: import.meta.env.VITE_NODE_ENV || 'development',
+// HTTP Methods
+export const HTTP_METHODS = {
+  GET: 'GET',
+  POST: 'POST',
+  PUT: 'PUT',
+  DELETE: 'DELETE',
+  PATCH: 'PATCH',
 } as const;
 
-// Log API configuration in development
-if (ENV_INFO.isDevelopment) {
-  console.log('🔧 API Configuration:', {
-    baseUrl: API_CONFIG.BASE_URL,
-    environment: ENV_INFO.nodeEnv,
-    timeout: API_CONFIG.TIMEOUT,
-  });
-}
+// Response status codes
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;
+
+// Request headers
+export const DEFAULT_HEADERS = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+};
+
+export default {
+  API_CONFIG,
+  API_ENDPOINTS,
+  buildApiUrl,
+  HTTP_METHODS,
+  HTTP_STATUS,
+  DEFAULT_HEADERS,
+};
