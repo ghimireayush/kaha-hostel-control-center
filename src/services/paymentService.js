@@ -2,7 +2,7 @@ import { studentService } from "./studentService.js";
 import { ledgerService } from "./ledgerService.js";
 import { notificationService } from "./notificationService.js";
 
-const API_BASE_URL = "http://localhost:3012/api/v1";
+const API_BASE_URL = "https://dev.kaha.com.np/hostel/api/v1";
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {

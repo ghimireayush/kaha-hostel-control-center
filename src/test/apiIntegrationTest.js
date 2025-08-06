@@ -102,7 +102,7 @@ async function runAPITests() {
     console.log('Your frontend is now successfully connected to the backend APIs.');
   } else {
     console.log('\n⚠️  Some tests failed. Please check:');
-    console.log('1. Backend server is running on http://localhost:3012');
+    console.log('1. Backend server is running on https://dev.kaha.com.np/hostel');
     console.log('2. API endpoints are accessible');
     console.log('3. API response format matches expected structure');
   }
