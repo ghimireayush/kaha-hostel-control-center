@@ -1,249 +1,305 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import React, { useState, useEffect, memo } from "react";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, User, Calendar, DollarSign, CreditCard, TrendingUp, TrendingDown } from "lucide-react";
+import { studentService } from "@/services/studentService.js";
+import { mockData } from "@/data/mockData.js";
 
-export const Dashboard = () => {
-  // Mock data - in real app, this would come from API with real-time updates
+
+
+export const Dashboard = memo(() => {
+  const navigate = useNavigate();
+  
+  // Simple state management
+  const [dashboardStats, setDashboardStats] = useState({
+    totalStudents: 0,
+    totalCollected: 0,
+    totalDues: 0,
+    thisMonthCollection: 0,
+    advanceBalances: 0,
+    overdueInvoices: 0
+  });
+  const [checkedOutWithDues, setCheckedOutWithDues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load students data (for future use)
+        await studentService.getStudents();
+        
+        // Use mock dashboard stats
+        setDashboardStats(mockData.dashboardStats);
+        
+        // Use mock checked out students with dues
+        setCheckedOutWithDues(mockData.checkedOutWithDues);
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Simple stats calculation
   const stats = {
-    totalStudents: 156,
-    totalCollected: 450000,
-    totalDues: 85000,
-    thisMonthCollection: 120000,
-    advanceBalances: 25000,
-    overdueInvoices: 12
+    ...dashboardStats,
+    checkedOutWithDues: checkedOutWithDues.length,
+    checkedOutDuesAmount: checkedOutWithDues.reduce((sum, student) => sum + (student.outstandingDues || 0), 0)
   };
 
-  const highestDueStudents = [
-    { name: "Ram Sharma", room: "A-101", due: 15000, months: 2 },
-    { name: "Sita Poudel", room: "B-205", due: 12500, months: 1 },
-    { name: "Hari Thapa", room: "C-301", due: 10000, months: 3 }
-  ];
 
-  const recentActivities = [
-    { type: "payment", student: "Ram Sharma", amount: 8000, time: "2 hours ago", status: "completed" },
-    { type: "invoice", student: "Sita Poudel", amount: 12000, time: "4 hours ago", status: "generated" },
-    { type: "discount", student: "Hari Thapa", amount: 2000, time: "1 day ago", status: "applied" },
-    { type: "advance", student: "Maya Gurung", amount: 15000, time: "2 days ago", status: "received" }
-  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header with Real-time Sync Status */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-[#231F20]">📊 Ledger Dashboard</h2>
-          <div className="flex items-center space-x-2 mt-2">
-            <div className="h-2 w-2 bg-[#07A64F] rounded-full animate-pulse"></div>
-            <span className="text-sm text-[#07A64F]">Live sync active • Last updated: now</span>
+    <div className="space-y-8">
+      {/* Premium Header */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07A64F]/5 via-[#1295D0]/5 to-[#07A64F]/5 rounded-3xl blur-xl"></div>
+        <div className="relative bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl shadow-black/5">
+          <div className="flex justify-between items-start">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-2xl flex items-center justify-center shadow-lg shadow-[#07A64F]/30">
+                  <span className="text-2xl">📊</span>
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-[#07A64F] via-[#1295D0] to-[#07A64F] bg-clip-text text-transparent tracking-tight">
+                    Financial Dashboard
+                  </h1>
+                  <p className="text-slate-600 font-medium text-lg">
+                    Real-time Analytics & Insights
+                  </p>
+                </div>
+              </div>
+
+
+            </div>
+
+
           </div>
         </div>
-        <div className="flex space-x-3">
-          <Button className="bg-[#1295D0] hover:bg-[#1295D0]/90 text-white border-0">
-            📝 Generate Monthly Invoices
-          </Button>
-          <Button variant="outline" className="border-[#07A64F]/30 text-[#07A64F] hover:bg-[#07A64F]/10">
-            💰 Bulk Payment Entry
-          </Button>
+      </div>
+
+      {/* Premium Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="group relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1295D0]/20 to-[#0ea5e9]/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+          <Card className="relative bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl shadow-[#1295D0]/10 hover:shadow-[#1295D0]/20 transition-all duration-500 group-hover:scale-[1.02] overflow-hidden rounded-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1295D0]/10 via-transparent to-[#0ea5e9]/10"></div>
+            <CardHeader className="relative z-10 pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center text-slate-700">
+                <span className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#1295D0] to-[#0ea5e9] rounded-xl flex items-center justify-center">
+                    <span className="text-white text-sm">👥</span>
+                  </div>
+                  Total Students
+                </span>
+                <Button size="sm" variant="ghost" className="text-[#1295D0] hover:bg-[#1295D0]/10 rounded-xl">
+                  Manage
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-4xl font-bold text-slate-800 mb-2">{stats.totalStudents || 0}</div>
+              <p className="text-slate-600 text-sm font-medium">Active residents</p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#1295D0] rounded-full animate-pulse"></div>
+                <span className="text-xs text-slate-500">Live count</span>
+              </div>
+            </CardContent>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+          </Card>
+        </div>
+
+        <div className="group relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#07A64F]/20 to-[#059669]/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+          <Card className="relative bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl shadow-[#07A64F]/10 hover:shadow-[#07A64F]/20 transition-all duration-500 group-hover:scale-[1.02] overflow-hidden rounded-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#07A64F]/10 via-transparent to-[#059669]/10"></div>
+            <CardHeader className="relative z-10 pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center text-slate-700">
+                <span className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#07A64F] to-[#059669] rounded-xl flex items-center justify-center">
+                    <span className="text-white text-sm">💰</span>
+                  </div>
+                  Total Collected
+                </span>
+                <Button size="sm" variant="ghost" className="text-[#07A64F] hover:bg-[#07A64F]/10 rounded-xl">
+                  Reports
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-4xl font-bold text-slate-800 mb-2">₨{(stats.totalCollected || 0).toLocaleString()}</div>
+              <p className="text-slate-600 text-sm font-medium">All time collection</p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#07A64F] rounded-full animate-pulse"></div>
+                <span className="text-xs text-slate-500">Updated now</span>
+              </div>
+            </CardContent>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+          </Card>
+        </div>
+
+        <div className="group relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+          <Card className="relative bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl shadow-red-500/10 hover:shadow-red-500/20 transition-all duration-500 group-hover:scale-[1.02] overflow-hidden rounded-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-red-600/10"></div>
+            <CardHeader className="relative z-10 pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center text-slate-700">
+                <span className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                    <span className="text-white text-sm">🚨</span>
+                  </div>
+                  Outstanding Dues
+                </span>
+                <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50 rounded-xl">
+                  Follow Up
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-4xl font-bold text-slate-800 mb-2">₨{(stats.totalDues || 0).toLocaleString()}</div>
+              <p className="text-slate-600 text-sm font-medium">{stats.overdueInvoices || 0} overdue invoices</p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-slate-500">Needs attention</span>
+              </div>
+            </CardContent>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+          </Card>
         </div>
       </div>
 
-      {/* Enhanced Stats Cards with Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-r from-[#1295D0] to-[#1295D0]/80 text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex justify-between items-center">
-              Total Students
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">
-                👥 Manage
-              </Button>
+      {/* Students with Outstanding Dues - Compact Version */}
+      {loading ? (
+        <Card className="border-orange-200 bg-orange-50/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
+              <span className="ml-2 text-orange-700 text-sm">Loading students with dues...</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : checkedOutWithDues && checkedOutWithDues.length > 0 ? (
+        <Card className="border-orange-200/50 bg-gradient-to-br from-orange-50/30 to-red-50/30 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Students with Outstanding Dues</h3>
+                  <p className="text-slate-600 text-xs">Checked out but payment pending</p>
+                </div>
+                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 px-2 py-1 text-xs">
+                  {checkedOutWithDues?.length || 0} Student{(checkedOutWithDues?.length || 0) !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <div className="text-xl font-bold text-red-600">
+                  NPR {(checkedOutWithDues || []).reduce((sum, student) => sum + (student.outstandingDues || 0), 0).toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-500">Total Outstanding</div>
+              </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.totalStudents}</div>
-            <p className="text-white/80 text-sm">Active residents</p>
-          </CardContent>
-          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-[#07A64F] to-[#07A64F]/80 text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex justify-between items-center">
-              Total Collected
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">
-                📊 Reports
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">₨{stats.totalCollected.toLocaleString()}</div>
-            <p className="text-white/80 text-sm">All time collection</p>
-          </CardContent>
-          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex justify-between items-center">
-              Outstanding Dues
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">
-                🚨 Follow Up
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">₨{stats.totalDues.toLocaleString()}</div>
-            <p className="text-red-100 text-sm">{stats.overdueInvoices} overdue invoices</p>
-          </CardContent>
-          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-[#1295D0]/80 to-[#07A64F]/80 text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">This Month Collection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">₨{stats.thisMonthCollection.toLocaleString()}</div>
-            <p className="text-white/80 text-sm">Current month progress</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-[#07A64F]/80 to-[#1295D0]/80 text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Advance Balances</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">₨{stats.advanceBalances.toLocaleString()}</div>
-            <p className="text-white/80 text-sm">Student prepayments</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-[#1295D0] to-[#07A64F] text-white relative overflow-hidden border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">84%</div>
-            <p className="text-white/80 text-sm">Monthly avg collection</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Enhanced Highest Due Students with Actions */}
-        <Card className="border-red-200/50">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-[#231F20]">
-              <span className="flex items-center">
-                🚨 Highest Due Students
-              </span>
-              <Button size="sm" variant="outline" className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10">
-                View All
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {highestDueStudents.map((student, index) => (
-                <div key={index} className="flex justify-between items-center p-4 bg-red-50 rounded-lg border border-red-100 hover:border-red-200 transition-colors">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{student.name}</div>
-                    <div className="text-sm text-gray-500">Room: {student.room}</div>
-                    <div className="text-xs text-red-600 mt-1">
-                      {student.months} month{student.months > 1 ? 's' : ''} overdue
+          <CardContent className="space-y-3">
+            {(checkedOutWithDues || []).map((student, index) => (
+              <div key={student.studentId || index} className="bg-white/60 backdrop-blur-sm rounded-lg border border-white/50 p-4 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      {student.studentName?.charAt(0) || 'S'}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800 text-sm">{student.studentName}</h4>
+                      <div className="flex items-center gap-4 text-xs text-slate-600">
+                        <span className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {student.studentId}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {student.roomNumber}
+                        </span>
+                        <span>
+                          Checkout: {new Date(student.checkoutDate).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="destructive" className="mb-2">
-                      ₨{student.due.toLocaleString()}
-                    </Badge>
-                    <div className="flex space-x-1">
-                      <Button size="sm" variant="outline" className="text-xs px-2 py-1">
-                        💰 Pay
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-red-600">
+                        NPR {student.outstandingDues?.toLocaleString() || '0'}
+                      </div>
+                      <div className="text-xs text-slate-500">Outstanding</div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-[#07A64F] to-[#059669] hover:from-[#07A64F]/90 hover:to-[#059669]/90 text-white border-0 text-xs px-3 py-1 h-8"
+                        onClick={() => {
+                          // Navigate to payment recording page with student pre-selected
+                          navigate(`/ledger?student=${encodeURIComponent(student.studentId)}&section=payments&amount=${student.outstandingDues}&type=outstanding`);
+                        }}
+                      >
+                        <CreditCard className="h-3 w-3 mr-1" />
+                        Pay
                       </Button>
-                      <Button size="sm" variant="outline" className="text-xs px-2 py-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10 text-xs px-3 py-1 h-8"
+                        onClick={() => {
+                          // Navigate to ledger page with student filter
+                          navigate(`/ledger?student=${encodeURIComponent(student.studentId)}&section=ledger`);
+                        }}
+                      >
                         📋 Ledger
                       </Button>
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
+            
+            <div className="bg-gradient-to-r from-orange-100/50 to-red-100/50 rounded-lg p-3 border border-orange-200/50 mt-4">
+              <div className="flex items-center gap-2 text-xs text-orange-800">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="font-medium">
+                  These students have completed checkout but have pending dues. Follow up for payment collection.
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Enhanced Recent Activities with Status */}
-        <Card className="border-[#1295D0]/20">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-[#231F20]">
-              <span className="flex items-center">
-                🕒 Recent Activities
-              </span>
-              <Button size="sm" variant="outline" className="border-[#1295D0]/30 text-[#1295D0] hover:bg-[#1295D0]/10">
-                Activity Log
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span>
-                        {activity.type === 'payment' && '💰'} 
-                        {activity.type === 'invoice' && '🧾'} 
-                        {activity.type === 'discount' && '🏷️'}
-                        {activity.type === 'advance' && '⬆️'}
-                      </span>
-                      <span className="font-medium text-gray-900">{activity.student}</span>
-                      <Badge 
-                        variant={activity.status === 'completed' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {activity.status}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">{activity.time}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium text-gray-900">₨{activity.amount.toLocaleString()}</div>
-                    <div className="text-xs text-gray-500 capitalize">{activity.type}</div>
-                  </div>
-                </div>
-              ))}
+      ) : (
+        <Card className="border-green-200 bg-green-50/30">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <AlertTriangle className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-medium text-green-900 text-sm mb-1">No Outstanding Dues</h3>
+              <p className="text-xs text-green-700">
+                All checked-out students have cleared their dues.
+              </p>
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Quick Actions Panel */}
-      <Card className="border-[#07A64F]/20">
-        <CardHeader>
-          <CardTitle className="text-[#231F20]">⚡ Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button className="h-20 flex-col space-y-2 bg-[#1295D0] hover:bg-[#1295D0]/90 text-white border-0 shadow-lg">
-              <span className="text-2xl">📝</span>
-              <span className="text-sm">Create Invoice</span>
-            </Button>
-            <Button className="h-20 flex-col space-y-2 bg-[#07A64F] hover:bg-[#07A64F]/90 text-white border-0 shadow-lg">
-              <span className="text-2xl">💰</span>
-              <span className="text-sm">Record Payment</span>
-            </Button>
-            <Button className="h-20 flex-col space-y-2 bg-gradient-to-r from-[#1295D0] to-[#07A64F] hover:from-[#1295D0]/90 hover:to-[#07A64F]/90 text-white border-0 shadow-lg">
-              <span className="text-2xl">👥</span>
-              <span className="text-sm">Add Student</span>
-            </Button>
-            <Button className="h-20 flex-col space-y-2 bg-gradient-to-r from-[#07A64F] to-[#1295D0] hover:from-[#07A64F]/90 hover:to-[#1295D0]/90 text-white border-0 shadow-lg">
-              <span className="text-2xl">📊</span>
-              <span className="text-sm">View Reports</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      )}
     </div>
   );
-};
+});

@@ -1,8 +1,10 @@
 
-import studentsData from '../data/students.json';
+import { mockData } from '../data/mockData.js';
 import { notificationService } from './notificationService.js';
+import { roomService } from './roomService.js';
+import { ledgerService } from './ledgerService.js';
 
-let students = [...studentsData];
+let students = [...mockData.students];
 
 export const studentService = {
   // Get all students
@@ -87,12 +89,40 @@ export const studentService = {
   // Search students
   async searchStudents(searchTerm) {
     return new Promise((resolve) => {
-      const filtered = students.filter(student => 
+      const filteredStudents = students.filter(student => 
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.phone.includes(searchTerm) ||
-        student.roomNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        student.id.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setTimeout(() => resolve(filtered), 100);
+      setTimeout(() => resolve(filteredStudents), 100);
+    });
+  },
+
+  // Checkout student
+  async checkoutStudent(studentId) {
+    return new Promise((resolve) => {
+      const index = students.findIndex(s => s.id === studentId);
+      if (index !== -1) {
+        students[index] = { 
+          ...students[index], 
+          isCheckedOut: true,
+          checkoutDate: new Date().toISOString().split('T')[0],
+          status: 'Checked Out'
+        };
+        setTimeout(() => resolve(students[index]), 100);
+      } else {
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
+  // Get students who are checked out with dues
+  async getCheckedOutStudentsWithDues() {
+    return new Promise((resolve) => {
+      const checkedOutWithDues = students.filter(student => 
+        student.isCheckedOut === true && 
+        (student.totalDue - student.totalPaid) > 0
+      );
+      setTimeout(() => resolve(checkedOutWithDues), 100);
     });
   }
 };

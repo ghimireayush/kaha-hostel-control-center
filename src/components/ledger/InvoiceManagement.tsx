@@ -45,7 +45,7 @@ export const InvoiceManagement = () => {
   // Mock invoice data
   const [invoices] = useState<Invoice[]>([
     {
-      id: "INV-2024-001",
+      id: "BL-2024-03-123401",
       studentName: "Ram Sharma",
       room: "A-101",
       month: "March 2024",
@@ -59,7 +59,7 @@ export const InvoiceManagement = () => {
       dueDate: "2024-03-10"
     },
     {
-      id: "INV-2024-002",
+      id: "BL-2024-03-123402",
       studentName: "Sita Poudel",
       room: "B-205",
       month: "March 2024",
@@ -73,7 +73,7 @@ export const InvoiceManagement = () => {
       dueDate: "2024-03-10"
     },
     {
-      id: "INV-2024-003",
+      id: "BL-2024-03-123403",
       studentName: "Hari Thapa",
       room: "C-301",
       month: "March 2024",

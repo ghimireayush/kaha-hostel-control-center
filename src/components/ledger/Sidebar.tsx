@@ -12,103 +12,173 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     {
       id: "dashboard",
       label: "📊 Dashboard",
-      description: "Overview & Stats"
+      description: "Overview & Analytics",
+      icon: "📊",
+      gradient: "from-[#1295D0] to-[#0ea5e9]"
     },
     {
       id: "students",
       label: "👥 Student Management",
-      description: "Profiles & Fee Setup"
-    },
-    {
-      id: "invoices",
-      label: "🧾 Invoice Management",
-      description: "Generate & Track Bills"
+      description: "Profiles & Fee Setup",
+      icon: "👥",
+      gradient: "from-[#07A64F] to-[#059669]"
     },
     {
       id: "payments",
       label: "💰 Payment Recording",
-      description: "Log & Apply Payments"
+      description: "Log & Apply Payments",
+      icon: "💰",
+      gradient: "from-[#1295D0] to-[#07A64F]"
     },
     {
       id: "ledger",
       label: "📋 Student Ledger",
-      description: "Individual Ledger View"
+      description: "Individual Ledger View",
+      icon: "📋",
+      gradient: "from-[#07A64F] to-[#1295D0]"
     },
     {
       id: "billing",
       label: "⚡ Automated Billing",
-      description: "Prorated & Monthly Billing"
+      description: "Monthly & Prorated Billing",
+      icon: "⚡",
+      gradient: "from-[#1295D0] to-[#8b5cf6]"
     },
     {
       id: "discounts",
       label: "🏷️ Discount Management",
-      description: "Manage Discounts & Offers"
+      description: "Manage Discounts & Offers",
+      icon: "🏷️",
+      gradient: "from-[#07A64F] to-[#f59e0b]"
     },
     {
       id: "admin-charging",
       label: "⚡ Admin Charging",
-      description: "Manual Charge Management"
+      description: "Manual Charge Management",
+      icon: "⚡",
+      gradient: "from-[#ef4444] to-[#dc2626]"
+    },
+    {
+      id: "checkout",
+      label: "🚪 Student Checkout",
+      description: "Complete Checkout Process",
+      icon: "🚪",
+      gradient: "from-[#8b5cf6] to-[#7c3aed]"
     }
   ];
 
   return (
-    <div className="w-64 bg-gradient-to-b from-white to-gray-50 shadow-xl border-r border-gray-200">
-      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
-        <div className="flex items-center gap-3 mb-2">
-          <KahaLogo size="sm" />
-          <div>
-            <h2 className="font-bold text-lg bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              KLedger
-            </h2>
-            <p className="text-xs text-gray-600">Financial Hub</p>
+    <div className="w-72 bg-white/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 relative overflow-hidden">
+      {/* Sidebar Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 via-white/30 to-slate-100/50"></div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#07A64F]/10 to-transparent rounded-full blur-2xl"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#1295D0]/10 to-transparent rounded-full blur-2xl"></div>
+      
+      {/* Header Section */}
+      <div className="relative z-10 p-6 border-b border-white/20">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07A64F]/20 to-[#1295D0]/20 rounded-xl blur-lg"></div>
+            <div className="relative w-12 h-12 bg-white rounded-xl shadow-lg shadow-black/10 p-2 border border-white/50">
+              <KahaLogo size="sm" />
+            </div>
           </div>
+          <div>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-[#07A64F] via-[#1295D0] to-[#07A64F] bg-clip-text text-transparent tracking-tight">
+              KLedger Pro
+            </h2>
+            <p className="text-xs text-slate-500 font-medium tracking-wide">Financial Management Suite</p>
+          </div>
+        </div>
+        
+        {/* Status Indicator */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#07A64F]/10 to-[#1295D0]/10 rounded-lg border border-white/30">
+          <div className="w-2 h-2 bg-[#07A64F] rounded-full animate-pulse"></div>
+          <span className="text-xs text-slate-600 font-medium">System Online</span>
         </div>
       </div>
       
-      <nav className="p-4 space-y-3">
+      {/* Navigation Menu */}
+      <nav className="relative z-10 p-4 space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
         {menuItems.map((item, index) => {
-          const gradients = [
-            'from-blue-500 to-blue-600',
-            'from-purple-500 to-purple-600',
-            'from-green-500 to-green-600',
-            'from-orange-500 to-orange-600',
-            'from-pink-500 to-pink-600',
-            'from-indigo-500 to-indigo-600',
-            'from-red-500 to-red-600'
-          ];
+          const isActive = activeTab === item.id;
           
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "group w-full text-left p-4 rounded-xl transition-all duration-300 transform hover:scale-102",
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 border border-green-200 shadow-lg scale-105"
-                  : "text-gray-700 hover:bg-white hover:shadow-md"
+                "group w-full text-left p-4 rounded-2xl transition-all duration-500 transform relative overflow-hidden",
+                isActive
+                  ? "bg-gradient-to-r from-[#07A64F]/15 via-[#1295D0]/10 to-[#07A64F]/15 text-slate-800 shadow-xl shadow-[#07A64F]/20 scale-[1.02] border border-[#07A64F]/20"
+                  : "text-slate-600 hover:bg-white/60 hover:shadow-lg hover:shadow-black/5 hover:scale-[1.01] border border-transparent hover:border-white/30"
               )}
             >
-              <div className="flex items-center gap-3">
+              {/* Active Background Glow */}
+              {isActive && (
+                <div className="absolute inset-0 bg-gradient-to-r from-[#07A64F]/5 to-[#1295D0]/5 rounded-2xl"></div>
+              )}
+              
+              <div className="relative flex items-center gap-4">
+                {/* Icon Container */}
                 <div className={cn(
-                  "p-2 rounded-lg transition-all duration-300",
-                  activeTab === item.id
-                    ? `bg-gradient-to-br ${gradients[index]} text-white shadow-lg`
-                    : `bg-gray-100 group-hover:bg-gradient-to-br group-hover:${gradients[index]} group-hover:text-white`
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 relative overflow-hidden",
+                  isActive
+                    ? `bg-gradient-to-br ${item.gradient} text-white shadow-lg shadow-black/20`
+                    : "bg-slate-100/60 group-hover:bg-gradient-to-br group-hover:from-[#07A64F]/80 group-hover:to-[#1295D0]/80 group-hover:text-white group-hover:shadow-lg"
                 )}>
-                  <span className="text-sm">{item.label.split(' ')[0]}</span>
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"></div>
+                  )}
+                  <span className="text-lg relative z-10">{item.icon}</span>
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold">{item.label.substring(2)}</div>
-                  <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className={cn(
+                    "font-semibold text-sm tracking-wide transition-colors duration-300",
+                    isActive ? "text-slate-800" : "text-slate-700 group-hover:text-slate-800"
+                  )}>
+                    {item.label.substring(2)}
+                  </div>
+                  <div className={cn(
+                    "text-xs mt-1 transition-colors duration-300 leading-relaxed",
+                    isActive ? "text-slate-600" : "text-slate-500 group-hover:text-slate-600"
+                  )}>
+                    {item.description}
+                  </div>
                 </div>
-                {activeTab === item.id && (
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                
+                {/* Active Indicator */}
+                {isActive && (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-2 h-2 bg-[#07A64F] rounded-full animate-pulse shadow-lg shadow-[#07A64F]/50"></div>
+                    <div className="w-1 h-1 bg-[#1295D0] rounded-full animate-pulse delay-150"></div>
+                  </div>
                 )}
               </div>
+              
+              {/* Hover Effect Line */}
+              <div className={cn(
+                "absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-[#07A64F] to-[#1295D0] rounded-r-full transition-all duration-300",
+                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60"
+              )}></div>
             </button>
           );
         })}
       </nav>
+      
+      {/* Footer */}
+      <div className="relative z-10 p-4 border-t border-white/20 mt-auto">
+        <div className="text-center">
+          <div className="text-xs text-slate-400 font-medium">
+            Powered by Kaha Technology
+          </div>
+          <div className="text-xs text-slate-300 mt-1">
+            v2.0.1 • Premium Edition
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

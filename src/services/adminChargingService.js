@@ -39,14 +39,15 @@ export const adminChargingService = {
         description = chargeType ? chargeType.label : chargeData.description;
       }
 
-      // Create ledger entry
+      // Create ledger entry with proper reason
       const ledgerEntry = {
         studentId: student.id,
-        type: 'Manual Charge',
-        description: description,
+        type: 'Admin Charge',
+        description: `Admin Charge: ${description}`,
         debit: parseFloat(chargeData.amount),
         credit: 0,
         referenceId: `ADMIN-${Date.now()}`,
+        reason: `Admin charged student for ${description}${chargeData.notes ? ` - ${chargeData.notes}` : ''}`,
         addedBy: adminId,
         adminNotes: chargeData.notes || '',
         chargeType: chargeData.type,

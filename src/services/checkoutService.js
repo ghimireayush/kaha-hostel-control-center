@@ -1,11 +1,83 @@
 import { studentService } from './studentService.js';
 import { ledgerService } from './ledgerService.js';
-import { notificationService } from './notificationService.js';
-import { billingService } from './billingService.js';
-import { roomService } from './roomService.js';
+import { monthlyInvoiceService } from './monthlyInvoiceService.js';
 
 export const checkoutService = {
-  // Process student checkout
+  // Get active students for checkout
+  async getActiveStudentsForCheckout() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const students = await studentService.getStudents();
+        const activeStudents = students.filter(student => 
+          student.status === 'active' && !student.isCheckedOut
+        );
+        setTimeout(() => resolve(activeStudents), 100);
+      } catch (error) {
+        setTimeout(() => reject(error), 100);
+      }
+    });
+  },
+
+  // Book payment during checkout
+  async bookCheckoutPayment(studentId, amount, remark = "Paid on Checkout") {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Add payment to ledger with proper reason
+        await ledgerService.addLedgerEntry({
+          studentId,
+          type: 'Payment',
+          description: `Payment received during checkout`,
+          debit: 0,
+          credit: amount,
+          referenceId: `CHECKOUT-PAY-${studentId}-${Date.now()}`,
+          reason: `Payment received during checkout process - ${remark}`,
+          notes: remark,
+          paymentContext: 'checkout'
+        });
+        
+        // Update student payment records
+        const student = await studentService.getStudentById(studentId);
+        if (student) {
+          await studentService.updateStudent(studentId, {
+            totalPaid: student.totalPaid + amount,
+            currentBalance: Math.max(0, student.currentBalance - amount),
+            lastPaymentDate: new Date().toISOString().split('T')[0]
+          });
+        }
+        
+        console.log(`💰 Checkout Payment Booked: NPR ${amount} for ${student?.name} - ${remark}`);
+        
+        setTimeout(() => resolve({ success: true, amount, remark }), 100);
+      } catch (error) {
+        setTimeout(() => reject(error), 100);
+      }
+    });
+  },
+
+  // Calculate prorated amount for checkout month
+  calculateCheckoutProration(student, checkoutDate) {
+    const checkoutDateObj = new Date(checkoutDate);
+    const year = checkoutDateObj.getFullYear();
+    const month = checkoutDateObj.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Days stayed in the month (up to checkout date)
+    const daysStayed = checkoutDateObj.getDate();
+    const monthlyFee = (student.baseMonthlyFee || 0) + (student.laundryFee || 0) + (student.foodFee || 0);
+    const dailyRate = monthlyFee / daysInMonth;
+    const proratedAmount = Math.round(dailyRate * daysStayed * 100) / 100;
+    
+    return {
+      amount: proratedAmount,
+      dailyRate: Math.round(dailyRate * 100) / 100,
+      daysStayed: daysStayed,
+      daysInMonth: daysInMonth,
+      monthlyFee: monthlyFee,
+      period: `${new Date(year, month, 1).toLocaleDateString()} to ${checkoutDateObj.toLocaleDateString()}`
+    };
+  },
+
+  // Process student checkout with proper invoice and ledger integration
   async processCheckout(checkoutData) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -17,59 +89,110 @@ export const checkoutService = {
           throw new Error('Student not found');
         }
 
-        // Update student status to 'Checked Out'
+        // Calculate prorated amount for checkout month
+        const proratedCalc = this.calculateCheckoutProration(student, checkoutDate);
+        
+        // Generate checkout invoice using the monthly invoice service
+        const checkoutInvoice = await monthlyInvoiceService.generateCheckoutInvoice(
+          studentId,
+          checkoutDate,
+          proratedCalc.monthlyFee,
+          [
+            {
+              description: 'Final month prorated charges',
+              amount: proratedCalc.amount,
+              type: 'prorated_checkout'
+            }
+          ]
+        );
+
+        // Stop future invoices by updating student status
+        const statusUpdate = hadOutstandingDues && !duesCleared ? 'Checked out with dues' : 'Checked Out';
         await studentService.updateStudent(studentId, {
-          status: 'Checked Out',
+          status: statusUpdate,
+          isCheckedOut: true,
           checkoutDate: checkoutDate,
           checkoutReason: reason,
           checkoutNotes: notes,
-          finalBalance: hadOutstandingDues ? outstandingAmount : 0
+          finalBalance: hadOutstandingDues ? outstandingAmount : 0,
+          invoicesStopped: true, // Stop future invoice generation
+          lastInvoiceDate: checkoutDate
         });
 
-        // Add ledger entry only if dues are cleared
-        if (hitLedger && duesCleared) {
+        // Add checkout invoice to ledger (this creates the prorated charge)
+        await ledgerService.addLedgerEntry({
+          studentId: studentId,
+          studentName: student.name,
+          type: 'Checkout Invoice',
+          description: `Final prorated invoice - ${proratedCalc.period}`,
+          debit: proratedCalc.amount,
+          credit: 0,
+          referenceId: checkoutInvoice.referenceId,
+          reason: `Final prorated billing for checkout on ${new Date(checkoutDate).toLocaleDateString()} - ${proratedCalc.daysStayed} days at NPR ${proratedCalc.dailyRate}/day`,
+          invoiceData: checkoutInvoice,
+          date: checkoutDate
+        });
+
+        // Add checkout completion entry to ledger
+        if (hitLedger) {
           await ledgerService.addLedgerEntry({
             studentId: studentId,
+            studentName: student.name,
             type: 'Checkout',
-            description: `Student checkout - ${reason}`,
-            debit: hadOutstandingDues ? outstandingAmount : 0,
-            credit: hadOutstandingDues ? outstandingAmount : 0,
+            description: `Student checkout completed - ${reason}`,
+            debit: 0,
+            credit: 0,
             referenceId: `CHECKOUT-${studentId}-${Date.now()}`,
-            notes: notes
+            reason: `Student checkout processed - ${reason}. Invoice generation stopped from ${checkoutDate}`,
+            notes: notes,
+            checkoutData: {
+              checkoutDate,
+              reason,
+              hadOutstandingDues,
+              outstandingAmount,
+              duesCleared,
+              proratedAmount: proratedCalc.amount,
+              invoiceId: checkoutInvoice.referenceId
+            }
           });
         }
 
-        // Calculate prorated refund for unused days in current month
-        const checkoutRefund = billingService.calculateCheckoutRefund(student, checkoutDate);
-        
-        // Calculate total refund (advance balance + prorated refund)
-        const advanceRefund = hadOutstandingDues && !duesCleared ? 0 : (student.advanceBalance || 0);
-        const totalRefund = advanceRefund + (checkoutRefund.hasRefund ? checkoutRefund.refundAmount : 0);
-
-        // Add ledger entry for prorated refund if applicable
-        if (checkoutRefund.hasRefund && duesCleared) {
-          await ledgerService.addLedgerEntry({
+        // If student has outstanding dues, add them to the outstanding dues list
+        if (hadOutstandingDues && !duesCleared) {
+          const totalOutstanding = outstandingAmount + proratedCalc.amount;
+          
+          // Add to checked out with dues list
+          const checkedOutWithDues = JSON.parse(localStorage.getItem('checkedOutWithDues') || '[]');
+          const existingIndex = checkedOutWithDues.findIndex(s => s.studentId === studentId);
+          
+          const duesRecord = {
             studentId: studentId,
-            type: 'Refund',
-            description: `Prorated refund for ${checkoutRefund.remainingDays} unused days in current month`,
-            debit: 0,
-            credit: checkoutRefund.refundAmount,
-            referenceId: `REFUND-${studentId}-${Date.now()}`,
-            notes: `Daily rate: NPR ${checkoutRefund.dailyRate}, Unused days: ${checkoutRefund.remainingDays}`
-          });
-
-          // Update student balance with refund
-          await studentService.updateStudent(studentId, {
-            currentBalance: Math.max(0, (student.currentBalance || 0) - checkoutRefund.refundAmount),
-            refundAmount: totalRefund
-          });
+            studentName: student.name,
+            roomNumber: student.roomNumber,
+            checkoutDate: checkoutDate,
+            outstandingDues: totalOutstanding,
+            phone: student.phone,
+            email: student.email,
+            checkoutReason: reason,
+            lastUpdated: new Date().toISOString(),
+            status: 'pending_payment',
+            proratedAmount: proratedCalc.amount,
+            previousDues: outstandingAmount
+          };
+          
+          if (existingIndex >= 0) {
+            checkedOutWithDues[existingIndex] = duesRecord;
+          } else {
+            checkedOutWithDues.push(duesRecord);
+          }
+          
+          localStorage.setItem('checkedOutWithDues', JSON.stringify(checkedOutWithDues));
         }
 
         // Mark room as empty
-        await roomService.vacateRoom(student.roomNumber, studentId);
-
-        // Send checkout notification via Kaha App
-        await notificationService.notifyCheckoutApproved(studentId, totalRefund);
+        if (typeof roomService !== 'undefined' && roomService.vacateRoom) {
+          await roomService.vacateRoom(student.roomNumber, studentId);
+        }
 
         // Create checkout record
         const checkoutRecord = {
@@ -82,17 +205,28 @@ export const checkoutService = {
           notes: notes,
           hadOutstandingDues: hadOutstandingDues,
           outstandingAmount: outstandingAmount,
+          proratedAmount: proratedCalc.amount,
+          totalDues: hadOutstandingDues ? outstandingAmount + proratedCalc.amount : proratedCalc.amount,
           duesCleared: duesCleared,
           ledgerUpdated: hitLedger,
+          invoiceGenerated: true,
+          invoiceId: checkoutInvoice.referenceId,
+          invoicesStopped: true,
           processedBy: checkoutData.processedBy || 'Admin',
           processedAt: new Date().toISOString()
         };
 
-        console.log('Checkout processed successfully:', checkoutRecord);
+        console.log('✅ Checkout processed successfully:', {
+          student: student.name,
+          checkoutDate: checkoutDate,
+          proratedAmount: proratedCalc.amount,
+          invoiceId: checkoutInvoice.referenceId,
+          invoicesStopped: true
+        });
         
         setTimeout(() => resolve(checkoutRecord), 500);
       } catch (error) {
-        console.error('Checkout processing error:', error);
+        console.error('❌ Checkout processing error:', error);
         setTimeout(() => reject(error), 500);
       }
     });

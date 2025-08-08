@@ -37,13 +37,27 @@ export const PaymentRecording = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const studentParam = params.get('student');
+    const amountParam = params.get('amount');
+    const typeParam = params.get('type');
     
     if (studentParam && state.students.find(s => s.id === studentParam)) {
       setSelectedStudent(studentParam);
       setShowPaymentForm(true);
+      
+      // Pre-fill amount if provided
+      if (amountParam) {
+        setPaymentAmount(amountParam);
+      }
+      
+      // Set default payment mode for outstanding dues
+      if (typeParam === 'outstanding') {
+        setPaymentMode('cash');
+      }
+      
+      const student = state.students.find(s => s.id === studentParam);
       toast({
-        title: "Student Pre-selected",
-        description: "Payment form opened for the selected student.",
+        title: "Payment Form Ready",
+        description: `Payment form opened for ${student?.name}${amountParam ? ` with amount NPR ${Number(amountParam).toLocaleString()}` : ''}.`,
       });
     }
   }, [location.search, state.students, toast]);

@@ -24,6 +24,10 @@ interface Student {
   emergencyContact: string;
   course: string;
   institution: string;
+  isCheckedOut?: boolean;
+  checkoutDate?: string;
+  totalPaid?: number;
+  totalDue?: number;
 }
 
 interface BookingRequest {

@@ -1,7 +1,7 @@
 
-import ledgerData from '../data/ledger.json';
+import { mockData } from '../data/mockData.js';
 
-let ledgerEntries = [...ledgerData];
+let ledgerEntries = [...mockData.ledgerEntries];
 
 export const ledgerService = {
   // Get all ledger entries
@@ -21,16 +21,38 @@ export const ledgerService = {
     });
   },
 
-  // Add ledger entry
+  // Add ledger entry with proper reason tracking
   async addLedgerEntry(entryData) {
     return new Promise((resolve) => {
       const newEntry = {
         id: `LED${String(ledgerEntries.length + 1).padStart(3, '0')}`,
         ...entryData,
-        date: new Date().toISOString().split('T')[0]
+        date: entryData.date || new Date().toISOString().split('T')[0],
+        timestamp: new Date().toISOString(),
+        reason: entryData.reason || entryData.description || 'No reason provided'
       };
       ledgerEntries.push(newEntry);
+      console.log(`📊 Ledger Entry Added: ${newEntry.type} - ${newEntry.reason} - NPR ${(newEntry.debit || 0) - (newEntry.credit || 0)}`);
       setTimeout(() => resolve(newEntry), 100);
+    });
+  },
+
+  // Book payment with remark for checkout
+  async bookCheckoutPayment(studentId, amount, remark) {
+    return new Promise((resolve) => {
+      const paymentEntry = {
+        id: `LED${String(ledgerEntries.length + 1).padStart(3, '0')}`,
+        studentId,
+        date: new Date().toISOString().split('T')[0],
+        type: "Payment",
+        description: "Payment booked during checkout",
+        referenceId: null,
+        debit: 0,
+        credit: amount,
+        remark
+      };
+      ledgerEntries.push(paymentEntry);
+      setTimeout(() => resolve(paymentEntry), 100);
     });
   },
 

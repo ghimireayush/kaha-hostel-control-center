@@ -10,7 +10,8 @@
     "debit": 11700,
     "credit": 0,
     "balance": 11700,
-    "balanceType": "Dr"
+    "balanceType": "Dr",
+    "remark": null
   },
   {
     "id": "LED002",

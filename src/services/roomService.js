@@ -113,6 +113,23 @@ export const roomService = {
     });
   },
 
+  // Free up a bed when a student checks out
+  async freeBed(roomNumber, studentId) {
+    return new Promise((resolve) => {
+      const room = rooms.find(r => r.roomNumber === roomNumber);
+      if (room) {
+        // Remove student from occupants list
+        room.occupants = room.occupants.filter(id => id !== studentId);
+        // Update occupancy and available beds
+        room.occupancy = room.occupants.length;
+        room.availableBeds = room.bedCount - room.occupancy;
+        setTimeout(() => resolve(room), 100);
+      } else {
+        setTimeout(() => resolve(null), 100);
+      }
+    });
+  },
+
   // Get room statistics
   async getRoomStats() {
     return new Promise((resolve) => {

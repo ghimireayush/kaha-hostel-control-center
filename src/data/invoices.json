@@ -1,6 +1,6 @@
 [
   {
-    "id": "INV-2024-001",
+    "id": "BL-2024-01-123401",
     "studentId": "student_001",
     "studentName": "Ram Sharma",
     "room": "A-101",
@@ -41,7 +41,7 @@
     "updatedAt": "2024-01-10T10:30:00Z"
   },
   {
-    "id": "INV-2024-002",
+    "id": "BL-2024-01-123402",
     "studentId": "student_002",
     "studentName": "Sita Poudel",
     "room": "B-205",
@@ -87,7 +87,7 @@
     "updatedAt": "2024-01-15T14:20:00Z"
   },
   {
-    "id": "INV-2024-003",
+    "id": "BL-2024-01-123403",
     "studentId": "student_003",
     "studentName": "Hari Thapa",
     "room": "C-301",
