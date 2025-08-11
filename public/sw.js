@@ -3,15 +3,10 @@ const CACHE_NAME = 'kaha-hostel-v1';
 const STATIC_CACHE = 'static-v1';
 const DYNAMIC_CACHE = 'dynamic-v1';
 
-// Resources to cache immediately
+// Resources to cache immediately (minimal for development)
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css',
-  '/src/data/students.json',
-  '/src/data/ledger.json'
+  '/index.html'
 ];
 
 // Simple caching - no complex strategies
@@ -28,7 +23,11 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('Caching static assets...');
-        return cache.addAll(STATIC_ASSETS);
+        // Only cache basic assets in development
+        return cache.addAll(STATIC_ASSETS).catch((error) => {
+          console.warn('Failed to cache some assets:', error);
+          return Promise.resolve();
+        });
       })
       .then(() => {
         return self.skipWaiting();

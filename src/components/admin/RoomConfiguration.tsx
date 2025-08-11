@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Bed, Plus, Edit, Trash2, Users, Settings, Layout, Eye } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { RoomDesigner } from "./RoomDesigner";
+// import { RoomDesigner } from "./RoomDesigner";
 import { RoomLayoutViewer } from "./RoomLayoutViewer";
 
 export const RoomConfiguration = () => {
@@ -193,13 +193,13 @@ export const RoomConfiguration = () => {
   };
 
   if (showRoomDesigner && selectedRoomForDesign) {
-    const roomData = rooms.find(r => r.id === selectedRoomForDesign);
+    // Room Designer temporarily disabled due to React hooks issue
     return (
-      <RoomDesigner
-        onSave={handleSaveLayout}
-        onClose={closeRoomDesigner}
-        roomData={roomData?.layout}
-      />
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Room Designer</h2>
+        <p className="text-gray-600 mb-6">Room layout designer is temporarily unavailable.</p>
+        <Button onClick={closeRoomDesigner}>Back to Room Configuration</Button>
+      </div>
     );
   }
 
