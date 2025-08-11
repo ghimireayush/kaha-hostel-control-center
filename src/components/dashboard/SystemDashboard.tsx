@@ -86,14 +86,8 @@ export const SystemDashboard = () => {
           <p className="text-gray-600 mt-1">Complete hostel management system with integrated notifications</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Smartphone className="h-3 w-3" />
-            Kaha App Integrated
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Ledger-First System
-          </Badge>
+
+
         </div>
       </div>
 
@@ -182,41 +176,6 @@ export const SystemDashboard = () => {
             <Button variant="outline" className="w-full">
               View All Activity
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* System Status */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-blue-50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">🎉 System Restructuring Complete!</h3>
-              <p className="text-gray-600 mt-1">
-                All major components have been updated to use the new ledger-first approach with Kaha App integration.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                All Systems Operational
-              </Badge>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              Ledger-first architecture implemented
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              Kaha App notifications integrated
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              All services updated and tested
-            </div>
           </div>
         </CardContent>
       </Card>

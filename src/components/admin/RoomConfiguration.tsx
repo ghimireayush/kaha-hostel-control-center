@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Plus, Edit, Trash2, Users, Settings, Layout } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Bed, Plus, Edit, Trash2, Users, Settings, Layout, Eye } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { RoomDesigner } from "./RoomDesigner";
+import { RoomLayoutViewer } from "./RoomLayoutViewer";
 
 export const RoomConfiguration = () => {
   const { translations } = useLanguage();
@@ -64,6 +66,8 @@ export const RoomConfiguration = () => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [showRoomDesigner, setShowRoomDesigner] = useState(false);
   const [selectedRoomForDesign, setSelectedRoomForDesign] = useState<string | null>(null);
+  const [showLayoutViewer, setShowLayoutViewer] = useState(false);
+  const [selectedRoomForView, setSelectedRoomForView] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
     type: "Dormitory",
@@ -135,6 +139,24 @@ export const RoomConfiguration = () => {
   const closeRoomDesigner = () => {
     setShowRoomDesigner(false);
     setSelectedRoomForDesign(null);
+  };
+
+  const handleViewLayout = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room?.layout) {
+      setSelectedRoomForView(roomId);
+      setShowLayoutViewer(true);
+    } else {
+      toast.info("Please configure the room layout first using the Layout Designer", {
+        description: "Click the Layout button to design your room",
+        duration: 4000,
+      });
+    }
+  };
+
+  const closeLayoutViewer = () => {
+    setShowLayoutViewer(false);
+    setSelectedRoomForView(null);
   };
 
   const handleEditRoom = (roomId: string) => {
@@ -300,6 +322,15 @@ export const RoomConfiguration = () => {
                   <Button 
                     size="sm" 
                     variant="outline"
+                    onClick={() => handleViewLayout(room.id)}
+                    className="text-green-600 hover:text-green-700"
+                    title={room.layout ? "View saved room layout" : "Configure room layout first"}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
                     onClick={() => openRoomDesigner(room.id)}
                     className="text-purple-600 hover:text-purple-700"
                   >
@@ -387,6 +418,24 @@ export const RoomConfiguration = () => {
           </Card>
         ))}
       </div>
+
+      {/* Layout Viewer Dialog */}
+      <Dialog open={showLayoutViewer} onOpenChange={setShowLayoutViewer}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layout className="h-5 w-5 text-purple-600" />
+              Room Layout View
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRoomForView && (
+            <RoomLayoutViewer
+              layout={rooms.find(r => r.id === selectedRoomForView)?.layout}
+              roomName={rooms.find(r => r.id === selectedRoomForView)?.name || "Room"}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

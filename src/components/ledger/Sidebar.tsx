@@ -94,7 +94,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         {/* Status Indicator */}
         <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#07A64F]/10 to-[#1295D0]/10 rounded-lg border border-white/30">
           <div className="w-2 h-2 bg-[#07A64F] rounded-full animate-pulse"></div>
-          <span className="text-xs text-slate-600 font-medium">System Online</span>
+          <span className="text-xs text-slate-600 font-medium">Kaha Active</span>
         </div>
       </div>
       

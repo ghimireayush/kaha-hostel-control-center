@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
+import { KahaLogo } from "@/components/common/KahaLogo";
 
 // Lazy load components for better initial load performance
 const Landing = lazy(() => import("./pages/Landing"));
@@ -15,7 +16,7 @@ const HostelProfile = lazy(() => import("./pages/HostelProfile"));
 const BookingRequests = lazy(() => import("./pages/BookingRequests"));
 const RoomManagement = lazy(() => import("./pages/RoomManagement"));
 const Analytics = lazy(() => import("./pages/Analytics"));
-const Settings = lazy(() => import("./pages/Settings"));
+
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Optimized QueryClient configuration
@@ -35,20 +36,19 @@ const queryClient = new QueryClient({
   },
 });
 
-// Loading component with skeleton
+// Loading component with Kaha logo
 const LoadingFallback = ({ componentName }: { componentName?: string }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <div className="w-16 h-16 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-2xl flex items-center justify-center shadow-lg shadow-[#07A64F]/30 mx-auto animate-pulse">
-        <span className="text-2xl">🏠</span>
-      </div>
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mx-auto"></div>
-        <div className="h-3 bg-gray-100 rounded animate-pulse w-24 mx-auto"></div>
+    <div className="text-center space-y-6">
+      <KahaLogo size="2xl" animated className="justify-center" />
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 rounded animate-pulse w-40 mx-auto"></div>
+        <div className="h-3 bg-gray-100 rounded animate-pulse w-32 mx-auto"></div>
       </div>
       {componentName && (
-        <p className="text-sm text-gray-500">Loading {componentName}...</p>
+        <p className="text-sm text-gray-500 font-medium">Loading {componentName}...</p>
       )}
+      <div className="text-xs text-gray-400">Kaha Hostel Control Center</div>
     </div>
   </div>
 );
@@ -143,14 +143,7 @@ const App = () => {
                     </Suspense>
                   }
                 />
-                <Route
-                  path="/settings"
-                  element={
-                    <Suspense fallback={<LoadingFallback componentName="Settings" />}>
-                      <Settings />
-                    </Suspense>
-                  }
-                />
+
                 <Route
                   path="*"
                   element={

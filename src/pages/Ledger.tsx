@@ -16,14 +16,13 @@ const StudentCheckoutManagement = lazy(() => import("@/components/ledger/Student
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
+import { KahaLogo } from "@/components/common/KahaLogo";
 
 // Loading component for lazy-loaded sections
 const SectionLoader = ({ sectionName }: { sectionName: string }) => (
   <div className="flex items-center justify-center h-64">
     <div className="text-center space-y-4">
-      <div className="w-12 h-12 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-2xl flex items-center justify-center shadow-lg shadow-[#07A64F]/30 mx-auto animate-pulse">
-        <span className="text-2xl">📊</span>
-      </div>
+      <KahaLogo size="md" animated className="mx-auto" />
       <div className="space-y-2">
         <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mx-auto"></div>
         <div className="h-3 bg-gray-100 rounded animate-pulse w-24 mx-auto"></div>

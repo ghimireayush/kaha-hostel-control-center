@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
-import { LanguageToggle } from "@/components/admin/LanguageToggle";
+
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -72,7 +72,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
                   <div className="h-3 w-3 bg-[#07A64F] rounded-full animate-pulse"></div>
                   <div className="absolute inset-0 h-3 w-3 bg-[#07A64F]/70 rounded-full animate-ping opacity-75"></div>
                 </div>
-                <span className="text-sm text-[#07A64F] font-semibold">System Online</span>
+                <span className="text-sm text-[#07A64F] font-semibold">Kaha Ready</span>
               </div>
             </div>
             
@@ -96,7 +96,7 @@ export const MainLayout = ({ children, activeTab }: MainLayoutProps) => {
                   </div>
                 </span>
               </Button>
-              <LanguageToggle />
+
             </div>
           </div>
         </div>

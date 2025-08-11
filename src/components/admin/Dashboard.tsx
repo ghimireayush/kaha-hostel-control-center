@@ -153,7 +153,7 @@ export const Dashboard = () => {
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
                     <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium">System Online</span>
+                    <span className="text-sm font-medium">Analytics Ready</span>
                   </div>
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
                     <Activity className="h-4 w-4" />
@@ -498,7 +498,7 @@ export const Dashboard = () => {
                 <span className="font-medium text-green-600">Excellent</span>
               </div>
               <Progress value={98} className="h-2" />
-              <p className="text-xs text-gray-600">All systems operational</p>
+              <p className="text-xs text-gray-600">Analytics tracking active</p>
             </div>
           </CardContent>
         </Card>

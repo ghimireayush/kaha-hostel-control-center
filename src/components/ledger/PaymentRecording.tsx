@@ -142,7 +142,7 @@ export const PaymentRecording = () => {
                 <div className="font-medium">{student.name}</div>
                 <div className="text-sm text-gray-600">Room: {student.room}</div>
                 <div className="text-lg font-bold text-red-600 mt-2">
-                  ₨{student.outstandingDue.toLocaleString()}
+                  NPR {student.outstandingDue.toLocaleString()}
                 </div>
                 <Button 
                   size="sm" 
@@ -190,7 +190,7 @@ export const PaymentRecording = () => {
                     </div>
                   </TableCell>
                   <TableCell className="font-bold text-green-600">
-                    ₨{payment.amount.toLocaleString()}
+                    NPR {payment.amount.toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{payment.paymentMode}</Badge>
@@ -201,7 +201,7 @@ export const PaymentRecording = () => {
                   <TableCell>
                     {payment.advanceBalance > 0 ? (
                       <span className="text-blue-600 font-medium">
-                        ₨{payment.advanceBalance.toLocaleString()}
+                        NPR {payment.advanceBalance.toLocaleString()}
                       </span>
                     ) : (
                       "-"
@@ -234,7 +234,7 @@ export const PaymentRecording = () => {
                         {student.name} - Room {student.room}
                         {student.outstandingDue > 0 && (
                           <span className="text-red-600 ml-2">
-                            (Due: ₨{student.outstandingDue.toLocaleString()})
+                            (Due: NPR {student.outstandingDue.toLocaleString()})
                           </span>
                         )}
                       </SelectItem>
@@ -244,7 +244,7 @@ export const PaymentRecording = () => {
               </div>
 
               <div>
-                <Label htmlFor="amount">Payment Amount (₨) *</Label>
+                <Label htmlFor="amount">Payment Amount (NPR) *</Label>
                 <Input
                   id="amount"
                   type="number"

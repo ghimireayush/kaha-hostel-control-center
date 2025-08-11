@@ -77,113 +77,75 @@ const HostelProfile = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Basic Information */}
+        <Card className="max-w-2xl mx-auto border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="bg-gradient-to-r from-[#07A64F] to-[#1295D0] text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Building className="h-6 w-6" />
+              </div>
               <div>
-                <Label htmlFor="name">Hostel Name</Label>
+                <h3 className="text-xl font-bold">Basic Information</h3>
+                <p className="text-white/80 text-sm">Essential hostel details</p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 space-y-6">
+            <div>
+              <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Hostel Name</Label>
+              <Input
+                id="name"
+                value={hostelData.name}
+                onChange={(e) => setHostelData({...hostelData, name: e.target.value})}
+                disabled={!isEditing}
+                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Description</Label>
+              <Textarea
+                id="description"
+                value={hostelData.description}
+                onChange={(e) => setHostelData({...hostelData, description: e.target.value})}
+                disabled={!isEditing}
+                rows={4}
+                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="address" className="text-sm font-semibold text-gray-700">Address</Label>
+              <Input
+                id="address"
+                value={hostelData.address}
+                onChange={(e) => setHostelData({...hostelData, address: e.target.value})}
+                disabled={!isEditing}
+                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">Phone</Label>
                 <Input
-                  id="name"
-                  value={hostelData.name}
-                  onChange={(e) => setHostelData({...hostelData, name: e.target.value})}
+                  id="phone"
+                  value={hostelData.phone}
+                  onChange={(e) => setHostelData({...hostelData, phone: e.target.value})}
                   disabled={!isEditing}
+                  className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
                 />
               </div>
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={hostelData.description}
-                  onChange={(e) => setHostelData({...hostelData, description: e.target.value})}
-                  disabled={!isEditing}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email</Label>
                 <Input
-                  id="address"
-                  value={hostelData.address}
-                  onChange={(e) => setHostelData({...hostelData, address: e.target.value})}
+                  id="email"
+                  value={hostelData.email}
+                  onChange={(e) => setHostelData({...hostelData, email: e.target.value})}
                   disabled={!isEditing}
+                  className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={hostelData.phone}
-                    onChange={(e) => setHostelData({...hostelData, phone: e.target.value})}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={hostelData.email}
-                    onChange={(e) => setHostelData({...hostelData, email: e.target.value})}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Operational Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Operational Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="checkin">Check-in Time</Label>
-                  <Input
-                    id="checkin"
-                    value={hostelData.checkInTime}
-                    onChange={(e) => setHostelData({...hostelData, checkInTime: e.target.value})}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="checkout">Check-out Time</Label>
-                  <Input
-                    id="checkout"
-                    value={hostelData.checkOutTime}
-                    onChange={(e) => setHostelData({...hostelData, checkOutTime: e.target.value})}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{hostelData.totalRooms}</p>
-                  <p className="text-sm text-blue-600">Total Rooms</p>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{hostelData.totalBeds}</p>
-                  <p className="text-sm text-green-600">Total Beds</p>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-2xl font-bold text-purple-600">{hostelData.establishedYear}</p>
-                  <p className="text-sm text-purple-600">Established</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
 
       </div>
