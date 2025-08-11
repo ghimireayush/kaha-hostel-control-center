@@ -45,6 +45,7 @@ interface BookingRequest {
   duration: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   notes: string;
+  rejectionReason?: string;
   emergencyContact: string;
   address: string;
   idProofType: string;
@@ -118,6 +119,7 @@ interface AppContextType {
   dispatch: React.Dispatch<AppAction>;
   refreshAllData: () => Promise<void>;
   approveBooking: (bookingId: string, roomAssignment: string) => Promise<boolean>;
+  rejectBooking: (bookingId: string, reason: string) => Promise<boolean>;
   getStudentById: (id: string) => Student | undefined;
   getStudentInvoices: (studentId: string) => Invoice[];
 }
@@ -163,6 +165,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const rejectBooking = async (bookingId: string, reason: string): Promise<boolean> => {
+    try {
+      const result = await bookingService.updateBookingStatus(bookingId, 'Rejected', reason);
+      if (result) {
+        dispatch({ type: 'UPDATE_BOOKING_STATUS', payload: { id: bookingId, status: 'Rejected' } });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error rejecting booking:', error);
+      return false;
+    }
+  };
+
   const getStudentById = (id: string): Student | undefined => {
     return state.students.find(student => student.id === id);
   };
@@ -180,6 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch,
     refreshAllData,
     approveBooking,
+    rejectBooking,
     getStudentById,
     getStudentInvoices
   };

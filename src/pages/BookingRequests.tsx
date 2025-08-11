@@ -6,18 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, Check, X, UserPlus, Clock, MapPin, Phone } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Search, Eye, Check, X, UserPlus, Clock, MapPin, Phone, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useAppContext } from "@/contexts/AppContext";
 import { useNavigation } from "@/hooks/useNavigation";
 
 const BookingRequests = () => {
-  const { state, approveBooking } = useAppContext();
+  const { state, approveBooking, rejectBooking } = useAppContext();
   const { goToLedger } = useNavigation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [approving, setApproving] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [requestToReject, setRequestToReject] = useState<any>(null);
+  const [rejecting, setRejecting] = useState(false);
 
   const handleApprove = async (request: any) => {
     setApproving(true);
@@ -47,15 +54,46 @@ const BookingRequests = () => {
     }
   };
 
-  const handleReject = async (request: any) => {
+  const handleRejectClick = (request: any) => {
+    setRequestToReject(request);
+    setShowRejectDialog(true);
+    setRejectionReason("");
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!requestToReject || !rejectionReason.trim()) {
+      toast.error("Please provide a rejection reason");
+      return;
+    }
+
+    setRejecting(true);
     try {
-      // In a real app, you'd call an API here
-      toast.error(`${request.name}'s request has been rejected.`);
-      setSelectedRequest(null);
+      const success = await rejectBooking(requestToReject.id, rejectionReason.trim());
+      
+      if (success) {
+        toast.error(`${requestToReject.name}'s request has been rejected.`, {
+          description: `Reason: ${rejectionReason.trim()}`,
+          duration: 5000,
+        });
+        setShowRejectDialog(false);
+        setRequestToReject(null);
+        setRejectionReason("");
+        setSelectedRequest(null);
+      } else {
+        toast.error("Failed to reject booking request");
+      }
     } catch (error) {
       toast.error("Error rejecting booking request");
       console.error("Rejection error:", error);
+    } finally {
+      setRejecting(false);
     }
+  };
+
+  const handleRejectCancel = () => {
+    setShowRejectDialog(false);
+    setRequestToReject(null);
+    setRejectionReason("");
   };
 
   const getStatusColor = (status: string) => {
@@ -284,7 +322,7 @@ const BookingRequests = () => {
                               size="sm"
                               variant="outline"
                               className="text-red-600 hover:text-red-700"
-                              onClick={() => handleReject(request)}
+                              onClick={() => handleRejectClick(request)}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -357,7 +395,7 @@ const BookingRequests = () => {
                     <Button
                       variant="outline"
                       className="flex-1 text-red-600 hover:text-red-700"
-                      onClick={() => handleReject(selectedRequest)}
+                      onClick={() => handleRejectClick(selectedRequest)}
                     >
                       ❌ Reject Request
                     </Button>
@@ -367,6 +405,62 @@ const BookingRequests = () => {
             </Card>
           </div>
         )}
+
+        {/* Rejection Reason Dialog */}
+        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Reject Booking Request
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {requestToReject && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">Rejecting request for:</p>
+                  <p className="font-semibold">{requestToReject.name}</p>
+                  <p className="text-sm text-gray-500">{requestToReject.id}</p>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="rejection-reason" className="text-sm font-medium">
+                  Rejection Reason <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="rejection-reason"
+                  placeholder="Please provide a clear reason for rejection (e.g., No available rooms, Incomplete documentation, etc.)"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-gray-500">
+                  This reason will be recorded and may be shared with the applicant.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleRejectCancel}
+                disabled={rejecting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleRejectConfirm}
+                disabled={rejecting || !rejectionReason.trim()}
+              >
+                {rejecting ? "Rejecting..." : "Confirm Rejection"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
