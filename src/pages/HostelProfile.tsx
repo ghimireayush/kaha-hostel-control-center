@@ -56,24 +56,15 @@ const HostelProfile = () => {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">🏢 Hostel Profile</h2>
-            <p className="text-gray-600 mt-1">Manage your hostel information and settings</p>
+            <p className="text-gray-600 mt-1">View your hostel information (read-only)</p>
           </div>
           <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => setIsEditing(true)} variant="outline">
-                ✏️ Edit Profile
-              </Button>
-            )}
+            <Button 
+              className="bg-gradient-to-r from-[#07A64F] to-[#1295D0] hover:from-[#06954A] hover:to-[#1185C0] text-white"
+              onClick={() => window.open('https://kaha.com.np/app', '_blank')}
+            >
+              📱 Download Kaha App to Edit
+            </Button>
           </div>
         </div>
 
@@ -96,9 +87,8 @@ const HostelProfile = () => {
               <Input
                 id="name"
                 value={hostelData.name}
-                onChange={(e) => setHostelData({...hostelData, name: e.target.value})}
-                disabled={!isEditing}
-                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+                disabled={true}
+                className="mt-2 border-gray-200 bg-gray-50"
               />
             </div>
             <div>
@@ -106,10 +96,9 @@ const HostelProfile = () => {
               <Textarea
                 id="description"
                 value={hostelData.description}
-                onChange={(e) => setHostelData({...hostelData, description: e.target.value})}
-                disabled={!isEditing}
+                disabled={true}
                 rows={4}
-                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+                className="mt-2 border-gray-200 bg-gray-50"
               />
             </div>
             <div>
@@ -117,9 +106,8 @@ const HostelProfile = () => {
               <Input
                 id="address"
                 value={hostelData.address}
-                onChange={(e) => setHostelData({...hostelData, address: e.target.value})}
-                disabled={!isEditing}
-                className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+                disabled={true}
+                className="mt-2 border-gray-200 bg-gray-50"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,9 +116,8 @@ const HostelProfile = () => {
                 <Input
                   id="phone"
                   value={hostelData.phone}
-                  onChange={(e) => setHostelData({...hostelData, phone: e.target.value})}
-                  disabled={!isEditing}
-                  className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+                  disabled={true}
+                  className="mt-2 border-gray-200 bg-gray-50"
                 />
               </div>
               <div>
@@ -138,9 +125,8 @@ const HostelProfile = () => {
                 <Input
                   id="email"
                   value={hostelData.email}
-                  onChange={(e) => setHostelData({...hostelData, email: e.target.value})}
-                  disabled={!isEditing}
-                  className="mt-2 border-gray-200 focus:border-[#07A64F] focus:ring-[#07A64F]"
+                  disabled={true}
+                  className="mt-2 border-gray-200 bg-gray-50"
                 />
               </div>
             </div>

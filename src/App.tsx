@@ -16,6 +16,9 @@ const HostelProfile = lazy(() => import("./pages/HostelProfile"));
 const BookingRequests = lazy(() => import("./pages/BookingRequests"));
 const RoomManagement = lazy(() => import("./pages/RoomManagement"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const InactiveStudents = lazy(() => import("./pages/InactiveStudents"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -140,6 +143,30 @@ const App = () => {
                   element={
                     <Suspense fallback={<LoadingFallback componentName="Analytics" />}>
                       <Analytics />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/attendance"
+                  element={
+                    <Suspense fallback={<LoadingFallback componentName="Attendance" />}>
+                      <Attendance />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <Suspense fallback={<LoadingFallback componentName="Notifications" />}>
+                      <Notifications />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/inactive"
+                  element={
+                    <Suspense fallback={<LoadingFallback componentName="Inactive Students" />}>
+                      <InactiveStudents />
                     </Suspense>
                   }
                 />

@@ -65,9 +65,9 @@ export const Analytics = () => {
             <div className="p-2 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-xl">
               <BarChart3 className="h-8 w-8 text-white" />
             </div>
-            Analytics Dashboard
+            Monthly Analytics Dashboard
           </h1>
-          <p className="text-gray-600 mt-1">Performance insights for your hostel operations</p>
+          <p className="text-gray-600 mt-1">Monthly performance insights and revenue trends</p>
         </div>
       </div>
 
@@ -77,9 +77,9 @@ export const Analytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                <p className="text-sm font-medium text-gray-600">Average Monthly Revenue</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  Rs {currentMonth.revenue?.toLocaleString() || '0'}
+                  Rs {(monthlyData.reduce((sum, month) => sum + (month.revenue || 0), 0) / Math.max(monthlyData.length, 1)).toLocaleString()}
                 </p>
                 <p className={`text-sm mt-1 ${trends.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {trends.revenueGrowth >= 0 ? '+' : ''}{trends.revenueGrowth}% from last month
@@ -94,8 +94,10 @@ export const Analytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{currentMonth.bookings || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Average Monthly Bookings</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.round(monthlyData.reduce((sum, month) => sum + (month.bookings || 0), 0) / Math.max(monthlyData.length, 1))}
+                </p>
                 <p className={`text-sm mt-1 ${trends.bookingGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {trends.bookingGrowth >= 0 ? '+' : ''}{trends.bookingGrowth}% from last month
                 </p>
@@ -142,7 +144,7 @@ export const Analytics = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-gray-600" />
-              Monthly Revenue Trends
+              Monthly Revenue Trend
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -152,7 +154,7 @@ export const Analytics = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip formatter={(value) => [`Rs ${value.toLocaleString()}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#07A64F" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -162,7 +164,7 @@ export const Analytics = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-gray-600" />
-              Occupancy Rate Trends
+              Occupancy Rate Trend
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -175,9 +177,9 @@ export const Analytics = () => {
                 <Line 
                   type="monotone" 
                   dataKey="occupancy" 
-                  stroke="#10B981" 
+                  stroke="#1295D0" 
                   strokeWidth={3}
-                  dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                  dot={{ fill: '#1295D0', strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
