@@ -131,13 +131,13 @@ const BookingRequests = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Booking Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="bg-yellow-50 border-yellow-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-yellow-600">Pending Requests</p>
+                  <p className="text-sm font-medium text-yellow-600">Pending</p>
                   <p className="text-3xl font-bold text-yellow-700">{pendingCount}</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
@@ -173,8 +173,8 @@ const BookingRequests = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">Total Requests</p>
-                  <p className="text-3xl font-bold text-blue-700">{state.bookingRequests.length}</p>
+                  <p className="text-sm font-medium text-blue-600">Total Booking Requests</p>
+                  <p className="text-3xl font-bold text-blue-700">{pendingCount + approvedCount + rejectedCount}</p>
                 </div>
                 <UserPlus className="h-8 w-8 text-blue-600" />
               </div>
@@ -192,7 +192,7 @@ const BookingRequests = () => {
               <div className="flex-1 relative">
                 <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                 <Input
-                  placeholder="Search by name or phone..."
+                  placeholder="Filter by contact (name or phone)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -200,7 +200,7 @@ const BookingRequests = () => {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Filter by Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
@@ -222,78 +222,105 @@ const BookingRequests = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Request ID</TableHead>
                   <TableHead>Student Details</TableHead>
                   <TableHead>Guardian</TableHead>
-                  <TableHead>Preferred Room</TableHead>
-                  <TableHead>Join Date</TableHead>
+                  <TableHead>Guest</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Room / Bed</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium text-blue-600">{request.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{request.name}</p>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {request.phone}
-                        </p>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {request.address}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{request.guardianName}</p>
-                        <p className="text-sm text-gray-500">{request.guardianPhone}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{request.preferredRoom}</TableCell>
-                    <TableCell>{request.checkInDate}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(request.status)}>
-                        {request.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedRequest(request)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {request.status === 'Pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() => handleApprove(request)}
-                              disabled={approving}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleReject(request)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredRequests.map((request) => {
+                  // Calculate age from date of birth (assuming we have it in the data)
+                  const calculateAge = (dateOfBirth: string) => {
+                    if (!dateOfBirth) return 'N/A';
+                    const today = new Date();
+                    const birthDate = new Date(dateOfBirth);
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    return age;
+                  };
+
+                  return (
+                    <TableRow key={request.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{request.name}</p>
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <Phone className="h-3 w-3 mr-1" />
+                            {request.phone}
+                          </p>
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {request.address}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{request.guardianName}</p>
+                          <p className="text-sm text-gray-500">{request.guardianPhone}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          Student
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{calculateAge(request.dateOfBirth || '2000-01-01')} years</span>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{request.preferredRoom}</p>
+                          <p className="text-sm text-gray-500">Bed: TBD</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedRequest(request)}
+                            className="text-xs"
+                          >
+                            View
+                          </Button>
+                          {request.status === 'Pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                                onClick={() => handleApprove(request)}
+                                disabled={approving}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 text-xs"
+                                onClick={() => handleReject(request)}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

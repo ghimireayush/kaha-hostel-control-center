@@ -12,7 +12,9 @@ import {
   Receipt,
   CreditCard,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Bell,
+  UserX
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState } from "react";
@@ -34,6 +36,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     { id: "bookings", label: translations.bookings, icon: CalendarCheck },
     { id: "rooms", label: translations.rooms, icon: Bed },
     { id: "analytics", label: translations.analytics, icon: BarChart3 },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "inactive", label: "Inactive Students", icon: UserX },
   ];
 
   const adminMenuItems = [];
@@ -151,73 +155,23 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           </div>
         )}
 
-        {/* Enhanced Kaha Ledger Section */}
+        {/* Enhanced Kaha Ledger Section - Simplified */}
         <div className="border-t border-gray-200 pt-6 mt-6">
           <div className="mb-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4">Financial Hub</p>
           </div>
           <button
-            onClick={handleLedgerToggle}
-            className={cn(
-              "group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300",
-              expandedSection === "ledger"
-                ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-md"
-                : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md"
-            )}
+            onClick={() => window.location.href = '/ledger'}
+            className="group w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300 text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md"
           >
-            <div className={`p-2 rounded-lg transition-all duration-300 ${
-              expandedSection === "ledger"
-                ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg"
-                : "bg-gray-100 group-hover:bg-gradient-to-br group-hover:from-green-500 group-hover:to-green-600 group-hover:text-white"
-            }`}>
+            <div className="p-2 rounded-lg transition-all duration-300 bg-gray-100 group-hover:bg-gradient-to-br group-hover:from-green-500 group-hover:to-green-600 group-hover:text-white">
               <BookOpen className="h-4 w-4" />
             </div>
             <div className="flex-1">
               <span className="font-semibold">Kaha KLedger</span>
               <p className="text-xs text-gray-500">Financial Management</p>
             </div>
-            <svg
-              className={cn(
-                "h-4 w-4 transition-transform duration-300",
-                expandedSection === "ledger" ? "rotate-180" : ""
-              )}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
           </button>
-
-          {/* Enhanced Ledger Sub-items */}
-          {expandedSection === "ledger" && (
-            <div className="mt-3 space-y-2 bg-gradient-to-b from-green-50/50 to-transparent rounded-xl p-2">
-              {ledgerSubItems.map((item, index) => {
-                const Icon = item.icon;
-                const subGradients = [
-                  'from-blue-400 to-blue-500',
-                  'from-purple-400 to-purple-500',
-                  'from-green-400 to-green-500',
-                  'from-orange-400 to-orange-500',
-                  'from-pink-400 to-pink-500',
-                  'from-indigo-400 to-indigo-500'
-                ];
-                
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleLedgerSubItemClick(item.id)}
-                    className="group w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-all duration-200 text-sm text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm"
-                  >
-                    <div className={`p-1.5 rounded-md transition-all duration-200 bg-gray-100 group-hover:bg-gradient-to-br group-hover:${subGradients[index]} group-hover:text-white`}>
-                      <Icon className="h-3 w-3" />
-                    </div>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Enhanced Settings */}

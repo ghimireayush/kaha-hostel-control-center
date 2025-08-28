@@ -109,7 +109,7 @@ export const Dashboard = memo(() => {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="text-4xl font-bold text-slate-800 mb-2">{stats.totalStudents || 0}</div>
-              <p className="text-slate-600 text-sm font-medium">Active residents</p>
+              <p className="text-slate-600 text-sm font-medium">Correct active students</p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="w-2 h-2 bg-[#1295D0] rounded-full animate-pulse"></div>
                 <span className="text-xs text-slate-500">Live count</span>
@@ -138,7 +138,7 @@ export const Dashboard = memo(() => {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="text-4xl font-bold text-slate-800 mb-2">NPR {(stats.totalCollected || 0).toLocaleString()}</div>
-              <p className="text-slate-600 text-sm font-medium">All time collection</p>
+              <p className="text-slate-600 text-sm font-medium">All time revenue collection (sum of all payments)</p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="w-2 h-2 bg-[#07A64F] rounded-full animate-pulse"></div>
                 <span className="text-xs text-slate-500">Updated now</span>
@@ -167,7 +167,7 @@ export const Dashboard = memo(() => {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="text-4xl font-bold text-slate-800 mb-2">NPR {(stats.totalDues || 0).toLocaleString()}</div>
-              <p className="text-slate-600 text-sm font-medium">{stats.overdueInvoices || 0} overdue invoices</p>
+              <p className="text-slate-600 text-sm font-medium">Payments that need to be collected from {stats.overdueInvoices || 0} invoices</p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                 <span className="text-xs text-slate-500">Needs attention</span>
