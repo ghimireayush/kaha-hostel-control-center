@@ -20,6 +20,9 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/payments/${id}`,
     BY_STUDENT: (studentId: string) => `/payments/student/${studentId}`,
     STATS: '/payments/stats',
+    METHODS: '/payments/methods',
+    BULK: '/payments/bulk',
+    MONTHLY_SUMMARY: '/payments/summary/monthly',
   },
   LEDGER: {
     BASE: '/ledger',

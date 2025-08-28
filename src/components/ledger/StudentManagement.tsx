@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { monthlyInvoiceService } from "@/services/monthlyInvoiceService.js";
-import { mockData } from "@/data/mockData.js";
+import { useAppContext } from "@/contexts/AppContext";
 
 interface Student {
   id: string;
@@ -878,6 +878,7 @@ const ChargeConfigurationForm = ({ student, onComplete, onCancel }: ChargeConfig
 };
 
 export const StudentManagement = () => {
+  const { state, refreshAllData } = useAppContext();
   const [activeTab, setActiveTab] = useState("pending");
   const [students, setStudents] = useState<Student[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -896,8 +897,9 @@ export const StudentManagement = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Use mock students data
-        const processedStudents = mockData.students
+        // Use AppContext students data instead of mock data
+        const contextStudents = state.students || [];
+        const processedStudents = contextStudents
           .filter((s: Student) => !s.isCheckedOut)
           .map((student: Student, index: number) => ({
             ...student,

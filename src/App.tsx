@@ -2,10 +2,10 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
+import { SafeTooltipProvider } from "@/components/providers/SafeTooltipProvider";
 import { KahaLogo } from "@/components/common/KahaLogo";
 
 // Lazy load components for better initial load performance
@@ -19,6 +19,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const InactiveStudents = lazy(() => import("./pages/InactiveStudents"));
+const DashboardTest = lazy(() => import("./pages/DashboardTest"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -75,8 +76,8 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppProvider>
+      <AppProvider>
+        <SafeTooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -170,6 +171,14 @@ const App = () => {
                     </Suspense>
                   }
                 />
+                <Route
+                  path="/dashboard-test"
+                  element={
+                    <Suspense fallback={<LoadingFallback componentName="Dashboard Test" />}>
+                      <DashboardTest />
+                    </Suspense>
+                  }
+                />
 
                 <Route
                   path="*"
@@ -182,8 +191,8 @@ const App = () => {
               </Routes>
             </Suspense>
           </BrowserRouter>
-        </AppProvider>
-      </TooltipProvider>
+        </SafeTooltipProvider>
+      </AppProvider>
     </QueryClientProvider>
   );
 };

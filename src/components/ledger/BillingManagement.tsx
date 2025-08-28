@@ -10,8 +10,10 @@ import { Calendar, DollarSign, Users, Eye, Download, FileText, TrendingUp, Clock
 import { automatedBillingService } from "@/services/automatedBillingService.js";
 import { invoiceGenerationService } from "@/services/invoiceGenerationService.js";
 import { mockData } from "@/data/mockData.js";
+import { useAppContext } from "@/contexts/AppContext";
 
 export const BillingManagement = () => {
+  const { state } = useAppContext();
   const [monthlyData, setMonthlyData] = useState([]);
   const [selectedMonthDetails, setSelectedMonthDetails] = useState(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -35,7 +37,7 @@ export const BillingManagement = () => {
         month: "December 2024",
         totalInvoices: decemberInvoices.length,
         totalAmount: decemberInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
-        students: mockData.students.filter(s => !s.isCheckedOut), // Active students
+        students: state.students.filter(s => !s.isCheckedOut), // Active students
         paidInvoices: decemberInvoices.filter(inv => inv.status === 'Paid').length,
         pendingInvoices: decemberInvoices.filter(inv => inv.status !== 'Paid').length,
         invoices: decemberInvoices
@@ -55,7 +57,7 @@ export const BillingManagement = () => {
           amount: mockData.billingData.monthlyInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
           paid: mockData.billingData.monthlyInvoices.filter(inv => inv.status === 'Paid').length,
           pending: mockData.billingData.monthlyInvoices.filter(inv => inv.status !== 'Paid').length,
-          students: mockData.students.filter(s => !s.isCheckedOut).length
+          students: state.students.filter(s => !s.isCheckedOut).length
         },
         allTime: {
           averageMonthlyAmount: 75000,
@@ -114,7 +116,7 @@ export const BillingManagement = () => {
   const handleViewStudentCharges = async (invoice) => {
     try {
       // Find the student data to get their configured charges
-      const student = mockData.students.find(s => s.id === invoice.studentId);
+      const student = state.students.find(s => s.id === invoice.studentId);
       if (student) {
         const chargeDetails = {
           student: student,

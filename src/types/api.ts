@@ -24,6 +24,15 @@ export interface Student {
     roomNumber: string;
     name: string;
   };
+  // Additional fields from real API
+  guardianName?: string;
+  guardianPhone?: string;
+  baseMonthlyFee?: number;
+  course?: string;
+  institution?: string;
+  emergencyContact?: string;
+  currentBalance?: number;
+  advanceBalance?: number;
 }
 
 export interface CreateStudentDto {
@@ -93,20 +102,71 @@ export interface Payment {
   amount: number;
   paymentMethod: 'Cash' | 'Bank Transfer' | 'Card' | 'Online' | 'Cheque' | 'UPI' | 'Mobile Wallet';
   paymentDate: string;
-  description?: string;
+  reference?: string;
+  notes?: string;
   status: 'Completed' | 'Pending' | 'Failed' | 'Cancelled' | 'Refunded';
   transactionId?: string;
-  referenceNumber?: string;
+  receiptNumber?: string;
+  processedBy?: string;
+  bankName?: string;
+  chequeNumber?: string;
+  chequeDate?: string;
+  invoiceIds?: string[];
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreatePaymentDto {
   studentId: string;
   amount: number;
   paymentMethod: Payment['paymentMethod'];
-  paymentDate: string;
-  description?: string;
+  paymentDate?: string;
+  reference?: string;
+  notes?: string;
+  status?: Payment['status'];
   transactionId?: string;
-  referenceNumber?: string;
+  receiptNumber?: string;
+  processedBy?: string;
+  bankName?: string;
+  chequeNumber?: string;
+  chequeDate?: string;
+  invoiceIds?: string[];
+}
+
+export interface UpdatePaymentDto {
+  amount?: number;
+  paymentMethod?: Payment['paymentMethod'];
+  paymentDate?: string;
+  reference?: string;
+  notes?: string;
+  status?: Payment['status'];
+  transactionId?: string;
+  bankName?: string;
+  chequeNumber?: string;
+  chequeDate?: string;
+}
+
+export interface PaymentStats {
+  totalPayments: number;
+  completedPayments: number;
+  pendingPayments: number;
+  failedPayments: number;
+  totalAmount: number;
+  averagePaymentAmount: number;
+  paymentMethods: Record<string, { count: number; amount: number }>;
+  successRate: number;
+  todayPayments: number;
+  todayAmount: number;
+  thisMonthPayments: number;
+  thisMonthAmount: number;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+  requiresReference?: boolean;
+  icon?: string;
 }
 
 // Ledger Types

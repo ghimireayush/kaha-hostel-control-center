@@ -12,6 +12,7 @@ import { monthlyInvoiceService } from "@/services/monthlyInvoiceService.js";
 import { ledgerService } from "@/services/ledgerService.js";
 import { checkoutService } from "@/services/checkoutService.js";
 import { mockData } from "@/data/mockData.js";
+import { useAppContext } from "@/contexts/AppContext";
 
 interface Student {
     id: string;
@@ -612,6 +613,7 @@ const CheckoutDialog = ({ student, isOpen, onClose, onCheckoutComplete }: Checko
 // Updated: 2025-01-08 - Simplified checkout with only checkout button
 export const StudentCheckoutManagement = () => {
     console.log('🔄 NEW StudentCheckoutManagement component loaded - Only Checkout Button!');
+    const { state } = useAppContext();
     const [students, setStudents] = useState<Student[]>([]);
     const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -623,9 +625,9 @@ export const StudentCheckoutManagement = () => {
     useEffect(() => {
         const loadStudents = async () => {
             try {
-                // Use mock data directly
-                const activeStudents = mockData.students.filter((student: Student) =>
-                    student.status === 'active' && !student.isCheckedOut
+                // Use AppContext students data
+                const activeStudents = state.students.filter((student: Student) =>
+                    student.status === 'Active' && !student.isCheckedOut
                 );
 
                 setStudents(activeStudents);

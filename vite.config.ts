@@ -23,12 +23,12 @@ export default defineConfig(({ mode }) => ({
   },
 
   optimizeDeps: {
-    force: true,
     include: [
       'react',
       'react-dom',
       'react-router-dom',
       'lucide-react',
+      '@radix-ui/react-tooltip',
       '@radix-ui/react-dialog',
       '@radix-ui/react-select',
       '@radix-ui/react-tabs',
@@ -37,8 +37,7 @@ export default defineConfig(({ mode }) => ({
       'class-variance-authority',
       'clsx',
       'tailwind-merge'
-    ],
-    exclude: ['@vitejs/plugin-react-swc', '@emotion/react']
+    ]
   },
   build: {
     // Enable code splitting
