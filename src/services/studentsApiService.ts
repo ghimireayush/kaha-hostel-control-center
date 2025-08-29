@@ -35,10 +35,10 @@ export class StudentsApiService {
     
     console.log('🔍 Raw API result:', result);
     
-    // Handle real API response structure: { data: { items: [...] } }
+    // Handle backend API response structure: { status: 200, data: { items: [...] } }
     let students: Student[] = [];
     if (result.data && result.data.items) {
-      // Real API response structure
+      // Backend API response structure
       students = result.data.items.map((item: any) => ({
         id: item.id,
         name: item.name,
@@ -47,19 +47,29 @@ export class StudentsApiService {
         roomNumber: item.roomNumber,
         status: item.status,
         joinDate: item.enrollmentDate, // Map enrollmentDate to joinDate
+        enrollmentDate: item.enrollmentDate,
         balance: item.currentBalance || 0,
+        currentBalance: item.currentBalance || 0,
+        advanceBalance: item.advanceBalance || 0,
         room: item.roomNumber ? { 
           id: `room-${item.roomNumber}`, 
           roomNumber: item.roomNumber, 
           name: `Room ${item.roomNumber}` 
         } : null,
-        // Additional fields from real API
+        // Additional fields from backend API
         guardianName: item.guardianName,
         guardianPhone: item.guardianPhone,
         address: item.address,
         baseMonthlyFee: parseFloat(item.baseMonthlyFee || '0'),
+        laundryFee: parseFloat(item.laundryFee || '0'),
+        foodFee: parseFloat(item.foodFee || '0'),
         course: item.course,
-        institution: item.institution
+        institution: item.institution,
+        emergencyContact: item.emergencyContact,
+        bookingRequestId: item.bookingRequestId,
+        updatedAt: item.updatedAt,
+        isConfigured: item.isConfigured || false,
+        bedNumber: item.bedNumber
       }));
     } else if (Array.isArray(result)) {
       // Mock API or direct array response
@@ -78,35 +88,102 @@ export class StudentsApiService {
    * Get a single student by ID
    */
   async getStudentById(id: string): Promise<Student> {
-    return this.apiService.get<Student>(API_ENDPOINTS.STUDENTS.BY_ID(id));
+    const result = await this.apiService.get<any>(API_ENDPOINTS.STUDENTS.BY_ID(id));
+    
+    // Handle backend response format
+    if (result.data) {
+      const item = result.data;
+      return {
+        id: item.id,
+        name: item.name,
+        phone: item.phone,
+        email: item.email,
+        roomNumber: item.roomNumber,
+        status: item.status,
+        joinDate: item.enrollmentDate,
+        enrollmentDate: item.enrollmentDate,
+        balance: item.currentBalance || 0,
+        currentBalance: item.currentBalance || 0,
+        advanceBalance: item.advanceBalance || 0,
+        room: item.roomNumber ? { 
+          id: `room-${item.roomNumber}`, 
+          roomNumber: item.roomNumber, 
+          name: `Room ${item.roomNumber}` 
+        } : null,
+        guardianName: item.guardianName,
+        guardianPhone: item.guardianPhone,
+        address: item.address,
+        baseMonthlyFee: parseFloat(item.baseMonthlyFee || '0'),
+        laundryFee: parseFloat(item.laundryFee || '0'),
+        foodFee: parseFloat(item.foodFee || '0'),
+        course: item.course,
+        institution: item.institution,
+        emergencyContact: item.emergencyContact,
+        bookingRequestId: item.bookingRequestId,
+        updatedAt: item.updatedAt,
+        isConfigured: item.isConfigured || false,
+        bedNumber: item.bedNumber
+      };
+    }
+    return result;
   }
 
   /**
    * Create a new student
    */
   async createStudent(studentData: CreateStudentDto): Promise<Student> {
-    return this.apiService.post<Student>(API_ENDPOINTS.STUDENTS.BASE, studentData);
+    const result = await this.apiService.post<any>(API_ENDPOINTS.STUDENTS.BASE, studentData);
+    
+    // Handle backend response format
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   }
 
   /**
    * Update an existing student
    */
   async updateStudent(id: string, updateData: UpdateStudentDto): Promise<Student> {
-    return this.apiService.put<Student>(API_ENDPOINTS.STUDENTS.BY_ID(id), updateData);
+    const result = await this.apiService.put<any>(API_ENDPOINTS.STUDENTS.BY_ID(id), updateData);
+    
+    // Handle backend response format
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   }
 
   /**
    * Delete a student
    */
   async deleteStudent(id: string): Promise<void> {
-    return this.apiService.delete<void>(API_ENDPOINTS.STUDENTS.BY_ID(id));
+    const result = await this.apiService.delete<any>(API_ENDPOINTS.STUDENTS.BY_ID(id));
+    
+    // Handle backend response format
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   }
 
   /**
    * Get student statistics
    */
   async getStudentStats(): Promise<StudentStats> {
-    return this.apiService.get<StudentStats>(API_ENDPOINTS.STUDENTS.STATS);
+    const result = await this.apiService.get<any>(API_ENDPOINTS.STUDENTS.STATS);
+    
+    // Handle backend response format and map to expected structure
+    if (result.data) {
+      return {
+        total: result.data.totalStudents || 0,
+        active: result.data.activeStudents || 0,
+        inactive: result.data.inactiveStudents || 0,
+        totalDues: result.data.totalBalance || 0,
+        totalAdvances: result.data.totalAdvance || 0
+      };
+    }
+    return result;
   }
 
   /**
@@ -192,6 +269,31 @@ export class StudentsApiService {
    */
   async getStudentInvoices(id: string): Promise<any[]> {
     return this.apiService.get(API_ENDPOINTS.STUDENTS.INVOICES(id));
+  }
+
+  /**
+   * Configure student charges and fees
+   */
+  async configureStudent(id: string, configData: {
+    baseMonthlyFee?: number;
+    laundryFee?: number;
+    foodFee?: number;
+    wifiFee?: number;
+    maintenanceFee?: number;
+    securityDeposit?: number;
+    additionalCharges?: Array<{
+      name: string;
+      amount: number;
+      type: string;
+    }>;
+  }): Promise<any> {
+    const result = await this.apiService.post(API_ENDPOINTS.STUDENTS.CONFIGURE(id), configData);
+    
+    // Handle backend response format
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   }
 }
 

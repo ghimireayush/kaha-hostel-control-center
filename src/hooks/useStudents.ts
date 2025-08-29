@@ -24,6 +24,7 @@ interface UseStudentsActions {
   createStudent: (studentData: CreateStudentDto) => Promise<Student>;
   updateStudent: (id: string, updateData: UpdateStudentDto) => Promise<Student>;
   deleteStudent: (id: string) => Promise<void>;
+  configureStudent: (id: string, configData: any) => Promise<any>;
   searchStudents: (term: string) => Promise<void>;
   setFilters: (filters: StudentFilters) => void;
   clearError: () => void;
@@ -182,6 +183,30 @@ export const useStudents = (initialFilters: StudentFilters = {}): UseStudentsSta
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
+  // Configure student charges
+  const configureStudent = useCallback(async (id: string, configData: any): Promise<any> => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      const result = await studentsApiService.configureStudent(id, configData);
+      
+      // Refresh student data to get updated fees
+      await loadStudents();
+      
+      setState(prev => ({ ...prev, loading: false }));
+      
+      return result;
+    } catch (err) {
+      const apiError = handleApiError(err);
+      setState(prev => ({ 
+        ...prev, 
+        error: apiError.message, 
+        loading: false 
+      }));
+      throw apiError;
+    }
+  }, [loadStudents]);
+
   // Refresh all data
   const refreshData = useCallback(async () => {
     await Promise.all([loadStudents(), loadStudentStats()]);
@@ -212,6 +237,7 @@ export const useStudents = (initialFilters: StudentFilters = {}): UseStudentsSta
     createStudent,
     updateStudent,
     deleteStudent,
+    configureStudent,
     searchStudents,
     setFilters,
     clearError,

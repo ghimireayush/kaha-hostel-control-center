@@ -24,15 +24,21 @@ export interface Student {
     roomNumber: string;
     name: string;
   };
-  // Additional fields from real API
+  // Additional fields from backend API
   guardianName?: string;
   guardianPhone?: string;
   baseMonthlyFee?: number;
+  laundryFee?: number;
+  foodFee?: number;
   course?: string;
   institution?: string;
   emergencyContact?: string;
   currentBalance?: number;
   advanceBalance?: number;
+  bookingRequestId?: string;
+  updatedAt?: string;
+  isConfigured?: boolean;
+  bedNumber?: string;
 }
 
 export interface CreateStudentDto {

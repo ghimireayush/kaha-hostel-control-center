@@ -1,559 +1,901 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Plus, Edit, Trash2, Eye, RefreshCw, Users, UserCheck, UserX } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Search, User, Phone, Mail, CreditCard, Home, Settings, Edit, Bed, Users, CheckCircle, Plus, Trash2, DollarSign, AlertTriangle, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useStudents } from '../../hooks/useStudents';
-import { Student, CreateStudentDto } from '../../types/api';
+import { Student } from '../../types/api';
 
-interface StudentManagementProps {
-  className?: string;
+interface Room {
+  id: string;
+  name: string;
+  roomNumber: string;
+  bedCount: number;
+  occupancy: number;
+  availableBeds: number;
+  type: string;
+  monthlyRate: number;
+  gender: string;
+  amenities: string[];
 }
 
-const StudentManagement: React.FC<StudentManagementProps> = ({ className = '' }) => {
+interface ChargeItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+// Charge Configuration Form Component
+interface ChargeConfigurationFormProps {
+  student: Student;
+  onComplete: (studentId: string, chargeData: any) => void;
+  onCancel: () => void;
+}
+
+const ChargeConfigurationForm = ({ student, onComplete, onCancel }: ChargeConfigurationFormProps) => {
+  const [baseCharges, setBaseCharges] = useState({
+    baseMonthlyFee: student.baseMonthlyFee || 15000,
+    laundryFee: student.laundryFee || 2000,
+    foodFee: student.foodFee || 8000,
+    wifiFee: 1000,
+    maintenanceFee: 500,
+    securityDeposit: 10000
+  });
+
+  const [additionalCharges, setAdditionalCharges] = useState<ChargeItem[]>([
+    { id: '1', description: '', amount: 0 },
+    { id: '2', description: '', amount: 0 },
+    { id: '3', description: '', amount: 0 }
+  ]);
+
+  const handleBaseChargeChange = (field: string, value: number) => {
+    setBaseCharges(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAdditionalChargeChange = (id: string, field: 'description' | 'amount', value: string | number) => {
+    setAdditionalCharges(prev => prev.map(charge =>
+      charge.id === id
+        ? { ...charge, [field]: value }
+        : charge
+    ));
+  };
+
+  const addNewChargeField = () => {
+    const newId = Date.now().toString();
+    setAdditionalCharges(prev => [...prev, { id: newId, description: '', amount: 0 }]);
+  };
+
+  const removeChargeField = (id: string) => {
+    if (additionalCharges.length > 1) {
+      setAdditionalCharges(prev => prev.filter(charge => charge.id !== id));
+    }
+  };
+
+  const calculateTotalMonthlyFee = () => {
+    const baseTotal = baseCharges.baseMonthlyFee + baseCharges.laundryFee + baseCharges.foodFee +
+      baseCharges.wifiFee + baseCharges.maintenanceFee;
+    const additionalTotal = additionalCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
+    return baseTotal + additionalTotal;
+  };
+
+  const handleComplete = () => {
+    const totalMonthlyFee = calculateTotalMonthlyFee();
+
+    if (totalMonthlyFee === 0) {
+      toast.error("Please configure at least the base monthly fee");
+      return;
+    }
+
+    // Filter out empty additional charges
+    const validAdditionalCharges = additionalCharges.filter(charge =>
+      charge.description.trim() !== '' && charge.amount > 0
+    );
+
+    const chargeData = {
+      ...baseCharges,
+      additionalCharges: validAdditionalCharges,
+      totalMonthlyFee
+    };
+
+    onComplete(student.id, chargeData);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Student Info Header */}
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-full flex items-center justify-center text-white font-bold">
+            {student.name.charAt(0)}
+          </div>
+          <div>
+            <h3 className="font-bold">{student.name}</h3>
+            <p className="text-sm text-gray-600">{student.roomNumber} • {student.course}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Base Charges */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Base Monthly Charges
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="baseFee">Base Monthly Fee (₹) *</Label>
+              <Input
+                id="baseFee"
+                type="number"
+                value={baseCharges.baseMonthlyFee}
+                onChange={(e) => handleBaseChargeChange('baseMonthlyFee', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="laundryFee">Laundry Fee (₹)</Label>
+              <Input
+                id="laundryFee"
+                type="number"
+                value={baseCharges.laundryFee}
+                onChange={(e) => handleBaseChargeChange('laundryFee', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="foodFee">Food Fee (₹)</Label>
+              <Input
+                id="foodFee"
+                type="number"
+                value={baseCharges.foodFee}
+                onChange={(e) => handleBaseChargeChange('foodFee', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="wifiFee">WiFi Fee (₹)</Label>
+              <Input
+                id="wifiFee"
+                type="number"
+                value={baseCharges.wifiFee}
+                onChange={(e) => handleBaseChargeChange('wifiFee', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maintenanceFee">Maintenance Fee (₹)</Label>
+              <Input
+                id="maintenanceFee"
+                type="number"
+                value={baseCharges.maintenanceFee}
+                onChange={(e) => handleBaseChargeChange('maintenanceFee', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="securityDeposit">Security Deposit (₹)</Label>
+              <Input
+                id="securityDeposit"
+                type="number"
+                value={baseCharges.securityDeposit}
+                onChange={(e) => handleBaseChargeChange('securityDeposit', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Charges */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Additional Charges & Services
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addNewChargeField}
+              className="text-[#07A64F] border-[#07A64F]/30 hover:bg-[#07A64F]/10"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Charge
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-600 mb-4">
+            Add custom charges for additional services like parking, gym access, study room, etc.
+          </p>
+
+          {additionalCharges.map((charge) => (
+            <div key={charge.id} className="flex gap-4 items-end p-4 bg-gray-50 rounded-lg">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor={`desc-${charge.id}`}>Service/Item Description</Label>
+                <Input
+                  id={`desc-${charge.id}`}
+                  placeholder="e.g., Parking Fee, Gym Access, Study Room, etc."
+                  value={charge.description}
+                  onChange={(e) => handleAdditionalChargeChange(charge.id, 'description', e.target.value)}
+                />
+              </div>
+              <div className="w-32 space-y-2">
+                <Label htmlFor={`amount-${charge.id}`}>Amount (₹)</Label>
+                <Input
+                  id={`amount-${charge.id}`}
+                  type="number"
+                  placeholder="0"
+                  value={charge.amount}
+                  onChange={(e) => handleAdditionalChargeChange(charge.id, 'amount', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeChargeField(charge.id)}
+                disabled={additionalCharges.length <= 1}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Fee Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            Monthly Fee Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {/* Base Charges Summary */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-900">Base Charges:</h4>
+              {baseCharges.baseMonthlyFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Base Monthly Fee:</span>
+                  <span>₹{baseCharges.baseMonthlyFee.toLocaleString()}</span>
+                </div>
+              )}
+              {baseCharges.laundryFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Laundry Fee:</span>
+                  <span>₹{baseCharges.laundryFee.toLocaleString()}</span>
+                </div>
+              )}
+              {baseCharges.foodFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Food Fee:</span>
+                  <span>₹{baseCharges.foodFee.toLocaleString()}</span>
+                </div>
+              )}
+              {baseCharges.wifiFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>WiFi Fee:</span>
+                  <span>₹{baseCharges.wifiFee.toLocaleString()}</span>
+                </div>
+              )}
+              {baseCharges.maintenanceFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Maintenance Fee:</span>
+                  <span>₹{baseCharges.maintenanceFee.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Charges Summary */}
+            {additionalCharges.some(charge => charge.description && charge.amount > 0) && (
+              <div className="space-y-2 border-t pt-3">
+                <h4 className="font-medium text-gray-900">Additional Charges:</h4>
+                {additionalCharges
+                  .filter(charge => charge.description && charge.amount > 0)
+                  .map(charge => (
+                    <div key={charge.id} className="flex justify-between text-sm">
+                      <span>{charge.description}:</span>
+                      <span>₹{charge.amount.toLocaleString()}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="border-t border-green-300 pt-3 flex justify-between font-bold text-lg">
+              <span>Total Monthly Fee:</span>
+              <span className="text-green-800">₹{calculateTotalMonthlyFee().toLocaleString()}</span>
+            </div>
+
+            {/* Security Deposit */}
+            {baseCharges.securityDeposit > 0 && (
+              <div className="flex justify-between text-blue-600 border-t border-green-300 pt-2">
+                <span>One-time Security Deposit:</span>
+                <span>₹{baseCharges.securityDeposit.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4">
+        <Button
+          onClick={handleComplete}
+          className="bg-[#07A64F] hover:bg-[#07A64F]/90 flex-1"
+          disabled={calculateTotalMonthlyFee() === 0}
+        >
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Complete Configuration
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="flex-1"
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export const StudentManagement = () => {
   const {
     students,
     loading,
     error,
     searchTerm,
-    createStudent,
-    updateStudent,
-    deleteStudent,
+    configureStudent,
     searchStudents,
     refreshData
   } = useStudents();
 
-  const [selectedTab, setSelectedTab] = useState<'all' | 'Active' | 'Inactive'>('all');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("pending");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showChargeConfigDialog, setShowChargeConfigDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  // Filter students based on selected tab
-  const filteredStudents = useMemo(() => {
-    if (!students) return [];
+  // Separate students into pending configuration and configured
+  const pendingStudents = students?.filter(student => !student.isConfigured) || [];
+  const configuredStudents = students?.filter(student => student.isConfigured) || [];
 
-    switch (selectedTab) {
-      case 'Active':
-        return students.filter(student => student.status === 'Active');
-      case 'Inactive':
-        return students.filter(student => student.status === 'Inactive');
-      default:
-        return students;
-    }
-  }, [students, selectedTab]);
+  // Filter configured students based on search
+  const filteredStudents = configuredStudents.filter(student =>
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (student.roomNumber && student.roomNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    student.phone.includes(searchTerm)
+  );
 
-  const handleAddStudent = async (studentData: CreateStudentDto) => {
-    setIsSubmitting(true);
-    try {
-      await createStudent(studentData);
-      setShowAddDialog(false);
-    } catch (error) {
-      console.error('Failed to add student:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Configure charges
+  const configureCharges = (student: Student) => {
+    setSelectedStudent(student);
+    setShowChargeConfigDialog(true);
   };
 
-  const handleEditStudent = async (studentData: Partial<Student>) => {
-    if (!selectedStudent) return;
-
-    setIsSubmitting(true);
+  // Complete charge configuration
+  const completeChargeConfiguration = async (studentId: string, chargeData: any) => {
     try {
-      await updateStudent(selectedStudent.id, studentData);
-      setShowEditDialog(false);
+      await configureStudent(studentId, chargeData);
+
+      toast.success("Student charges configured successfully!");
+
+      setShowChargeConfigDialog(false);
       setSelectedStudent(null);
+
+      // Switch to student list tab to show the configured student
+      setActiveTab("students");
+
     } catch (error) {
-      console.error('Failed to update student:', error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error in charge configuration:', error);
+      toast.error('Failed to complete charge configuration. Please try again.');
     }
   };
 
-  const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm('Are you sure you want to delete this student?')) return;
-
-    try {
-      await deleteStudent(studentId);
-    } catch (error) {
-      console.error('Failed to delete student:', error);
-    }
-  };
-
-  const handleViewStudent = (student: Student) => {
-    setSelectedStudent(student);
-    setShowViewDialog(true);
-  };
-
-  const handleEditClick = (student: Student) => {
-    setSelectedStudent(student);
-    setShowEditDialog(true);
-  };
-
-  if (error) {
+  if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
-        <div className="text-center">
-          <div className="text-red-500 mb-2">
-            <Users className="h-12 w-12 mx-auto mb-2" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Students</h3>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={refreshData}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </button>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading students...</p>
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">
+          <Users className="h-12 w-12 mx-auto mb-2" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Students</h3>
+        <p className="text-gray-500 mb-4">{error}</p>
+        <Button onClick={refreshData} className="bg-blue-600 hover:bg-blue-700">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Student Management</h2>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={refreshData}
-              disabled={loading}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            <button
-              onClick={() => setShowAddDialog(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Student
-            </button>
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-[#231F20]">👥 Student Management</h1>
+          <p className="text-[#231F20]/70 mt-1">
+            Enroll new students and manage existing student records
+          </p>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchTerm}
-            onChange={(e) => searchStudents(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        {/* Quick Stats */}
+        <div className="flex items-center gap-4">
+          <Badge variant="outline" className="text-[#1295D0] border-[#1295D0]/30">
+            {students?.length || 0} Total Students
+          </Badge>
+          <Badge variant="outline" className="text-[#07A64F] border-[#07A64F]/30">
+            {students?.filter(s => s.status === 'Active').length || 0} Active
+          </Badge>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8 px-6">
-          {[
-            { key: 'all', label: 'All Students', icon: Users },
-            { key: 'Active', label: 'Active', icon: UserCheck },
-            { key: 'Inactive', label: 'Inactive', icon: UserX }
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setSelectedTab(key as any)}
-              className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${selectedTab === key
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-            >
-              <Icon className="h-4 w-4 mr-2" />
-              {label}
-              <span className="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
-                {key === 'all' ? students?.length || 0 :
-                  key === 'Active' ? students?.filter(s => s.status === 'Active').length || 0 :
-                    students?.filter(s => s.status === 'Inactive').length || 0}
-              </span>
-            </button>
-          ))}
-        </nav>
-      </div>
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Pending Configuration ({pendingStudents.length})
+          </TabsTrigger>
+          <TabsTrigger value="students" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Student List & Management ({configuredStudents.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Content */}
-      <div className="p-6">
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading students...</p>
-          </div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm ? 'No students match your search criteria.' : 'Get started by adding your first student.'}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={() => setShowAddDialog(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-blue-600">
-                              {student.name.charAt(0).toUpperCase()}
-                            </span>
+        {/* Pending Configuration Tab */}
+        <TabsContent value="pending" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-[#07A64F]" />
+                Students Pending Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingStudents.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-gray-600 mb-4">
+                    These students need charge configuration to complete their enrollment.
+                  </p>
+
+                  {pendingStudents.map((student) => (
+                    <Card key={student.id} className="border-orange-200 bg-orange-50/30">
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                          {/* Student Info */}
+                          <div className="lg:col-span-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-gradient-to-br from-[#07A64F] to-[#1295D0] rounded-full flex items-center justify-center text-white font-bold">
+                                {student.name.charAt(0)}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-[#231F20]">{student.name}</h3>
+                                <p className="text-sm text-gray-600">{student.id}</p>
+                                <p className="text-xs text-gray-500">{student.phone}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Room & Course Info */}
+                          <div className="lg:col-span-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Bed className="h-4 w-4 text-[#1295D0]" />
+                                <span className="font-medium">{student.roomNumber || 'Not assigned'}</span>
+                                {student.bedNumber && <span className="text-sm text-gray-500">({student.bedNumber})</span>}
+                              </div>
+                              <p className="text-sm text-gray-600">{student.course || 'Not specified'}</p>
+                              <p className="text-xs text-gray-500">{student.institution || ''}</p>
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <div className="lg:col-span-2">
+                            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                              Pending Configuration
+                            </Badge>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="lg:col-span-3">
+                            <Button
+                              onClick={() => configureCharges(student)}
+                              className="w-full bg-[#07A64F] hover:bg-[#07A64F]/90"
+                            >
+                              <Settings className="h-4 w-4 mr-2" />
+                              Configure Charges
+                            </Button>
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          <div className="text-sm text-gray-500">ID: {student.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.roomNumber || 'Not assigned'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${student.status === 'Active'
-                        ? 'bg-green-100 text-green-800'
-                        : student.status === 'Inactive'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                        }`}>
-                        {student.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.phone}</div>
-                      <div className="text-sm text-gray-500">{student.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleViewStudent(student)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(student)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Edit Student"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete Student"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Settings className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">No Pending Configurations</h3>
+                  <p className="text-gray-500">
+                    All students have been configured. New students will appear here.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Add Student Dialog */}
-      {showAddDialog && (
-        <StudentDialog
-          title="Add New Student"
-          onSubmit={handleAddStudent}
-          onClose={() => setShowAddDialog(false)}
-          isSubmitting={isSubmitting}
-        />
-      )}
+        {/* Student List & Management Tab */}
+        <TabsContent value="students" className="space-y-6">
+          {/* Search and Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="md:col-span-2">
+              <CardContent className="pt-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by name, ID, room, or phone..."
+                    value={searchTerm}
+                    onChange={(e) => searchStudents(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Edit Student Dialog */}
-      {showEditDialog && selectedStudent && (
-        <StudentDialog
-          title="Edit Student"
-          student={selectedStudent}
-          onSubmit={handleEditStudent}
-          onClose={() => {
-            setShowEditDialog(false);
-            setSelectedStudent(null);
-          }}
-          isSubmitting={isSubmitting}
-        />
-      )}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-[#07A64F]">{configuredStudents.length}</div>
+                  <div className="text-sm text-gray-600">Configured Students</div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* View Student Dialog */}
-      {showViewDialog && selectedStudent && (
-        <StudentViewDialog
-          student={selectedStudent}
-          onClose={() => {
-            setShowViewDialog(false);
-            setSelectedStudent(null);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-// Student Dialog Component
-interface StudentDialogProps {
-  title: string;
-  student?: Student;
-  onSubmit: (data: CreateStudentDto) => void;
-  onClose: () => void;
-  isSubmitting: boolean;
-}
-
-const StudentDialog: React.FC<StudentDialogProps> = ({
-  title,
-  student,
-  onSubmit,
-  onClose,
-  isSubmitting
-}) => {
-  const [formData, setFormData] = useState({
-    name: student?.name || '',
-    email: student?.email || '',
-    phone: student?.phone || '',
-    roomNumber: student?.roomNumber || '',
-    address: student?.address || '',
-    enrollmentDate: student?.enrollmentDate || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Enrollment Date
-              </label>
-              <input
-                type="date"
-                value={formData.enrollmentDate}
-                onChange={(e) => setFormData({ ...formData, enrollmentDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone *
-              </label>
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Room Number
-              </label>
-              <input
-                type="text"
-                value={formData.roomNumber}
-                onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
-              </label>
-              <textarea
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSubmitting ? 'Saving...' : student ? 'Update' : 'Add'} Student
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Student View Dialog Component
-interface StudentViewDialogProps {
-  student: Student;
-  onClose: () => void;
-}
-
-const StudentViewDialog: React.FC<StudentViewDialogProps> = ({ student, onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Student Details</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ×
-            </button>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-[#1295D0]">
+                    {configuredStudents.filter(s => (s.currentBalance || 0) > 0).length}
+                  </div>
+                  <div className="text-sm text-gray-600">With Dues</div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-16 w-16">
-                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-xl font-medium text-blue-600">
-                    {student.name.charAt(0).toUpperCase()}
-                  </span>
+          {/* Students Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Student List ({filteredStudents.length} students)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredStudents.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student Details</TableHead>
+                      <TableHead>Room & Bed</TableHead>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Monthly Fees</TableHead>
+                      <TableHead>Balance</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#07A64F] to-[#1295D0] flex items-center justify-center text-white font-bold">
+                              {student.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium">{student.name}</p>
+                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {student.phone}
+                              </p>
+                              <p className="text-xs text-gray-400">{student.id}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Bed className="h-4 w-4 text-[#1295D0]" />
+                            <div>
+                              <p className="font-medium">{student.roomNumber || 'Not assigned'}</p>
+                              {student.bedNumber && (
+                                <p className="text-sm text-gray-500">{student.bedNumber}</p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{student.course || 'Not specified'}</p>
+                            <p className="text-sm text-gray-500">{student.institution || ''}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm">Base: ₹{(student.baseMonthlyFee || 0).toLocaleString()}</div>
+                            {(student.laundryFee || 0) > 0 && (
+                              <div className="text-xs text-gray-500">Laundry: ₹{(student.laundryFee || 0).toLocaleString()}</div>
+                            )}
+                            {(student.foodFee || 0) > 0 && (
+                              <div className="text-xs text-gray-500">Food: ₹{(student.foodFee || 0).toLocaleString()}</div>
+                            )}
+                            <div className="font-medium text-[#1295D0] border-t pt-1">
+                              Total: ₹{((student.baseMonthlyFee || 0) + (student.laundryFee || 0) + (student.foodFee || 0)).toLocaleString()}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {(student.currentBalance || 0) > 0 ? (
+                            <div className="text-red-600 font-medium">
+                              Due: ₹{(student.currentBalance || 0).toLocaleString()}
+                            </div>
+                          ) : (
+                            <div className="text-green-600 font-medium">
+                              Up to date
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={student.status === 'Active' ? 'default' : 'secondary'}>
+                            {student.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setShowDetailsDialog(true);
+                              }}
+                            >
+                              <User className="h-3 w-3 mr-1" />
+                              View Details
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">No students found</h3>
+                  <p className="text-gray-500">
+                    {searchTerm ? 'Try adjusting your search criteria' : 'No configured students yet. Complete charge configuration for pending students.'}
+                  </p>
+                  {!searchTerm && pendingStudents.length > 0 && (
+                    <Button
+                      onClick={() => setActiveTab("pending")}
+                      className="mt-4 bg-[#07A64F] hover:bg-[#07A64F]/90"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configure Pending Students
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Student Details Dialog */}
+      {selectedStudent && (
+        <Dialog open={showDetailsDialog} onOpenChange={(open) => {
+          if (!open) {
+            setSelectedStudent(null);
+            setShowDetailsDialog(false);
+          }
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Student Details - {selectedStudent.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Student Header */}
+              <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#07A64F] to-[#1295D0] flex items-center justify-center text-white font-bold text-xl">
+                  {selectedStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{selectedStudent.name}</h3>
+                  <p className="text-gray-600">ID: {selectedStudent.id}</p>
+                  <Badge variant={selectedStudent.status === 'Active' ? 'default' : 'secondary'}>
+                    {selectedStudent.status}
+                  </Badge>
                 </div>
               </div>
-              <div className="ml-4">
-                <div className="text-lg font-medium text-gray-900">{student.name}</div>
-                <div className="text-sm text-gray-500">ID: {student.id}</div>
+
+              {/* Information Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Personal Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Phone:</span>
+                      <span>{selectedStudent.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Email:</span>
+                      <span>{selectedStudent.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Home className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Address:</span>
+                      <span>{selectedStudent.address || 'Not provided'}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Room & Academic Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bed className="h-5 w-5" />
+                      Room & Academic Info
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <span className="text-sm text-gray-600">Room Number:</span>
+                      <p className="font-medium text-lg">{selectedStudent.roomNumber || 'Not assigned'}</p>
+                      {selectedStudent.bedNumber && (
+                        <p className="text-sm text-gray-500">Bed: {selectedStudent.bedNumber}</p>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Course:</span>
+                      <p>{selectedStudent.course || 'Not specified'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Institution:</span>
+                      <p>{selectedStudent.institution || 'Not specified'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Guardian Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Guardian Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <span className="text-sm text-gray-600">Name:</span>
+                      <p className="font-medium">{selectedStudent.guardianName || 'Not provided'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Phone:</span>
+                      <span>{selectedStudent.guardianPhone || 'Not provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Emergency:</span>
+                      <span>{selectedStudent.emergencyContact || 'Not provided'}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Financial Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Financial Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Base Monthly Fee:</span>
+                        <span className="font-medium">₹{(selectedStudent.baseMonthlyFee || 0).toLocaleString()}</span>
+                      </div>
+                      {(selectedStudent.laundryFee || 0) > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Laundry Fee:</span>
+                          <span>₹{(selectedStudent.laundryFee || 0).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {(selectedStudent.foodFee || 0) > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Food Fee:</span>
+                          <span>₹{(selectedStudent.foodFee || 0).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="font-medium">Total Monthly:</span>
+                        <span className="font-bold text-[#1295D0]">₹{((selectedStudent.baseMonthlyFee || 0) + (selectedStudent.laundryFee || 0) + (selectedStudent.foodFee || 0)).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      {(selectedStudent.currentBalance || 0) > 0 ? (
+                        <div className="flex justify-between text-red-600">
+                          <span className="font-medium">Outstanding Due:</span>
+                          <span className="font-bold">₹{(selectedStudent.currentBalance || 0).toLocaleString()}</span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-green-600">
+                          <span className="font-medium">Payment Status:</span>
+                          <span className="font-medium">Up to date</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${student.status === 'Active'
-                  ? 'bg-green-100 text-green-800'
-                  : student.status === 'Inactive'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-800'
-                  }`}>
-                  {student.status}
-                </span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Room</label>
-                <p className="text-sm text-gray-900">{student.roomNumber || 'Not assigned'}</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">Email</label>
-              <p className="text-sm text-gray-900">{student.email}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">Phone</label>
-              <p className="text-sm text-gray-900">{student.phone}</p>
-            </div>
-
-            {student.guardianPhone && (
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Guardian Contact</label>
-                <p className="text-sm text-gray-900">{student.guardianPhone}</p>
-              </div>
-            )}
-
-            {student.address && (
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Address</label>
-                <p className="text-sm text-gray-900">{student.address}</p>
-              </div>
+      {/* Charge Configuration Dialog */}
+      <Dialog open={showChargeConfigDialog} onOpenChange={setShowChargeConfigDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Charges - {selectedStudent?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {selectedStudent && (
+              <ChargeConfigurationForm
+                student={selectedStudent}
+                onComplete={completeChargeConfiguration}
+                onCancel={() => setShowChargeConfigDialog(false)}
+              />
             )}
           </div>
-
-          <div className="flex justify-end pt-6">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

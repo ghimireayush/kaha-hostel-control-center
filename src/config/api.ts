@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     PAYMENTS: (id: string) => `/students/${id}/payments`,
     INVOICES: (id: string) => `/students/${id}/invoices`,
     CHECKOUT: (id: string) => `/students/${id}/checkout`,
+    CONFIGURE: (id: string) => `/students/${id}/configure`,
   },
   DASHBOARD: {
     STATS: '/dashboard/stats',
