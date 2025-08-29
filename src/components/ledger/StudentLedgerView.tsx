@@ -41,30 +41,33 @@ export const StudentLedgerView = () => {
   const [selectedStudent, setSelectedStudent] = useState("");
 
   // Transform API students to local format
-  const students = apiStudents.map(student => ({
+  const students = (apiStudents || []).map(student => ({
     ...student,
+    // Ensure id is always a string
+    id: String(student.id || ''),
     // Map API fields to local interface
-    address: student.address || '',
-    roomNumber: student.roomNumber || '',
-    course: student.course || '',
-    institution: student.institution || '',
-    guardianName: student.guardianName || '',
-    guardianPhone: student.guardianPhone || '',
-    emergencyContact: student.emergencyContact || student.guardianPhone || '',
-    baseMonthlyFee: student.baseMonthlyFee || 0,
-    laundryFee: student.laundryFee || 0,
-    foodFee: student.foodFee || 0,
-    joinDate: student.joinDate || new Date().toISOString().split('T')[0],
-    enrollmentDate: student.createdAt || new Date().toISOString().split('T')[0],
-    status: student.status || 'Active',
-    isCheckedOut: student.isCheckedOut || false,
+    name: String(student.name || ''),
+    address: String(student.address || ''),
+    roomNumber: String(student.roomNumber || ''),
+    course: String(student.course || ''),
+    institution: String(student.institution || ''),
+    guardianName: String(student.guardianName || ''),
+    guardianPhone: String(student.guardianPhone || ''),
+    emergencyContact: String(student.emergencyContact || student.guardianPhone || ''),
+    baseMonthlyFee: Number(student.baseMonthlyFee || 0),
+    laundryFee: Number(student.laundryFee || 0),
+    foodFee: Number(student.foodFee || 0),
+    joinDate: String(student.joinDate || new Date().toISOString().split('T')[0]),
+    enrollmentDate: String(student.createdAt || new Date().toISOString().split('T')[0]),
+    status: String(student.status || 'Active'),
+    isCheckedOut: Boolean(student.isCheckedOut || false),
     checkoutDate: student.checkoutDate || null,
-    currentBalance: student.balance || 0,
+    currentBalance: Number(student.balance || 0),
     advanceBalance: 0, // Default advance balance
     totalPaid: 0,
-    totalDue: student.baseMonthlyFee || 0,
+    totalDue: Number(student.baseMonthlyFee || 0),
     lastPaymentDate: '',
-    configurationDate: student.createdAt || new Date().toISOString(),
+    configurationDate: String(student.createdAt || new Date().toISOString()),
     additionalCharges: []
   }));
 
@@ -73,7 +76,7 @@ export const StudentLedgerView = () => {
     const params = new URLSearchParams(location.search);
     const studentParam = params.get('student');
     
-    if (studentParam && students.find(s => s.id === studentParam)) {
+    if (studentParam && students && students.length > 0 && students.find(s => s.id === studentParam)) {
       setSelectedStudent(studentParam);
     }
   }, [location.search, students]);
@@ -212,11 +215,13 @@ export const StudentLedgerView = () => {
               <SelectValue placeholder="Choose student to view ledger" />
             </SelectTrigger>
             <SelectContent>
-              {students.map((student) => (
-                <SelectItem key={student.id} value={student.id}>
-                  {student.name} - Room {student.roomNumber}
+              {students && students.length > 0 ? students.map((student) => (
+                <SelectItem key={student.id} value={String(student.id)}>
+                  {String(student.name)} - Room {String(student.roomNumber || 'N/A')}
                 </SelectItem>
-              ))}
+              )) : (
+                <SelectItem value="" disabled>No students available</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </CardContent>

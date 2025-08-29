@@ -75,7 +75,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   ];
 
   return (
-    <div className="w-72 bg-white/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 relative overflow-hidden">
+    <div className="w-72 min-w-72 bg-white/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 relative overflow-hidden flex-shrink-0">
       {/* Sidebar Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 via-white/30 to-slate-100/50"></div>
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#07A64F]/10 to-transparent rounded-full blur-2xl"></div>
