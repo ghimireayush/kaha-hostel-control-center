@@ -13,27 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { monthlyInvoiceService } from "@/services/monthlyInvoiceService.js";
-import { useAppContext } from "@/contexts/AppContext";
+import { useStudents } from "@/hooks/useStudents";
+import { Student as ApiStudent, CreateStudentDto, UpdateStudentDto } from "@/types/api";
 
-interface Student {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
-  roomNumber: string;
+// Extend the API Student type with additional local properties
+interface Student extends ApiStudent {
   bedNumber?: string;
-  course: string;
-  institution: string;
-  guardianName: string;
-  guardianPhone: string;
-  emergencyContact: string;
-  baseMonthlyFee: number;
-  laundryFee: number;
-  foodFee: number;
-  joinDate: string;
-  status: string;
-  isCheckedOut: boolean;
   isConfigured?: boolean;
   configurationDate?: string;
   billingStartDate?: string;
@@ -878,38 +863,64 @@ const ChargeConfigurationForm = ({ student, onComplete, onCancel }: ChargeConfig
 };
 
 export const StudentManagement = () => {
-  const { state, refreshAllData } = useAppContext();
+  // Use the real Students API hook
+  const { 
+    students: apiStudents, 
+    loading: studentsLoading, 
+    error: studentsError,
+    createStudent,
+    updateStudent,
+    deleteStudent,
+    searchStudents,
+    refreshData
+  } = useStudents();
+
   const [activeTab, setActiveTab] = useState("pending");
-  const [students, setStudents] = useState<Student[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showChargeConfigDialog, setShowChargeConfigDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   
+  // Transform API students to local Student format with additional properties
+  const transformedStudents: Student[] = apiStudents.map((student, index) => ({
+    ...student,
+    // Map API fields to local interface
+    address: student.address || '',
+    roomNumber: student.roomNumber || '',
+    course: student.course || '',
+    institution: student.institution || '',
+    guardianName: student.guardianName || '',
+    guardianPhone: student.guardianPhone || '',
+    emergencyContact: student.emergencyContact || student.guardianPhone || '',
+    baseMonthlyFee: student.baseMonthlyFee || 0,
+    laundryFee: 0, // Default values for fields not in API
+    foodFee: 0,
+    joinDate: student.joinDate || new Date().toISOString(),
+    // Additional local properties
+    isConfigured: index !== 0, // First student is pending, others configured
+    currentBalance: student.balance || 0,
+    totalPaid: 0,
+    totalDue: student.baseMonthlyFee || 0,
+    lastPaymentDate: '',
+    additionalCharges: []
+  }));
+
+  // Filter only active students (not checked out)
+  const activeStudents = transformedStudents.filter(student => 
+    student.status === 'Active'
+  );
+
   // Separate students into pending configuration and configured
-  const pendingStudents = students.filter(student => !student.isConfigured);
-  const configuredStudents = students.filter(student => student.isConfigured);
+  const pendingStudents = activeStudents.filter(student => !student.isConfigured);
+  const configuredStudents = activeStudents.filter(student => student.isConfigured);
 
-  // Load data
+  // Load rooms data (keeping mock data for now)
   useEffect(() => {
-    const loadData = async () => {
+    const loadRooms = async () => {
       try {
-        // Use AppContext students data instead of mock data
-        const contextStudents = state.students || [];
-        const processedStudents = contextStudents
-          .filter((s: Student) => !s.isCheckedOut)
-          .map((student: Student, index: number) => ({
-            ...student,
-            // First student is pending configuration, others are configured
-            isConfigured: index !== 0
-          }));
-        
-        setStudents(processedStudents);
-
-        // Use mock rooms data
+        // Use mock rooms data (TODO: Replace with real rooms API when available)
         const mockRooms = [
           {
             id: "room_001",
@@ -954,7 +965,7 @@ export const StudentManagement = () => {
         const params = new URLSearchParams(window.location.search);
         const studentParam = params.get('student');
         if (studentParam) {
-          const targetStudent = processedStudents.find((s: Student) => s.id === studentParam);
+          const targetStudent = activeStudents.find((s: Student) => s.id === studentParam);
           if (targetStudent && !targetStudent.isConfigured) {
             setActiveTab("pending");
             // Auto-open charge configuration for the student
@@ -965,21 +976,30 @@ export const StudentManagement = () => {
           }
         }
       } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Failed to load data');
-      } finally {
-        setLoading(false);
+        console.error('Error loading rooms data:', error);
+        toast.error('Failed to load rooms data');
       }
     };
 
-    loadData();
-  }, []);
+    loadRooms();
+  }, [activeStudents]);
 
-  // Filter configured students based on search
+  // Handle search with debouncing
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm.trim()) {
+        searchStudents(searchTerm);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, searchStudents]);
+
+  // Filter configured students based on search (local filtering for immediate feedback)
   const filteredStudents = configuredStudents.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (student.roomNumber && student.roomNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
     student.phone.includes(searchTerm)
   );
 
@@ -1056,25 +1076,36 @@ export const StudentManagement = () => {
     }
   };
 
-  // Save student changes
-  const saveStudentChanges = (studentId: string, updatedData: any) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId 
-        ? { 
-            ...student, 
-            ...updatedData,
-            totalDue: updatedData.baseMonthlyFee + updatedData.laundryFee + updatedData.foodFee
-          }
-        : student
-    ));
-    
-    setShowEditDialog(false);
-    setSelectedStudent(null);
-    
-    toast.success("Student information updated successfully!");
+  // Save student changes using real API
+  const saveStudentChanges = async (studentId: string, updatedData: any) => {
+    try {
+      // Prepare update data for API
+      const updatePayload: UpdateStudentDto = {
+        name: updatedData.name,
+        phone: updatedData.phone,
+        email: updatedData.email,
+        address: updatedData.address,
+        roomNumber: updatedData.roomNumber,
+        // Map additional fields if they exist in API
+        ...(updatedData.course && { course: updatedData.course }),
+        ...(updatedData.institution && { institution: updatedData.institution })
+      };
+
+      // Call the real API to update student
+      await updateStudent(studentId, updatePayload);
+      
+      setShowEditDialog(false);
+      setSelectedStudent(null);
+      
+      toast.success("Student information updated successfully!");
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast.error("Failed to update student information. Please try again.");
+    }
   };
 
-  if (loading) {
+  // Show loading state while students are being fetched
+  if (studentsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4">
@@ -1116,7 +1147,7 @@ export const StudentManagement = () => {
         {/* Quick Stats */}
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-[#1295D0] border-[#1295D0]/30">
-            {students.length} Total Students
+            {transformedStudents.length} Total Students
           </Badge>
           <Badge variant="outline" className="text-[#07A64F] border-[#07A64F]/30">
             {students.filter(s => s.status === 'active').length} Active

@@ -5,152 +5,190 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useAppContext } from "@/contexts/AppContext";
+import { useStudents } from "@/hooks/useStudents";
+import { useLedger } from "@/hooks/useLedger";
+import { Student as ApiStudent, LedgerEntry } from "@/types/api";
 import { useLocation } from "react-router-dom";
 
-interface LedgerEntry {
-  id: string;
-  date: string;
-  type: 'invoice' | 'payment' | 'discount' | 'advance';
-  description: string;
-  debit: number;
-  credit: number;
-  balance: number;
-  reference?: string;
-}
+// LedgerEntry interface is now imported from @/types/api
 
 export const StudentLedgerView = () => {
-  const { state } = useAppContext();
+  // Use real Students API
+  const { 
+    students: apiStudents, 
+    loading: studentsLoading, 
+    error: studentsError,
+    refreshData: refreshStudents
+  } = useStudents();
+  
+  // Use real Ledger API
+  const {
+    entries: ledgerEntries,
+    studentBalance,
+    entriesLoading,
+    balanceLoading,
+    entriesError,
+    balanceError,
+    fetchStudentLedger,
+    fetchStudentBalance,
+    refreshData: refreshLedger,
+    getFormattedBalance,
+    getBalanceTypeColor,
+    getEntryTypeIcon
+  } = useLedger();
+  
   const location = useLocation();
   const [selectedStudent, setSelectedStudent] = useState("");
+
+  // Transform API students to local format
+  const students = apiStudents.map(student => ({
+    ...student,
+    // Map API fields to local interface
+    address: student.address || '',
+    roomNumber: student.roomNumber || '',
+    course: student.course || '',
+    institution: student.institution || '',
+    guardianName: student.guardianName || '',
+    guardianPhone: student.guardianPhone || '',
+    emergencyContact: student.emergencyContact || student.guardianPhone || '',
+    baseMonthlyFee: student.baseMonthlyFee || 0,
+    laundryFee: student.laundryFee || 0,
+    foodFee: student.foodFee || 0,
+    joinDate: student.joinDate || new Date().toISOString().split('T')[0],
+    enrollmentDate: student.createdAt || new Date().toISOString().split('T')[0],
+    status: student.status || 'Active',
+    isCheckedOut: student.isCheckedOut || false,
+    checkoutDate: student.checkoutDate || null,
+    currentBalance: student.balance || 0,
+    advanceBalance: 0, // Default advance balance
+    totalPaid: 0,
+    totalDue: student.baseMonthlyFee || 0,
+    lastPaymentDate: '',
+    configurationDate: student.createdAt || new Date().toISOString(),
+    additionalCharges: []
+  }));
 
   // Handle URL parameters to auto-select student
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const studentParam = params.get('student');
     
-    if (studentParam && state.students.find(s => s.id === studentParam)) {
+    if (studentParam && students.find(s => s.id === studentParam)) {
       setSelectedStudent(studentParam);
     }
-  }, [location.search, state.students]);
+  }, [location.search, students]);
 
-  const students = state.students;
+  // Fetch ledger data when student is selected
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchStudentLedger(selectedStudent);
+      fetchStudentBalance(selectedStudent);
+    }
+  }, [selectedStudent, fetchStudentLedger, fetchStudentBalance]);
 
-  // Get real ledger data for selected student
-  const selectedStudentData = selectedStudent ? state.students.find(s => s.id === selectedStudent) : null;
-  
-  // Generate dynamic ledger entries based on student data
-  const generateLedgerEntries = (student: any): LedgerEntry[] => {
-    if (!student) return [];
-    
-    const entries: LedgerEntry[] = [];
-    let runningBalance = 0;
-    
-    // Enrollment entry
-    entries.push({
-      id: `${student.id}-enrollment`,
-      date: student.enrollmentDate,
-      type: "advance",
-      description: "Student enrollment - Welcome to hostel",
-      debit: 0,
-      credit: 0,
-      balance: 0,
-      reference: `ENR-${student.id}`
-    });
-    
-    // Generate monthly invoices (last 3 months)
-    const monthlyFee = student.baseMonthlyFee + student.laundryFee + student.foodFee;
-    const months = ['January', 'February', 'March'];
-    
-    months.forEach((month, index) => {
-      const invoiceAmount = monthlyFee;
-      runningBalance += invoiceAmount;
-      
-      entries.push({
-        id: `${student.id}-invoice-${index}`,
-        date: `2024-0${index + 1}-01`,
-        type: "invoice",
-        description: `${month} 2024 - Monthly charges (Base: ₨${student.baseMonthlyFee}, Laundry: ₨${student.laundryFee}, Food: ₨${student.foodFee})`,
-        debit: invoiceAmount,
-        credit: 0,
-        balance: runningBalance,
-        reference: `INV-2024-${String(index + 1).padStart(3, '0')}`
-      });
-    });
-    
-    // Add payments to match current balance
-    const totalCharges = runningBalance;
-    const currentDue = student.currentBalance || 0;
-    const totalPaid = totalCharges - currentDue;
-    
-    if (totalPaid > 0) {
-      runningBalance -= totalPaid;
-      entries.push({
-        id: `${student.id}-payment`,
-        date: "2024-03-15",
-        type: "payment",
-        description: "Payment received - Multiple transactions",
-        debit: 0,
-        credit: totalPaid,
-        balance: runningBalance,
-        reference: `PAY-${student.id}`
-      });
-    }
-    
-    // Add advance if student has advance balance
-    if (student.advanceBalance > 0) {
-      runningBalance -= student.advanceBalance;
-      entries.push({
-        id: `${student.id}-advance`,
-        date: "2024-01-10",
-        type: "advance",
-        description: "Advance payment received",
-        debit: 0,
-        credit: student.advanceBalance,
-        balance: runningBalance,
-        reference: `ADV-${student.id}`
-      });
-    }
-    
-    return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
-  
-  const ledgerEntries = generateLedgerEntries(selectedStudentData);
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'invoice': return '🧾';
-      case 'payment': return '💰';
-      case 'discount': return '🏷️';
-      case 'advance': return '⬆️';
-      default: return '📋';
-    }
-  };
+  // Get selected student data
+  const selectedStudentData = selectedStudent ? students.find(s => s.id === selectedStudent) : null;
 
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'invoice':
+      case 'Invoice':
         return <Badge className="bg-red-100 text-red-800">Invoice</Badge>;
-      case 'payment':
+      case 'Payment':
         return <Badge className="bg-green-100 text-green-800">Payment</Badge>;
-      case 'discount':
+      case 'Discount':
         return <Badge className="bg-blue-100 text-blue-800">Discount</Badge>;
-      case 'advance':
-        return <Badge className="bg-purple-100 text-purple-800">Advance</Badge>;
+      case 'Adjustment':
+        return <Badge className="bg-purple-100 text-purple-800">Adjustment</Badge>;
+      case 'Refund':
+        return <Badge className="bg-orange-100 text-orange-800">Refund</Badge>;
+      case 'Penalty':
+        return <Badge className="bg-red-100 text-red-800">Penalty</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
   };
 
-  const currentBalance = ledgerEntries[ledgerEntries.length - 1]?.balance || 0;
-  const totalDebits = ledgerEntries.reduce((sum, entry) => sum + entry.debit, 0);
-  const totalCredits = ledgerEntries.reduce((sum, entry) => sum + entry.credit, 0);
+  // Calculate totals from real ledger data
+  const currentBalance = studentBalance?.currentBalance || 0;
+  const totalDebits = ledgerEntries.reduce((sum, entry) => sum + (entry.debit || 0), 0);
+  const totalCredits = ledgerEntries.reduce((sum, entry) => sum + (entry.credit || 0), 0);
+
+  // Show loading state
+  if (studentsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">Loading student data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an API error
+  if (studentsError || entriesError) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error Loading Data</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{studentsError || entriesError}</p>
+              </div>
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    refreshStudents();
+                    if (selectedStudent) {
+                      refreshLedger();
+                    }
+                  }}
+                  className="text-red-800 border-red-300 hover:bg-red-50"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900">📋 Student Ledger View</h2>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              refreshStudents();
+              if (selectedStudent) {
+                refreshLedger();
+              }
+            }}
+            disabled={studentsLoading || entriesLoading}
+            className="flex items-center gap-2"
+          >
+            <svg 
+              className={`h-4 w-4 ${studentsLoading || entriesLoading ? 'animate-spin' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh Data
+          </Button>
           <Button variant="outline">🖨️ Print Ledger</Button>
           <Button variant="outline">📄 Download PDF</Button>
         </div>
@@ -229,21 +267,30 @@ export const StudentLedgerView = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">
-                  ₨{Math.abs(currentBalance).toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Current {currentBalance >= 0 ? 'Outstanding' : 'Advance'}
-                </div>
-                <div className="text-xs mt-1">
-                  {currentBalance >= 0 ? '🔴 Amount Due' : '🟢 Credit Balance'}
-                </div>
+                {balanceLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-bold ${getBalanceTypeColor(studentBalance?.balanceType || 'Nil')}`}>
+                      {getFormattedBalance(Math.abs(currentBalance))}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Current {currentBalance >= 0 ? 'Outstanding' : 'Advance'}
+                    </div>
+                    <div className="text-xs mt-1">
+                      {currentBalance >= 0 ? '🔴 Amount Due' : '🟢 Credit Balance'}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <div className="text-2xl font-bold text-red-600">
-                  ₨{totalDebits.toLocaleString()}
+                  {getFormattedBalance(totalDebits)}
                 </div>
                 <div className="text-sm text-gray-500">Total Charges</div>
                 <div className="text-xs mt-1 text-red-600">📈 All invoices</div>
@@ -252,7 +299,7 @@ export const StudentLedgerView = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="text-2xl font-bold text-green-600">
-                  ₨{totalCredits.toLocaleString()}
+                  {getFormattedBalance(totalCredits)}
                 </div>
                 <div className="text-sm text-gray-500">Total Payments</div>
                 <div className="text-xs mt-1 text-green-600">💰 All credits</div>
@@ -277,66 +324,89 @@ export const StudentLedgerView = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead className="text-right">Debit (₨)</TableHead>
-                    <TableHead className="text-right">Credit (₨)</TableHead>
-                    <TableHead className="text-right">Balance (₨)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ledgerEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <span>{getTypeIcon(entry.type)}</span>
-                          {getTypeBadge(entry.type)}
-                        </div>
-                      </TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {entry.reference}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {entry.debit > 0 && (
-                          <span className="text-red-600 font-medium">
-                            ₨{entry.debit.toLocaleString()}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {entry.credit > 0 && (
-                          <span className="text-green-600 font-medium">
-                            ₨{entry.credit.toLocaleString()}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        <span className={entry.balance >= 0 ? 'text-red-600' : 'text-green-600'}>
-                          ₨{Math.abs(entry.balance).toLocaleString()}
-                          {entry.balance >= 0 ? ' Dr' : ' Cr'}
-                        </span>
-                      </TableCell>
+              {entriesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-600">Loading ledger entries...</p>
+                  </div>
+                </div>
+              ) : ledgerEntries.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-4">📋</div>
+                  <p className="text-gray-500 font-medium">No ledger entries found</p>
+                  <p className="text-sm text-gray-400">This student has no transaction history</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead className="text-right">Debit</TableHead>
+                      <TableHead className="text-right">Credit</TableHead>
+                      <TableHead className="text-right">Balance</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ledgerEntries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span>{getEntryTypeIcon(entry.type)}</span>
+                            {getTypeBadge(entry.type)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{entry.description}</TableCell>
+                        <TableCell>
+                          {entry.referenceId && (
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {entry.referenceId}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(entry.debit || 0) > 0 && (
+                            <span className="text-red-600 font-medium">
+                              {getFormattedBalance(entry.debit || 0)}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(entry.credit || 0) > 0 && (
+                            <span className="text-green-600 font-medium">
+                              {getFormattedBalance(entry.credit || 0)}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          <span className={getBalanceTypeColor(entry.balanceType)}>
+                            {getFormattedBalance(Math.abs(entry.balance || 0))}
+                            {entry.balanceType !== 'Nil' && ` ${entry.balanceType}`}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
 
               {/* Running Balance Info */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Final Balance:</span>
-                  <span className={`text-xl font-bold ${currentBalance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ₨{Math.abs(currentBalance).toLocaleString()} {currentBalance >= 0 ? 'Outstanding' : 'Advance'}
-                  </span>
+                  {balanceLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-6 bg-gray-200 rounded w-32"></div>
+                    </div>
+                  ) : (
+                    <span className={`text-xl font-bold ${getBalanceTypeColor(studentBalance?.balanceType || 'Nil')}`}>
+                      {getFormattedBalance(Math.abs(currentBalance))} {currentBalance >= 0 ? 'Outstanding' : 'Advance'}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-600 mt-2">
                   {currentBalance >= 0 
