@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAppContext } from "@/contexts/AppContext";
 import { useNavigation } from "@/hooks/useNavigation";
+import { useBookings } from "@/hooks/useBookings";
 import { KahaLogo } from "@/components/ui/KahaLogo";
 import { ledgerService } from "@/services/ledgerService";
 import { studentService } from "@/services/studentService";
@@ -30,11 +31,12 @@ export const Dashboard = () => {
   const { } = useLanguage();
   const { state } = useAppContext();
   const { goToBookings, goToLedger, goToStudentLedger } = useNavigation();
+  const { bookingStats } = useBookings();
 
   // Calculate real-time statistics
   const totalStudents = state.students.length;
   const activeStudents = state.students.filter(s => s.status === 'Active').length;
-  const pendingBookings = state.bookingRequests.filter(r => r.status === 'Pending').length;
+  const pendingBookings = bookingStats.pendingBookings;
   const totalDues = state.students.reduce((sum, s) => sum + (s.currentBalance || 0), 0);
 
   const paidInvoices = state.invoices.filter(i => i.status === 'Paid').length;
@@ -82,9 +84,10 @@ export const Dashboard = () => {
     .sort((a, b) => b.currentBalance - a.currentBalance)
     .slice(0, 4);
 
-  // Get recent bookings
-  const recentBookings = state.bookingRequests
-    .sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())
+  // Get recent bookings from API
+  const { bookings } = useBookings();
+  const recentBookings = bookings
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
 
   // Get students who are checked out but still have dues

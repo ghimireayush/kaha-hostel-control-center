@@ -1,89 +1,101 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, Check, X, UserPlus, Clock, MapPin, Phone } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Users, Calendar, Phone, Mail } from 'lucide-react';
+import { useBookings } from '@/hooks/useBookings';
+import { BookingStatus } from '@/types/api';
 import { toast } from "sonner";
-import { useAppContext } from "@/contexts/AppContext";
-import { useNavigation } from "@/hooks/useNavigation";
 
 const BookingRequests = () => {
-  const { state, approveBooking } = useAppContext();
-  const { goToLedger } = useNavigation();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const [approving, setApproving] = useState(false);
+  const {
+    bookings,
+    pendingBookings,
+    bookingStats,
+    loading,
+    error,
+    actionLoading,
+    approveBooking,
+    rejectBooking,
+    refreshData
+  } = useBookings();
+  
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
 
-  const handleApprove = async (request: any) => {
-    setApproving(true);
+  // Filter bookings based on search and status
+  useEffect(() => {
+    let filtered = bookings;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(booking => 
+        booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.phone.includes(searchTerm) ||
+        booking.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(booking => booking.status === statusFilter);
+    }
+    
+    setFilteredBookings(filtered);
+  }, [bookings, searchTerm, statusFilter]);
+
+  const handleApprove = async (bookingId) => {
     try {
-      const roomSuggestion = request.preferredRoom === 'Single Room' ? 'A-101' :
-                           request.preferredRoom === 'Shared Room' ? 'B-205' : 'C-301';
-      
-      const success = await approveBooking(request.id, roomSuggestion);
-      
-      if (success) {
-        toast.success(`${request.name} approved! Student profile created and ledger activated.`, {
-          duration: 4000,
-          action: {
-            label: "View Student Profile",
-            onClick: () => goToLedger("students")
-          }
-        });
-        setSelectedRequest(null);
-      } else {
-        toast.error("Failed to approve booking request");
-      }
+      const result = await approveBooking(bookingId);
+      toast.success('Booking approved successfully! Student profile created and room assigned.', {
+        duration: 4000,
+      });
+      console.log('Booking approved:', result);
     } catch (error) {
-      toast.error("Error approving booking request");
-      console.error("Approval error:", error);
-    } finally {
-      setApproving(false);
+      console.error('Error approving booking:', error);
+      toast.error('Failed to approve booking request');
     }
   };
 
-  const handleReject = async (request: any) => {
+  const handleReject = async () => {
+    if (!selectedBooking || !rejectionReason.trim()) return;
+    
     try {
-      // In a real app, you'd call an API here
-      toast.error(`${request.name}'s request has been rejected.`);
-      setSelectedRequest(null);
+      await rejectBooking(selectedBooking.id, rejectionReason);
+      setShowRejectDialog(false);
+      setRejectionReason('');
+      setSelectedBooking(null);
+      toast.success('Booking rejected successfully');
+      console.log('Booking rejected successfully');
     } catch (error) {
-      toast.error("Error rejecting booking request");
-      console.error("Rejection error:", error);
+      console.error('Error rejecting booking:', error);
+      toast.error('Failed to reject booking request');
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: BookingStatus) => {
     switch (status) {
-      case 'Approved':
+      case BookingStatus.APPROVED:
         return 'bg-green-100 text-green-700';
-      case 'Rejected':
+      case BookingStatus.REJECTED:
         return 'bg-red-100 text-red-700';
-      case 'Pending':
+      case BookingStatus.PENDING:
         return 'bg-yellow-100 text-yellow-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const filteredRequests = state.bookingRequests.filter(request => {
-    const matchesSearch = request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.phone.includes(searchTerm);
-    const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter.toLowerCase();
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const pendingCount = state.bookingRequests.filter(req => req.status === 'Pending').length;
-  const approvedCount = state.bookingRequests.filter(req => req.status === 'Approved').length;
-  const rejectedCount = state.bookingRequests.filter(req => req.status === 'Rejected').length;
-
-  if (state.loading) {
+  if (loading) {
     return (
       <MainLayout activeTab="bookings">
         <div className="flex items-center justify-center h-64">
@@ -113,6 +125,25 @@ const BookingRequests = () => {
     );
   }
 
+  if (error) {
+    return (
+      <MainLayout activeTab="bookings">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center space-y-4">
+            <div className="text-red-500 mb-2">
+              <XCircle className="h-12 w-12 mx-auto mb-2" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Booking Requests</h3>
+            <p className="text-gray-500 mb-4">{error}</p>
+            <Button onClick={refreshData} className="bg-blue-600 hover:bg-blue-700">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout activeTab="bookings">
       <div className="space-y-6">
@@ -123,11 +154,11 @@ const BookingRequests = () => {
             <p className="text-gray-600 mt-1">Manage student admission requests and approvals</p>
           </div>
           <Button 
-            onClick={() => goToLedger("students")}
+            onClick={refreshData}
             variant="outline"
-            className="border-green-600 text-green-600 hover:bg-green-50"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
           >
-            📚 View All Students ({state.students.length})
+            🔄 Refresh Data
           </Button>
         </div>
 
@@ -138,7 +169,7 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-yellow-600">Pending</p>
-                  <p className="text-3xl font-bold text-yellow-700">{pendingCount}</p>
+                  <p className="text-3xl font-bold text-yellow-700">{bookingStats.pendingBookings}</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
               </div>
@@ -150,9 +181,9 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600">Approved</p>
-                  <p className="text-3xl font-bold text-green-700">{approvedCount}</p>
+                  <p className="text-3xl font-bold text-green-700">{bookingStats.approvedBookings}</p>
                 </div>
-                <Check className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
@@ -162,9 +193,9 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-red-600">Rejected</p>
-                  <p className="text-3xl font-bold text-red-700">{rejectedCount}</p>
+                  <p className="text-3xl font-bold text-red-700">{bookingStats.rejectedBookings}</p>
                 </div>
-                <X className="h-8 w-8 text-red-600" />
+                <XCircle className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -174,9 +205,9 @@ const BookingRequests = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Total Booking Requests</p>
-                  <p className="text-3xl font-bold text-blue-700">{pendingCount + approvedCount + rejectedCount}</p>
+                  <p className="text-3xl font-bold text-blue-700">{bookingStats.totalBookings}</p>
                 </div>
-                <UserPlus className="h-8 w-8 text-blue-600" />
+                <Users className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -192,7 +223,7 @@ const BookingRequests = () => {
               <div className="flex-1 relative">
                 <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                 <Input
-                  placeholder="Filter by contact (name or phone)..."
+                  placeholder="Search by name, email, phone, or booking ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -204,9 +235,9 @@ const BookingRequests = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value={BookingStatus.PENDING}>Pending</SelectItem>
+                  <SelectItem value={BookingStatus.APPROVED}>Approved</SelectItem>
+                  <SelectItem value={BookingStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -216,184 +247,241 @@ const BookingRequests = () => {
         {/* Requests Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Booking Requests ({filteredRequests.length})</CardTitle>
+            <CardTitle>Booking Requests ({filteredBookings.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student Details</TableHead>
-                  <TableHead>Guardian</TableHead>
-                  <TableHead>Guest</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Room / Bed</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRequests.map((request) => {
-                  // Calculate age from date of birth (assuming we have it in the data)
-                  const calculateAge = (dateOfBirth: string) => {
-                    if (!dateOfBirth) return 'N/A';
-                    const today = new Date();
-                    const birthDate = new Date(dateOfBirth);
-                    let age = today.getFullYear() - birthDate.getFullYear();
-                    const monthDiff = today.getMonth() - birthDate.getMonth();
-                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                      age--;
-                    }
-                    return age;
-                  };
-
-                  return (
-                    <TableRow key={request.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{request.name}</p>
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <Phone className="h-3 w-3 mr-1" />
-                            {request.phone}
-                          </p>
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {request.address}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{request.guardianName}</p>
-                          <p className="text-sm text-gray-500">{request.guardianPhone}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          Student
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{calculateAge(request.dateOfBirth || '2000-01-01')} years</span>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{request.preferredRoom}</p>
-                          <p className="text-sm text-gray-500">Bed: TBD</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedRequest(request)}
-                            className="text-xs"
-                          >
-                            View
-                          </Button>
-                          {request.status === 'Pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white text-xs"
-                                onClick={() => handleApprove(request)}
-                                disabled={approving}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 text-xs"
-                                onClick={() => handleReject(request)}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Booking ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Student Details</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Contact</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Check-in Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Room Type</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-gray-500">
+                        {searchTerm || statusFilter !== 'all' ? 'No bookings match your filters' : 'No booking requests found'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredBookings.map((booking) => (
+                      <tr key={booking.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-blue-600">{booking.id}</td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium">{booking.name}</p>
+                            <p className="text-sm text-gray-500">{booking.address}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm flex items-center">
+                              <Mail className="h-3 w-3 mr-1" />
+                              {booking.email}
+                            </p>
+                            <p className="text-sm flex items-center">
+                              <Phone className="h-3 w-3 mr-1" />
+                              {booking.phone}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">{new Date(booking.checkInDate).toLocaleDateString()}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline">{booking.preferredRoom}</Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedBooking(booking)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            {booking.status === BookingStatus.PENDING && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(booking.id)}
+                                  disabled={actionLoading === `approve-${booking.id}`}
+                                  className="bg-green-600 hover:bg-green-700 text-white text-xs disabled:opacity-50"
+                                >
+                                  {actionLoading === `approve-${booking.id}` ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                  ) : (
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                  )}
+                                  {actionLoading === `approve-${booking.id}` ? 'Approving...' : 'Approve'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setShowRejectDialog(true);
+                                  }}
+                                  disabled={actionLoading === `reject-${booking.id}`}
+                                  className="border-red-600 text-red-600 hover:bg-red-50 text-xs disabled:opacity-50"
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Request Detail Modal */}
-        {selectedRequest && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>📄 Request Details - {selectedRequest.id}</span>
-                  <Button variant="outline" onClick={() => setSelectedRequest(null)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* View Booking Dialog */}
+        <Dialog open={!!selectedBooking && !showRejectDialog} onOpenChange={() => setSelectedBooking(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Booking Request Details</DialogTitle>
+            </DialogHeader>
+            {selectedBooking && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900">Student Information</h4>
-                    <div className="mt-2 space-y-2">
-                      <p><strong>Name:</strong> {selectedRequest.name}</p>
-                      <p><strong>Phone:</strong> {selectedRequest.phone}</p>
-                      <p><strong>Email:</strong> {selectedRequest.email}</p>
-                      <p><strong>Address:</strong> {selectedRequest.address}</p>
-                    </div>
+                    <Label className="text-sm font-medium text-gray-600">Booking ID</Label>
+                    <p className="text-sm font-medium text-blue-600">{selectedBooking.id}</p>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Guardian Information</h4>
-                    <div className="mt-2 space-y-2">
-                      <p><strong>Name:</strong> {selectedRequest.guardianName}</p>
-                      <p><strong>Phone:</strong> {selectedRequest.guardianPhone}</p>
-                      <p><strong>Emergency:</strong> {selectedRequest.emergencyContact}</p>
-                    </div>
+                    <Label className="text-sm font-medium text-gray-600">Status</Label>
+                    <Badge className={getStatusColor(selectedBooking.status)}>
+                      {selectedBooking.status}
+                    </Badge>
                   </div>
                 </div>
-
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Name</Label>
+                    <p className="text-sm">{selectedBooking.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Email</Label>
+                    <p className="text-sm">{selectedBooking.email}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                    <p className="text-sm">{selectedBooking.phone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Check-in Date</Label>
+                    <p className="text-sm">{new Date(selectedBooking.checkInDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Booking Details</h4>
-                  <div className="mt-2 space-y-2">
-                    <p><strong>Preferred Room:</strong> {selectedRequest.preferredRoom}</p>
-                    <p><strong>Expected Join Date:</strong> {selectedRequest.checkInDate}</p>
-                    <p><strong>Request Date:</strong> {selectedRequest.requestDate}</p>
-                    <p><strong>Course:</strong> {selectedRequest.course}</p>
-                    <p><strong>Institution:</strong> {selectedRequest.institution}</p>
-                    <p><strong>ID Proof Type:</strong> {selectedRequest.idProofType}</p>
-                    <p><strong>ID Proof Number:</strong> {selectedRequest.idProofNumber}</p>
+                  <Label className="text-sm font-medium text-gray-600">Address</Label>
+                  <p className="text-sm">{selectedBooking.address}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Preferred Room Type</Label>
+                  <Badge variant="outline">{selectedBooking.preferredRoom}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Guardian Name</Label>
+                    <p className="text-sm">{selectedBooking.guardianName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Guardian Phone</Label>
+                    <p className="text-sm">{selectedBooking.guardianPhone}</p>
                   </div>
                 </div>
-
-                {selectedRequest.status === 'Pending' && (
-                  <div className="flex gap-4 pt-4">
-                    <Button
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => handleApprove(selectedRequest)}
-                      disabled={approving}
-                    >
-                      {approving ? "Processing..." : "✅ Approve & Create Student Profile"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 text-red-600 hover:text-red-700"
-                      onClick={() => handleReject(selectedRequest)}
-                    >
-                      ❌ Reject Request
-                    </Button>
+                {selectedBooking.rejectionReason && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Rejection Reason</Label>
+                    <p className="text-sm text-red-600">{selectedBooking.rejectionReason}</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Request Date</Label>
+                    <p className="text-sm">{selectedBooking.requestDate ? new Date(selectedBooking.requestDate).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Course</Label>
+                    <p className="text-sm">{selectedBooking.course || 'N/A'}</p>
+                  </div>
+                </div>
+                {selectedBooking.institution && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Institution</Label>
+                    <p className="text-sm">{selectedBooking.institution}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setSelectedBooking(null)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reject Booking Dialog */}
+        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reject Booking Request</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rejectionReason">Rejection Reason</Label>
+                <Textarea
+                  id="rejectionReason"
+                  placeholder="Please provide a reason for rejection..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleReject} 
+                  disabled={actionLoading === `reject-${selectedBooking?.id}` || !rejectionReason.trim()}
+                  className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                >
+                  {actionLoading === `reject-${selectedBooking?.id}` ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Rejecting...
+                    </>
+                  ) : (
+                    'Reject Booking'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

@@ -207,15 +207,96 @@ export interface BookingRequest {
   name: string;
   phone: string;
   email: string;
+  guardianName: string;
+  guardianPhone: string;
+  preferredRoom: string;
+  course: string;
+  institution: string;
+  requestDate: string;
+  checkInDate: string;
+  duration: string;
+  status: BookingStatus;
+  notes?: string;
+  emergencyContact: string;
+  address: string;
+  idProofType: string;
+  idProofNumber: string;
+  approvedDate?: string;
+  processedBy?: string;
+  rejectionReason?: string;
+  assignedRoom?: string;
+  priorityScore?: number;
+  source?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export enum BookingStatus {
+  PENDING = 'Pending',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+  CANCELLED = 'Cancelled'
+}
+
+export interface CreateBookingRequest {
+  name: string;
+  phone: string;
+  email: string;
+  guardianName: string;
+  guardianPhone: string;
+  preferredRoom: string;
+  course: string;
+  institution: string;
+  requestDate: string;
+  checkInDate: string;
+  duration: string;
+  emergencyContact: string;
+  address: string;
+  idProofType: string;
+  idProofNumber: string;
+  notes?: string;
+  source?: string;
+}
+
+export interface UpdateBookingRequest {
+  name?: string;
+  phone?: string;
+  email?: string;
   guardianName?: string;
   guardianPhone?: string;
   preferredRoom?: string;
   course?: string;
   institution?: string;
-  requestDate: string;
+  requestDate?: string;
   checkInDate?: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+  duration?: string;
+  emergencyContact?: string;
+  address?: string;
+  idProofType?: string;
+  idProofNumber?: string;
   notes?: string;
+}
+
+export interface BookingStats {
+  totalBookings: number;
+  pendingBookings: number;
+  approvedBookings: number;
+  rejectedBookings: number;
+  cancelledBookings: number;
+  approvalRate: number;
+  sourceBreakdown: Record<string, number>;
+  monthlyTrend: Array<{ month: string; count: number }>;
+}
+
+export interface ApproveBookingResponse {
+  success: boolean;
+  message: string;
+  bookingId: string;
+  approvedDate: string;
+}
+
+export interface RejectBookingRequest {
+  reason: string;
 }
 
 // Analytics Types
@@ -240,8 +321,9 @@ export interface ApiErrorResponse {
   message: string;
   error?: string;
   details?: any;
-}// A
-nalytics Types
+}
+
+// Analytics Types
 export interface MonthlyRevenueData {
   month: string;
   revenue: number;
