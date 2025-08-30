@@ -3,41 +3,19 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, Users, DollarSign, Calendar, Activity, BarChart3 } from "lucide-react";
-import { analyticsService } from "@/services/analyticsService";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export const Analytics = () => {
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [guestTypeData, setGuestTypeData] = useState([]);
-  const [performanceMetrics, setPerformanceMetrics] = useState({});
-  const [collectionStats, setCollectionStats] = useState({});
-  const [trends, setTrends] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadAnalyticsData();
-  }, []);
-
-  const loadAnalyticsData = async () => {
-    try {
-      const [monthly, guestTypes, performance, collection, trendData] = await Promise.all([
-        analyticsService.getMonthlyRevenue(),
-        analyticsService.getGuestTypeData(),
-        analyticsService.getPerformanceMetrics(),
-        analyticsService.getCollectionStats(),
-        analyticsService.calculateTrends()
-      ]);
-
-      setMonthlyData(monthly);
-      setGuestTypeData(guestTypes);
-      setPerformanceMetrics(performance);
-      setCollectionStats(collection);
-      setTrends(trendData);
-    } catch (error) {
-      console.error('Error loading analytics data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    monthlyData,
+    guestTypeData,
+    performanceMetrics,
+    collectionStats,
+    trends,
+    loading,
+    error,
+    refreshData
+  } = useAnalytics();
 
   if (loading) {
     return (
@@ -46,6 +24,28 @@ export const Analytics = () => {
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600">Loading analytics data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center space-y-4">
+            <div className="text-red-500 mb-2">
+              <BarChart3 className="h-12 w-12 mx-auto mb-2" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Analytics</h3>
+            <p className="text-gray-500 mb-4">{error}</p>
+            <button 
+              onClick={refreshData}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
@@ -81,9 +81,6 @@ export const Analytics = () => {
                 <p className="text-2xl font-bold text-gray-900">
                   Rs {(monthlyData.reduce((sum, month) => sum + (month.revenue || 0), 0) / Math.max(monthlyData.length, 1)).toLocaleString()}
                 </p>
-                <p className={`text-sm mt-1 ${trends.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {trends.revenueGrowth >= 0 ? '+' : ''}{trends.revenueGrowth}% from last month
-                </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
@@ -98,9 +95,6 @@ export const Analytics = () => {
                 <p className="text-2xl font-bold text-gray-900">
                   {Math.round(monthlyData.reduce((sum, month) => sum + (month.bookings || 0), 0) / Math.max(monthlyData.length, 1))}
                 </p>
-                <p className={`text-sm mt-1 ${trends.bookingGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {trends.bookingGrowth >= 0 ? '+' : ''}{trends.bookingGrowth}% from last month
-                </p>
               </div>
               <Calendar className="h-8 w-8 text-blue-600" />
             </div>
@@ -113,9 +107,6 @@ export const Analytics = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Occupancy</p>
                 <p className="text-2xl font-bold text-gray-900">{currentMonth.occupancy || 0}%</p>
-                <p className={`text-sm mt-1 ${trends.occupancyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {trends.occupancyGrowth >= 0 ? '+' : ''}{trends.occupancyGrowth}% from last month
-                </p>
               </div>
               <Users className="h-8 w-8 text-orange-600" />
             </div>
@@ -192,7 +183,7 @@ export const Analytics = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-gray-600" />
-              Guest Type Distribution
+              Student Status Distribution
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -228,27 +219,27 @@ export const Analytics = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-                <span className="font-medium">Average Daily Rate (ADR)</span>
+                <span className="font-medium">Average Stay Duration</span>
                 <span className="text-xl font-bold text-blue-600">
-                  Rs {performanceMetrics.averageDailyRate?.toLocaleString() || '0'}
+                  {performanceMetrics.averageStayDuration || '0'} days
                 </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-                <span className="font-medium">Revenue Per Available Bed</span>
+                <span className="font-medium">Payment Collection Rate</span>
                 <span className="text-xl font-bold text-green-600">
-                  Rs {performanceMetrics.revenuePerBed?.toLocaleString() || '0'}
+                  {performanceMetrics.collectionRate || '0'}%
                 </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg">
-                <span className="font-medium">Average Length of Stay</span>
+                <span className="font-medium">Total Invoices</span>
                 <span className="text-xl font-bold text-orange-600">
-                  {performanceMetrics.averageLengthOfStay || '0'} days
+                  {performanceMetrics.totalInvoices || '0'}
                 </span>
               </div>
               <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg">
-                <span className="font-medium">Repeat Guest Rate</span>
+                <span className="font-medium">Paid Invoices</span>
                 <span className="text-xl font-bold text-purple-600">
-                  {performanceMetrics.repeatGuestRate || '0'}%
+                  {performanceMetrics.paidInvoices || '0'}
                 </span>
               </div>
             </div>

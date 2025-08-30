@@ -240,4 +240,58 @@ export interface ApiErrorResponse {
   message: string;
   error?: string;
   details?: any;
+}// A
+nalytics Types
+export interface MonthlyRevenueData {
+  month: string;
+  revenue: number;
+  bookings: number;
+  occupancy: number;
+}
+
+export interface GuestTypeData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+export interface PerformanceMetrics {
+  averageDailyRate?: number;
+  revenuePerBed?: number;
+  averageLengthOfStay?: number;
+  repeatGuestRate?: number;
+  collectionRate?: number;
+  averageStayDuration?: number;
+  customerSatisfaction?: number;
+  totalInvoices?: number;
+  paidInvoices?: number;
+}
+
+export interface CollectionStats {
+  collectionRate: number;
+  totalCollected: number;
+  totalOutstanding: number;
+}
+
+export interface AnalyticsTrends {
+  revenueGrowth: number;
+  bookingGrowth: number;
+  occupancyGrowth: number;
+}
+
+export interface DashboardAnalytics {
+  summary: {
+    totalStudents: number;
+    totalRooms: number;
+    occupiedRooms: number;
+    occupancyRate: number;
+    totalRevenue: number;
+    monthlyRevenue: number;
+    revenueGrowth: number;
+    bookingsGrowth: number;
+    occupancyGrowth: number;
+  };
+  monthlyData: MonthlyRevenueData[];
+  guestTypeData: GuestTypeData[];
+  performanceMetrics: PerformanceMetrics;
 }

@@ -49,6 +49,9 @@ export const API_ENDPOINTS = {
     REJECT: (id: string) => `/bookings/${id}/reject`,
   },
   ANALYTICS: {
+    DASHBOARD: '/analytics/dashboard',
+    MONTHLY_REVENUE: '/analytics/monthly-revenue',
+    PERFORMANCE_METRICS: '/analytics/performance-metrics',
     REVENUE: '/analytics/revenue',
     OCCUPANCY: '/analytics/occupancy',
     MONTHLY: '/analytics/monthly',
